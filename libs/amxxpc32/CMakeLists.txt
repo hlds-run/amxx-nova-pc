@@ -73,7 +73,7 @@ target_compile_definitions("${TARGET_NAME}"
     $<$<PLATFORM_ID:Windows>:
       _MBCS
       _CRT_SECURE_NO_WARNINGS
-      _CRT_SECURE_NO_DEPRECATE
+      strdup=_strdup
     >
 
     $<$<NOT:$<PLATFORM_ID:Windows>>:
