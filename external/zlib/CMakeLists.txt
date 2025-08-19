@@ -41,7 +41,7 @@ target_sources("${TARGET_NAME}"
 # Include Directories
 #-------------------------------------------------------------------------------
 
-target_include_directories("${TARGET_NAME}"
+target_include_directories("${TARGET_NAME}" SYSTEM
   PUBLIC
     "${PROJECT_SOURCE_DIR}/src"
 )
@@ -54,8 +54,6 @@ target_compile_definitions("${TARGET_NAME}"
   PRIVATE
     $<$<PLATFORM_ID:Windows>:
       _MBCS
-      _CRT_SECURE_NO_WARNINGS
-      _CRT_SECURE_NO_DEPRECATE
     >
 
     $<$<NOT:$<PLATFORM_ID:Windows>>:
