@@ -184,6 +184,7 @@ CMakeLists.txt          eol=lf
 .gitignore              eol=lf
 *.json                  eol=lf
 *.sha512                eol=lf
+*.yml                   eol=lf
 
 ######################
 #   MicrosoftShell   #

@@ -1,0 +1,168 @@
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+
+template: |
+  # What's Changed
+
+  $CHANGES
+
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+
+autolabeler:
+  - label: "BREAKING CHANGE"
+    title:
+      - "/!:/"
+    body:
+      - "/BREAKING CHANGE:/i"
+
+  - label: "bug"
+    branch:
+      - '/^fix\//'
+    title:
+      - '/^fix(\(.*\))?:/'
+
+  - label: "build"
+    branch:
+      - '/^build\//'
+    title:
+      - "/^build:/"
+    files:
+      - "*.cmake"
+      - "*.rc.in"
+      - "**/cmake/**"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+
+  - label: "chore"
+    branch:
+      - '/^chore\//'
+    title:
+      - '/^chore(\(.*\))?:/'
+    files:
+      - ".clang-tidy"
+      - ".cppcheck_suppressions"
+      - ".gitattributes"
+      - ".gitignore"
+      - ".pvs-studio"
+
+  - label: "ci"
+    branch:
+      - '/^ci\//'
+    title:
+      - "/^ci:/"
+    files:
+      - ".github/**"
+
+  - label: "documentation"
+    branch:
+      - '/^docs\//'
+    title:
+      - "/^docs:/"
+    files:
+      - "*.md"
+      - "*.rst"
+      - "doc/**"
+      - "docs/**"
+      - "LICENSE"
+
+  - label: "enhancement"
+    branch:
+      - '/^feat\//'
+    title:
+      - '/^feat(\(.*\))?:/'
+
+  - label: "performance"
+    branch:
+      - '/^perf\//'
+    title:
+      - '/^perf(\(.*\))?:/'
+
+  - label: "refactoring"
+    branch:
+      - '/^refactor\//'
+    title:
+      - '/^refactor(\(.*\))?:/'
+
+  - label: "revert"
+    branch:
+      - '/^revert\//'
+    title:
+      - "/^revert:/"
+
+  - label: "security"
+    branch:
+      - '/^security\//'
+    title:
+      - '/^security(\(.*\))?:/'
+
+  - label: "style"
+    branch:
+      - '/^style\//'
+    title:
+      - '/^style(\(.*\))?:/'
+    files:
+      - ".clang-format"
+      - ".editorconfig"
+
+  - label: "tests"
+    branch:
+      - '/^test\//'
+    title:
+      - '/^test(\(.*\))?:/'
+    files:
+      - "**/test/**"
+      - "**/tests/**"
+
+categories:
+  - title: ":warning: Breaking changes"
+    labels:
+      - "BREAKING CHANGE"
+
+  - title: ":rocket: Features"
+    labels:
+      - "enhancement"
+
+  - title: ":thumbsup: Improvements"
+    labels:
+      - "performance"
+
+  - title: ":shield: Security"
+    labels:
+      - "security"
+
+  - title: ":bug: Bug Fixes"
+    labels:
+      - "bug"
+
+  # - title: ":books: Documentation"
+  #   labels:
+  #     - "documentation"
+
+  # - title: ":white_check_mark: Tests"
+  #   labels:
+  #     - "tests"
+
+  - title: ":hammer: Maintenance"
+    labels:
+      - "build"
+      - "chore"
+      - "refactoring"
+
+version-resolver:
+  major:
+    labels:
+      - "BREAKING CHANGE"
+
+  minor:
+    labels:
+      - "enhancement"
+
+  patch:
+    labels:
+      - "bug"
+      - "performance"
+      - "refactoring"
+      - "security"
+
+exclude-labels:
+  - "skip-changelog"

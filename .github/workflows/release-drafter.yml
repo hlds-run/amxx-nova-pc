@@ -1,0 +1,36 @@
+name: Release Drafter
+
+on:
+  # Triggers on push events to the specified branches
+  push:
+    branches: [main]
+
+  # Required for autolabeler
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+  # Required for autolabeler to support PRs from forks
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  update_release_draft:
+    permissions:
+      contents: write
+      pull-requests: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: release-drafter/release-drafter@v6
+        with:
+          config-name: "release-drafter.yml"
+          publish: false
+          prerelease: false
+          disable-releaser: false
+          disable-autolabeler: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
