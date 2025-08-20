@@ -842,6 +842,7 @@ cleanup:
 #endif
     delete_autolisttable();
     delete_heaplisttable();
+    clear_warningstack();
     if (errnum != 0) {
         if (strlen(errfname) == 0)
             pc_printf("\n%d Error%s.\n", errnum, (errnum > 1) ? "s" : "");

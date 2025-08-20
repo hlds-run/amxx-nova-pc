@@ -1226,6 +1226,24 @@ static int command(void)
                         }
                         while (comma);
                     }
+                    else if (strcmp(str, "warning") == 0) {
+                        if ((lex(&val, &str) == tSYMBOL)) {
+                            if (strcmp(str, "push") == 0) {
+                                pushwarnings();
+                            }
+                            else if (strcmp(str, "pop") == 0) {
+                                popwarnings();
+                            }
+                            else if (strcmp(str, "enable") == 0) {
+                                preproc_expr(&val, NULL); /* get value (or 0 on error) */
+                                pc_enablewarning((int)val, 1);
+                            }
+                            else if (strcmp(str, "disable") == 0) {
+                                preproc_expr(&val, NULL); /* get value (or 0 on error) */
+                                pc_enablewarning((int)val, 0);
+                            }
+                        }
+                    }
                     else if (strcmp(str, "showstackusageinfo") == 0) {
                         sc_stkusageinfo = TRUE;
                     }

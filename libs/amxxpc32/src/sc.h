@@ -667,6 +667,9 @@ SC_FUNC void outval(cell val, int newline);
 /* function prototypes in SC5.C */
 SC_FUNC int error(int number, ...) INVISIBLE;
 SC_FUNC void errorset(int code, int line);
+SC_FUNC void pushwarnings(void);
+SC_FUNC void popwarnings(void);
+SC_FUNC void clear_warningstack(void);
 
 /* function prototypes in SC6.C */
 SC_FUNC int assemble(FILE* fout, FILE* fin);
