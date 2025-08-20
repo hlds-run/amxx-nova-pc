@@ -48,7 +48,16 @@
 #endif
 
 #define NUM_WARNINGS (sizeof warnmsg / sizeof warnmsg[0])
-static unsigned char warndisable[(NUM_WARNINGS + 7) / 8]; /* 8 flags in a char */
+
+typedef struct s_warnstack {
+    struct s_warnstack* next;
+    unsigned char mask[(NUM_WARNINGS + 7) / 8]; /* 8 flags in a char */
+} warnstack;
+
+/* the root entry holds the active flags, any other allocated entries contain
+ * "pushed" flags
+ */
+static warnstack warndisable;
 
 static int errflag;
 static int errfile;
@@ -90,7 +99,7 @@ SC_FUNC int error(int number, ...)
     if (number >= 200) {
         int index = (number - 200) / 8;
         int mask = 1 << ((number - 200) % 8);
-        if ((warndisable[index] & mask) != 0)
+        if ((warndisable.mask[index] & mask) != 0)
             return 0;
     } /* if */
 
@@ -233,17 +242,64 @@ int pc_enablewarning(int number, int enable)
     mask = (unsigned char)(1 << (number % 8));
     switch (enable) {
         case 0:
-            warndisable[index] |= mask;
+            warndisable.mask[index] |= mask;
             break;
         case 1:
-            warndisable[index] &= (unsigned char)~mask;
+            warndisable.mask[index] &= (unsigned char)~mask;
             break;
         case 2:
-            warndisable[index] ^= mask;
+            warndisable.mask[index] ^= mask;
             break;
     } /* switch */
 
     return TRUE;
+}
+
+/* pushwarnings()
+ * Saves currently disabled warnings, used to implement #pragma warning push
+ */
+SC_FUNC void pushwarnings(void)
+{
+    warnstack* p = (warnstack*)malloc(sizeof(warnstack));
+    if (p != NULL) {
+        memcpy(p->mask, warndisable.mask, sizeof(warndisable.mask));
+        p->next = warndisable.next;
+        warndisable.next = p;
+    }
+    else {
+        error(103); /* insufficient memory */
+    }
+}
+
+/* popwarnings()
+ * This function is the reverse of pc_pushwarnings()
+ */
+SC_FUNC void popwarnings(void)
+{
+    if (warndisable.next != NULL) {
+        warnstack* p = warndisable.next;
+        warndisable.next = p->next;
+        memcpy(warndisable.mask, p->mask, sizeof(warndisable.mask));
+        free(p);
+    }
+    else {
+        error(97); /* #pragma warning pop without push */
+    }
+}
+
+/* clear_warningstack()
+ * Removes any remaining stacked warning lists and cleans up the global array
+ */
+SC_FUNC void clear_warningstack(void)
+{
+    if (warndisable.next != NULL)
+        error(96); /* #pragma warning push without pop */
+    while (warndisable.next != NULL) {
+        warnstack* p = warndisable.next;
+        warndisable.next = p->next;
+        free(p);
+    }
+    memset(&warndisable, 0, sizeof(warndisable));
 }
 
 #undef SCPACK_TABLE

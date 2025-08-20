@@ -107,7 +107,16 @@ static char* errmsg[] = {
     /*085*/ "no states are defined for function \"%s\"\n",
     /*086*/ "unknown automaton \"%s\"\n",
     /*087*/ "unknown state \"%s\" for automaton \"%s\"\n",
-    /*088*/ "number of arguments does not match definition\n"};
+    /*088*/ "number of arguments does not match definition\n",
+    /*089*/ "state variables may not be initialized (symbol \"%s\")",
+    /*090*/ "public functions may not return arrays (symbol \"%s\")",
+    /*091*/ "first constant in an enumerated list must be initialized (symbol \"%s\")",
+    /*092*/ "invalid number format",
+    /*093*/ "array fields with a size may only appear in the final dimension",
+    /*094*/ "invalid subscript, subscript does not match array definition regarding named indices (symbol \"%s\")",
+    /*095*/ "multiple default entry points: both main() and @start() are declared",
+    /*096*/ "\"#pragma warning push\" is lacking a matching \"pop\"",
+    /*097*/ "\"#pragma warning pop\" is lacking a matching \"push\""};
 
 static char* fatalmsg[] = {
     /*100*/ "cannot read from file: \"%s\"\n",
