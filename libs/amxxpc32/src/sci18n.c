@@ -88,8 +88,9 @@ static int cp_readline(FILE* fp, char* string, size_t size)
     assert(size > 1);
     while ((c = fgetc(fp)) != EOF && count < size - 1) {
         if (c == '\r' || c == '\n') {
-            if (count > 0) /* '\r' or '\n' ends a string */
+            if (count > 0) { /* '\r' or '\n' ends a string */
                 break;
+            }
             /* if count==0, the line started with a '\r' or '\n', or perhaps line
              * ends in the file are '\r\n' and we read and stopped on the '\r' of
              * the preceding line
@@ -121,17 +122,20 @@ SC_FUNC int cp_path(const char* root, const char* directory)
     add_slash1 = (len1 == 0 || root[len1 - 1] != DIRSEP_CHAR);
     len2 = (directory != NULL) ? strlen(directory) : 0;
     add_slash2 = (len2 > 0 && root[len2 - 1] != DIRSEP_CHAR);
-    if (len1 + add_slash1 + len2 + add_slash2 >= (_MAX_PATH - MAXCODEPAGE))
+    if (len1 + add_slash1 + len2 + add_slash2 >= (_MAX_PATH - MAXCODEPAGE)) {
         return FALSE; /* full filename may not fit */
-    if (root != NULL)
+    }
+    if (root != NULL) {
         strcpy(cprootpath, root);
+    }
     if (add_slash1) {
         assert(len1 == 0 || cprootpath[len1] == '\0');
         cprootpath[len1] = DIRSEP_CHAR;
         cprootpath[len1 + 1] = '\0';
     } /* if */
-    if (directory != NULL)
+    if (directory != NULL) {
         strcat(cprootpath, directory);
+    }
     if (add_slash2) {
         assert(cprootpath[len1 + add_slash1 + len2] == '\0');
         cprootpath[len1 + add_slash1 + len2] = DIRSEP_CHAR;
@@ -167,18 +171,21 @@ SC_FUNC int cp_set(const char* name)
             wordtablesize = 0;
             wordtabletop = 0;
         } /* if */
-        for (index = 0; index < ELEMENTS(bytetable); index++)
+        for (index = 0; index < ELEMENTS(bytetable); index++) {
             bytetable[index] = (wchar_t)index;
+        }
         return TRUE;
     } /* if */
 
     /* try to open the file as-is */
-    if (strchr(name, DIRSEP_CHAR) != NULL)
+    if (strchr(name, DIRSEP_CHAR) != NULL) {
         fp = fopen(name, "rt");
+    }
     if (fp == NULL) {
         /* try opening the file in the "root path" for codepages */
-        if (strlen(name) > MAXCODEPAGE)
+        if (strlen(name) > MAXCODEPAGE) {
             return 0;
+        }
         assert(strlen(name) + strlen(cprootpath) < _MAX_PATH);
         strcpy(filename, cprootpath);
         strcat(filename, name);
@@ -186,16 +193,18 @@ SC_FUNC int cp_set(const char* name)
     } /* if */
     if (fp == NULL) {
         /* try opening the file in the "root path" for codepages, with a ".txt" extension */
-        if (strlen(name) + 4 >= MAXCODEPAGE)
+        if (strlen(name) + 4 >= MAXCODEPAGE) {
             return 0;
+        }
         assert(strlen(filename) + 4 < _MAX_PATH);
         strcat(filename, ".txt");
         fp = fopen(filename, "rt");
     } /* if */
     if (fp == NULL) {
         /* try opening the file in the "root path" for codepages, with "cp" prefixed before the name */
-        if (strlen(name) + 2 > MAXCODEPAGE)
+        if (strlen(name) + 2 > MAXCODEPAGE) {
             return 0;
+        }
         assert(2 + strlen(name) + strlen(cprootpath) < _MAX_PATH);
         strcpy(filename, cprootpath);
         strcat(filename, "cp");
@@ -204,18 +213,21 @@ SC_FUNC int cp_set(const char* name)
     } /* if */
     if (fp == NULL) {
         /* try opening the file in the "root path" for codepages, with "cp" prefixed an ".txt" appended */
-        if (strlen(name) + 2 + 4 > MAXCODEPAGE)
+        if (strlen(name) + 2 + 4 > MAXCODEPAGE) {
             return 0;
+        }
         assert(strlen(filename) + 4 < _MAX_PATH);
         strcat(filename, ".txt");
         fp = fopen(filename, "rt");
     } /* if */
-    if (fp == NULL)
+    if (fp == NULL) {
         return FALSE; /* all failed */
+    }
 
     /* clear the tables */
-    for (index = 0; index < ELEMENTS(bytetable); index++)
+    for (index = 0; index < ELEMENTS(bytetable); index++) {
         bytetable[index] = INVALID; /* special code meaning "not found" */
+    }
     assert(wordtablesize == 0 && wordtabletop == 0 && wordtable == NULL || wordtablesize > 0 && wordtable != NULL);
     if (wordtable != NULL) {
         free(wordtable);
@@ -227,8 +239,9 @@ SC_FUNC int cp_set(const char* name)
     /* read in the table */
     while (cp_readline(fp, filename, sizeof filename)) {
         char* ptr;
-        if ((ptr = strchr(filename, '#')) != NULL)
+        if ((ptr = strchr(filename, '#')) != NULL) {
             *ptr = '\0'; /* strip of comment */
+        }
         for (ptr = filename; *ptr > 0 && *ptr < ' '; ptr++)
             /* nothing */; /* skip leading whitespace */
         if (*ptr != '\0') {
@@ -293,18 +306,22 @@ SC_FUNC cell cp_translate(const unsigned char* string, const unsigned char** end
         while (low < high) {
             mid = (low + high) / 2;
             assert(low <= mid && mid < high);
-            if (index > wordtable[mid].index)
+            if (index > wordtable[mid].index) {
                 low = mid + 1;
-            else
+            }
+            else {
                 high = mid;
+            }
         } /* while */
         assert(low == high);
-        if (wordtable[low].index == index)
+        if (wordtable[low].index == index) {
             result = wordtable[low].code;
+        }
     } /* if */
 
-    if (endptr != NULL)
+    if (endptr != NULL) {
         *endptr = string;
+    }
     return (cell)result;
 }
 

@@ -51,11 +51,14 @@ SC_FUNC void writeleader(symbol* root)
     code_idx += opcodes(1) + opargs(1); /* calculate code length */
 
     /* check whether there are any functions that have states */
-    for (sym = root->next; sym != NULL; sym = sym->next)
-        if (sym->ident == iFUNCTN && (sym->usage & uREAD) != 0 && sym->states != NULL)
+    for (sym = root->next; sym != NULL; sym = sym->next) {
+        if (sym->ident == iFUNCTN && (sym->usage & uREAD) != 0 && sym->states != NULL) {
             break;
-    if (sym == NULL)
+        }
+    }
+    if (sym == NULL) {
         return; /* no function has states, nothing to do next */
+    }
 
     /* generate an error function that is called for an undefined state */
     stgwrite("\n;exit point for functions called from the wrong state\n");
@@ -74,10 +77,12 @@ SC_FUNC void writeleader(symbol* root)
     for (fsa = sc_automaton_tab.next; fsa != NULL; fsa = fsa->next) {
         defstorage();
         stgwrite("0\t; automaton ");
-        if (strlen(fsa->name) == 0)
+        if (strlen(fsa->name) == 0) {
             stgwrite("(anonymous)");
-        else
+        }
+        else {
             stgwrite(fsa->name);
+        }
         stgwrite("\n");
         fsa->value = glb_declared * sizeof(cell);
         glb_declared++;
@@ -109,8 +114,9 @@ SC_FUNC void writeleader(symbol* root)
                 assert(strlen(stlist->name) == 0);
                 strcpy(stlist->name, itoh(getlabel()));
             } /* for */
-            if (strcmp(sym->name, uENTRYFUNC) == 0)
-                continue;         /* do not generate stubs for this special function */
+            if (strcmp(sym->name, uENTRYFUNC) == 0) {
+                continue; /* do not generate stubs for this special function */
+            }
             sym->addr = code_idx; /* fix the function address now */
             /* get automaton id for this function */
             assert(listid > 0);
@@ -152,8 +158,9 @@ SC_FUNC void writeleader(symbol* root)
                             break;
                         } /* if */
                     } /* for */
-                    if (stlist == NULL && strtol(lbl_default, NULL, 16) == lbl_nostate)
+                    if (stlist == NULL && strtol(lbl_default, NULL, 16) == lbl_nostate) {
                         error(230, state->name, sym->name); /* unimplemented state, no fallback */
+                    }
                 } /* if (state belongs to automaton of function) */
             } /* for (state) */
             stgwrite("\n");
@@ -178,8 +185,9 @@ SC_FUNC void writetrailer(void)
     /* pad code to align data segment */
     if ((code_idx % sc_dataalign) != 0) {
         begcseg();
-        while ((code_idx % sc_dataalign) != 0)
+        while ((code_idx % sc_dataalign) != 0) {
             nooperation();
+        }
     } /* if */
 
     /* pad data segment to align the stack and the heap */
@@ -349,9 +357,11 @@ SC_FUNC void alignframe(int numbytes)
 #if !defined NDEBUG
     /* "numbytes" should be a power of 2 for this code to work */
     int i, count = 0;
-    for (i = 0; i < sizeof numbytes * 8; i++)
-        if (numbytes & (1 << i))
+    for (i = 0; i < sizeof numbytes * 8; i++) {
+        if (numbytes & (1 << i)) {
             count++;
+        }
+    }
     assert(count == 1);
 #endif
 
@@ -393,10 +403,12 @@ SC_FUNC void rvalue(value* lval)
         /* indirect fetch, but address not yet in PRI */
         assert(sym != NULL);
         assert(sym->vclass == sLOCAL); /* global references don't exist in Pawn */
-        if (sym->vclass == sLOCAL)
+        if (sym->vclass == sLOCAL) {
             stgwrite("\tlref.s.pri ");
-        else
+        }
+        else {
             stgwrite("\tlref.pri ");
+        }
         outval(sym->addr, TRUE);
         markusage(sym, uREAD);
         code_idx += opcodes(1) + opargs(1);
@@ -404,10 +416,12 @@ SC_FUNC void rvalue(value* lval)
     else {
         /* direct or stack relative fetch */
         assert(sym != NULL);
-        if (sym->vclass == sLOCAL)
+        if (sym->vclass == sLOCAL) {
             stgwrite("\tload.s.pri ");
-        else
+        }
+        else {
             stgwrite("\tload.pri ");
+        }
         outval(sym->addr, TRUE);
         markusage(sym, uREAD);
         code_idx += opcodes(1) + opargs(1);
@@ -440,16 +454,20 @@ SC_FUNC void address(symbol* sym, regid reg)
         /* a local array or local variable */
         switch (reg) {
             case sPRI:
-                if (sym->vclass == sLOCAL)
+                if (sym->vclass == sLOCAL) {
                     stgwrite("\taddr.pri ");
-                else
+                }
+                else {
                     stgwrite("\tconst.pri ");
+                }
                 break;
             case sALT:
-                if (sym->vclass == sLOCAL)
+                if (sym->vclass == sLOCAL) {
                     stgwrite("\taddr.alt ");
-                else
+                }
+                else {
                     stgwrite("\tconst.alt ");
+                }
                 break;
         } /* switch */
     } /* if */
@@ -460,10 +478,12 @@ SC_FUNC void address(symbol* sym, regid reg)
 
 static void addr_reg(int val, regid reg)
 {
-    if (reg == sPRI)
+    if (reg == sPRI) {
         stgwrite("\taddr.pri ");
-    else
+    }
+    else {
         stgwrite("\taddr.alt ");
+    }
     outval(val, TRUE);
     code_idx += opcodes(1) + opargs(1);
 }
@@ -475,10 +495,12 @@ static void addr_reg(int val, regid reg)
 //   base + 3*sizeof(cell) == first argument of the function
 static void load_argcount(regid reg)
 {
-    if (reg == sPRI)
+    if (reg == sPRI) {
         stgwrite("\tload.s.pri ");
-    else
+    }
+    else {
         stgwrite("\tload.s.alt ");
+    }
     outval(2 * sizeof(cell), TRUE);
     code_idx += opcodes(1) + opargs(1);
 }
@@ -527,20 +549,24 @@ SC_FUNC void store(value* lval)
     }
     else if (lval->ident == iREFERENCE) {
         assert(sym != NULL);
-        if (sym->vclass == sLOCAL)
+        if (sym->vclass == sLOCAL) {
             stgwrite("\tsref.s.pri ");
-        else
+        }
+        else {
             stgwrite("\tsref.pri ");
+        }
         outval(sym->addr, TRUE);
         code_idx += opcodes(1) + opargs(1);
     }
     else {
         assert(sym != NULL);
         markusage(sym, uWRITTEN);
-        if (sym->vclass == sLOCAL)
+        if (sym->vclass == sLOCAL) {
             stgwrite("\tstor.s.pri ");
-        else
+        }
+        else {
             stgwrite("\tstor.pri ");
+        }
         outval(sym->addr, TRUE);
         code_idx += opcodes(1) + opargs(1);
     } /* if */
@@ -549,10 +575,12 @@ SC_FUNC void store(value* lval)
 SC_FUNC void storereg(cell address, regid reg)
 {
     assert(reg == sPRI || reg == sALT);
-    if (reg == sPRI)
+    if (reg == sPRI) {
         stgwrite("\tstor.pri ");
-    else
+    }
+    else {
         stgwrite("\tstor.alt ");
+    }
     outval(address, TRUE);
     code_idx += opcodes(1) + opargs(1);
 }
@@ -584,10 +612,12 @@ SC_FUNC void copyarray(symbol* sym, cell size)
     }
     else {
         /* a local or global array */
-        if (sym->vclass == sLOCAL)
+        if (sym->vclass == sLOCAL) {
             stgwrite("\taddr.alt ");
-        else
+        }
+        else {
             stgwrite("\tconst.alt ");
+        }
     } /* if */
     outval(sym->addr, TRUE);
     markusage(sym, uWRITTEN);
@@ -611,10 +641,12 @@ SC_FUNC void fillarray(symbol* sym, cell size, cell value)
     }
     else {
         /* a local or global array */
-        if (sym->vclass == sLOCAL)
+        if (sym->vclass == sLOCAL) {
             stgwrite("\taddr.alt ");
-        else
+        }
+        else {
             stgwrite("\tconst.alt ");
+        }
     } /* if */
     outval(sym->addr, TRUE);
     markusage(sym, uWRITTEN);
@@ -761,13 +793,15 @@ SC_FUNC void ffcall(symbol* sym, const char* label, int numargs)
 
     assert(sym != NULL);
     assert(sym->ident == iFUNCTN);
-    if (sc_asmfile)
+    if (sc_asmfile) {
         funcdisplayname(symname, sym->name);
+    }
     if ((sym->usage & uNATIVE) != 0) {
         /* reserve a SYSREQ id if called for the first time */
         assert(label == NULL);
-        if (sc_status == statWRITE && (sym->usage & uREAD) == 0 && sym->addr >= 0)
+        if (sc_status == statWRITE && (sym->usage & uREAD) == 0 && sym->addr >= 0) {
             sym->addr = ntv_funcid++;
+        }
         stgwrite("\tsysreq.c ");
         outval(sym->addr, FALSE);
         if (sc_asmfile) {
@@ -1260,18 +1294,22 @@ SC_FUNC void inc(value* lval)
         stgwrite("\tpush.pri\n");
         /* load dereferenced value */
         assert(sym->vclass == sLOCAL); /* global references don't exist in Pawn */
-        if (sym->vclass == sLOCAL)
+        if (sym->vclass == sLOCAL) {
             stgwrite("\tlref.s.pri ");
-        else
+        }
+        else {
             stgwrite("\tlref.pri ");
+        }
         outval(sym->addr, TRUE);
         /* increment */
         stgwrite("\tinc.pri\n");
         /* store dereferenced value */
-        if (sym->vclass == sLOCAL)
+        if (sym->vclass == sLOCAL) {
             stgwrite("\tsref.s.pri ");
-        else
+        }
+        else {
             stgwrite("\tsref.pri ");
+        }
         outval(sym->addr, TRUE);
         stgwrite("\tpop.pri\n");
         code_idx += opcodes(5) + opargs(2);
@@ -1279,10 +1317,12 @@ SC_FUNC void inc(value* lval)
     else {
         /* local or global variable */
         assert(sym != NULL);
-        if (sym->vclass == sLOCAL)
+        if (sym->vclass == sLOCAL) {
             stgwrite("\tinc.s ");
-        else
+        }
+        else {
             stgwrite("\tinc ");
+        }
         outval(sym->addr, TRUE);
         code_idx += opcodes(1) + opargs(1);
     } /* if */
@@ -1321,18 +1361,22 @@ SC_FUNC void dec(value* lval)
         stgwrite("\tpush.pri\n");
         /* load dereferenced value */
         assert(sym->vclass == sLOCAL); /* global references don't exist in Pawn */
-        if (sym->vclass == sLOCAL)
+        if (sym->vclass == sLOCAL) {
             stgwrite("\tlref.s.pri ");
-        else
+        }
+        else {
             stgwrite("\tlref.pri ");
+        }
         outval(sym->addr, TRUE);
         /* decrement */
         stgwrite("\tdec.pri\n");
         /* store dereferenced value */
-        if (sym->vclass == sLOCAL)
+        if (sym->vclass == sLOCAL) {
             stgwrite("\tsref.s.pri ");
-        else
+        }
+        else {
             stgwrite("\tsref.pri ");
+        }
         outval(sym->addr, TRUE);
         stgwrite("\tpop.pri\n");
         code_idx += opcodes(5) + opargs(2);
@@ -1340,10 +1384,12 @@ SC_FUNC void dec(value* lval)
     else {
         /* local or global variable */
         assert(sym != NULL);
-        if (sym->vclass == sLOCAL)
+        if (sym->vclass == sLOCAL) {
             stgwrite("\tdec.s ");
-        else
+        }
+        else {
             stgwrite("\tdec ");
+        }
         outval(sym->addr, TRUE);
         code_idx += opcodes(1) + opargs(1);
     } /* if */
@@ -1373,6 +1419,7 @@ SC_FUNC void jmp_eq0(int number)
 SC_FUNC void outval(cell val, int newline)
 {
     stgwrite(itoh(val));
-    if (newline)
+    if (newline) {
         stgwrite("\n");
+    }
 }

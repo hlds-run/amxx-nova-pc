@@ -169,8 +169,9 @@ int errno = 0;
 
 void ZLIB_INTERNAL zmemcpy(Bytef* dest, const Bytef* source, uInt len)
 {
-    if (len == 0)
+    if (len == 0) {
         return;
+    }
     do {
         *dest++ = *source++; /* ??? to be unrolled */
     }
@@ -182,16 +183,18 @@ int ZLIB_INTERNAL zmemcmp(const Bytef* s1, const Bytef* s2, uInt len)
     uInt j;
 
     for (j = 0; j < len; j++) {
-        if (s1[j] != s2[j])
+        if (s1[j] != s2[j]) {
             return 2 * (s1[j] > s2[j]) - 1;
+        }
     }
     return 0;
 }
 
 void ZLIB_INTERNAL zmemzero(Bytef* dest, uInt len)
 {
-    if (len == 0)
+    if (len == 0) {
         return;
+    }
     do {
         *dest++ = 0; /* ??? to be unrolled */
     }
@@ -244,14 +247,16 @@ voidpf ZLIB_INTERNAL zcalloc(voidpf opaque, unsigned items, unsigned size)
      */
     if (bsize < 65520L) {
         buf = farmalloc(bsize);
-        if (*(ush*)&buf != 0)
+        if (*(ush*)&buf != 0) {
             return buf;
+        }
     }
     else {
         buf = farmalloc(bsize + 16L);
     }
-    if (buf == NULL || next_ptr >= MAX_PTR)
+    if (buf == NULL || next_ptr >= MAX_PTR) {
         return NULL;
+    }
     table[next_ptr].org_ptr = buf;
 
     /* Normalize the pointer to seg:0 */
@@ -273,8 +278,9 @@ void ZLIB_INTERNAL zcfree(voidpf opaque, voidpf ptr)
     }
     /* Find the original pointer */
     for (n = 0; n < next_ptr; n++) {
-        if (ptr != table[n].new_ptr)
+        if (ptr != table[n].new_ptr) {
             continue;
+        }
 
         farfree(table[n].org_ptr);
         while (++n < next_ptr) {

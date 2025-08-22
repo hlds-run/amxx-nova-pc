@@ -79,18 +79,23 @@ static void grow_stgbuffer(int requiredsize)
     /* if the staging buffer (holding intermediate code for one line) grows
      * over a few kBytes, there is probably a run-away expression
      */
-    if (requiredsize > sSTG_MAX)
+    if (requiredsize > sSTG_MAX) {
         error(102, "staging buffer"); /* staging buffer overflow (fatal error) */
+    }
     stgmax = requiredsize + sSTG_GROW;
-    if (stgbuf != NULL)
+    if (stgbuf != NULL) {
         p = (char*)realloc(stgbuf, stgmax * sizeof(char));
-    else
+    }
+    else {
         p = (char*)malloc(stgmax * sizeof(char));
-    if (p == NULL)
+    }
+    if (p == NULL) {
         error(102, "staging buffer"); /* staging buffer overflow (fatal error) */
+    }
     stgbuf = p;
-    if (clear)
+    if (clear) {
         *stgbuf = '\0';
+    }
 }
 
 SC_FUNC void stgbuffer_cleanup(void)
@@ -130,8 +135,9 @@ SC_FUNC void stgmark(char mark)
 
 static int filewrite(char* str)
 {
-    if (sc_status == statWRITE)
+    if (sc_status == statWRITE) {
         return pc_writeasm(outf, str);
+    }
     return TRUE;
 }
 
@@ -158,8 +164,9 @@ SC_FUNC void stgwrite(const char* st)
 
     CHECK_STGBUFFER(0);
     if (staging) {
-        if (stgidx >= 2 && stgbuf[stgidx - 1] == '\0' && stgbuf[stgidx - 2] != '\n')
-            stgidx -= 1;      /* overwrite last '\0' */
+        if (stgidx >= 2 && stgbuf[stgidx - 1] == '\0' && stgbuf[stgidx - 2] != '\n') {
+            stgidx -= 1; /* overwrite last '\0' */
+        }
         while (*st != '\0') { /* copy to staging buffer */
             CHECK_STGBUFFER(stgidx);
             stgbuf[stgidx++] = *st++;
@@ -190,8 +197,9 @@ SC_FUNC void stgwrite(const char* st)
  */
 SC_FUNC void stgout(int index)
 {
-    if (!staging)
+    if (!staging) {
         return;
+    }
     stgstring(&stgbuf[index], &stgbuf[stgidx]);
     stgidx = index;
 }
@@ -233,11 +241,12 @@ static void stgstring(char* start, char* end)
             start += 1; /* skip token */
             /* allocate a argstack with sMAXARGS items */
             stack = (argstack*)malloc(sMAXARGS * sizeof(argstack));
-            if (stack == NULL)
+            if (stack == NULL) {
                 error(103); /* insufficient memory */
-            nest = 1;       /* nesting counter */
-            argc = 0;       /* argument counter */
-            arg = -1;       /* argument index; no valid argument yet */
+            }
+            nest = 1; /* nesting counter */
+            argc = 0; /* argument counter */
+            arg = -1; /* argument index; no valid argument yet */
             do {
                 switch (*start) {
                     case sSTARTREORDER:
@@ -251,12 +260,14 @@ static void stgstring(char* start, char* end)
                     default:
                         if ((*start & sEXPRSTART) == sEXPRSTART) {
                             if (nest == 1) {
-                                if (arg >= 0)
+                                if (arg >= 0) {
                                     stack[arg].end = start - 1; /* finish previous argument */
+                                }
                                 arg = (unsigned char)*start - sEXPRSTART;
                                 stack[arg].start = start + 1;
-                                if (arg >= argc)
+                                if (arg >= argc) {
                                     argc = arg + 1;
+                                }
                             } /* if */
                             start++;
                         }
@@ -266,8 +277,9 @@ static void stgstring(char* start, char* end)
                 } /* switch */
             }
             while (nest); /* enddo */
-            if (arg >= 0)
+            if (arg >= 0) {
                 stack[arg].end = start - 1; /* finish previous argument */
+            }
             while (argc > 0) {
                 argc--;
                 stgstring(stack[argc].start, stack[argc].end);
@@ -276,8 +288,9 @@ static void stgstring(char* start, char* end)
         }
         else {
             ptr = start;
-            while (ptr < end && *ptr != sSTARTREORDER)
+            while (ptr < end && *ptr != sSTARTREORDER) {
                 ptr += strlen(ptr) + 1;
+            }
             stgopt(start, ptr);
             start = ptr;
         } /* if */
@@ -328,8 +341,9 @@ SC_FUNC void stgset(int onoff)
         /* write any contents that may be put in the buffer by stgwrite()
          * when "staging" was 0
          */
-        if (strlen(stgbuf) > 0)
+        if (strlen(stgbuf) > 0) {
             filewrite(stgbuf);
+        }
     } /* if */
     stgbuf[0] = '\0';
 }
@@ -369,14 +383,17 @@ static int matchsequence(const char* start, const char* end, const char* pattern
     char* ptr;
 
     *match_length = 0;
-    for (var = 0; var < MAX_OPT_VARS; var++)
+    for (var = 0; var < MAX_OPT_VARS; var++) {
         symbols[var][0] = '\0';
+    }
 
-    while (*start == '\t' || *start == ' ')
+    while (*start == '\t' || *start == ' ') {
         start++;
+    }
     while (*pattern) {
-        if (start >= end)
+        if (start >= end) {
             return FALSE;
+        }
         switch (*pattern) {
             case '%': /* new "symbol" */
                 pattern++;
@@ -390,8 +407,9 @@ static int matchsequence(const char* start, const char* end, const char* pattern
                 } /* for */
                 str[i] = '\0';
                 if (symbols[var][0] != '\0') {
-                    if (strcmp(symbols[var], str) != 0)
+                    if (strcmp(symbols[var], str) != 0) {
                         return FALSE; /* symbols should be identical */
+                    }
                 }
                 else {
                     strcpy(symbols[var], str);
@@ -401,33 +419,41 @@ static int matchsequence(const char* start, const char* end, const char* pattern
                 value = -strtol(pattern + 1, (char**)&pattern, 16);
                 ptr = itoh((ucell)value);
                 while (*ptr != '\0') {
-                    if (tolower(*start) != tolower(*ptr))
+                    if (tolower(*start) != tolower(*ptr)) {
                         return FALSE;
+                    }
                     start++;
                     ptr++;
                 } /* while */
                 pattern--; /* there is an increment following at the end of the loop */
                 break;
             case ' ':
-                if (*start != '\t' && *start != ' ')
+                if (*start != '\t' && *start != ' ') {
                     return FALSE;
-                while ((start < end && *start == '\t') || *start == ' ')
+                }
+                while ((start < end && *start == '\t') || *start == ' ') {
                     start++;
+                }
                 break;
             case '!':
-                while ((start < end && *start == '\t') || *start == ' ')
+                while ((start < end && *start == '\t') || *start == ' ') {
                     start++; /* skip trailing white space */
-                if (*start != '\n')
+                }
+                if (*start != '\n') {
                     return FALSE;
+                }
                 assert(*(start + 1) == '\0');
                 start += 2; /* skip '\n' and '\0' */
-                if (*(pattern + 1) != '\0')
-                    while ((start < end && *start == '\t') || *start == ' ')
+                if (*(pattern + 1) != '\0') {
+                    while ((start < end && *start == '\t') || *start == ' ') {
                         start++; /* skip leading white space of next instruction */
+                    }
+                }
                 break;
             default:
-                if (tolower(*start) != tolower(*pattern))
+                if (tolower(*start) != tolower(*pattern)) {
                     return FALSE;
+                }
                 start++;
         } /* switch */
         pattern++;
@@ -471,8 +497,9 @@ static char* replacesequence(const char* pattern, char symbols[MAX_OPT_VARS][MAX
     } /* while */
 
     /* allocate a buffer to replace the sequence in */
-    if ((buffer = (char*)malloc(*repl_length)) == NULL)
+    if ((buffer = (char*)malloc(*repl_length)) == NULL) {
         return (char*)error(103);
+    }
 
     /* replace the pattern into this temporary buffer */
     char* ptr = buffer;
@@ -494,8 +521,9 @@ static char* replacesequence(const char* pattern, char symbols[MAX_OPT_VARS][MAX
                 /* finish the line, optionally start the next line with an indent */
                 *ptr++ = '\n';
                 *ptr++ = '\0';
-                if (*(pattern + 1) != '\0')
+                if (*(pattern + 1) != '\0') {
                     *ptr++ = '\t';
+                }
                 break;
             default:
                 *ptr++ = *pattern;
@@ -582,8 +610,9 @@ static void stgopt(char* start, char* end)
         while (matches > 0);
     } /* if ((sc_debug & sNOOPTIMIZE)==0 && sc_status==statWRITE) */
 
-    for (start = debut; start < end; start += strlen(start) + 1)
+    for (start = debut; start < end; start += strlen(start) + 1) {
         filewrite(start);
+    }
 }
 
 #undef SCPACK_TABLE

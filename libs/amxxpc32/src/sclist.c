@@ -51,16 +51,19 @@ static stringpair* insert_stringpair(stringpair* root, char* first, char* second
     assert(first != NULL);
     assert(second != NULL);
     /* create a new node, and check whether all is okay */
-    if ((cur = (stringpair*)malloc(sizeof(stringpair))) == NULL)
+    if ((cur = (stringpair*)malloc(sizeof(stringpair))) == NULL) {
         return NULL;
+    }
     cur->first = duplicatestring(first);
     cur->second = duplicatestring(second);
     cur->matchlength = matchlength;
     if (cur->first == NULL || cur->second == NULL) {
-        if (cur->first != NULL)
+        if (cur->first != NULL) {
             free(cur->first);
-        if (cur->second != NULL)
+        }
+        if (cur->second != NULL) {
             free(cur->second);
+        }
         free(cur);
         return NULL;
     } /* if */
@@ -100,8 +103,9 @@ static stringpair* find_stringpair(stringpair* cur, char* first, int matchlength
         result = (int)*cur->first - (int)*first;
         if (result == 0 && matchlength == cur->matchlength) {
             result = strncmp(cur->first, first, matchlength);
-            if (result == 0)
+            if (result == 0) {
                 return cur;
+            }
         } /* if */
         cur = cur->next;
     } /* while */
@@ -135,14 +139,17 @@ static stringlist* insert_string(stringlist* root, char* string)
     stringlist* cur;
 
     assert(string != NULL);
-    if ((cur = (stringlist*)malloc(sizeof(stringlist))) == NULL)
+    if ((cur = (stringlist*)malloc(sizeof(stringlist))) == NULL) {
         error(103); /* insufficient memory (fatal error) */
-    if ((cur->line = duplicatestring(string)) == NULL)
+    }
+    if ((cur->line = duplicatestring(string)) == NULL) {
         error(103); /* insufficient memory (fatal error) */
+    }
     /* insert as "last" */
     assert(root != NULL);
-    while (root->next != NULL)
+    while (root->next != NULL) {
         root = root->next;
+    }
     cur->next = root->next;
     root->next = cur;
     return cur;
@@ -154,8 +161,9 @@ static char* get_string(stringlist* root, int index)
 
     assert(root != NULL);
     cur = root->next;
-    while (cur != NULL && index-- > 0)
+    while (cur != NULL && index-- > 0) {
         cur = cur->next;
+    }
     if (cur != NULL) {
         assert(cur->line != NULL);
         return cur->line;
@@ -208,8 +216,9 @@ SC_FUNC stringpair* insert_alias(char* name, char* alias)
     assert(strlen(name) <= sNAMEMAX);
     assert(alias != NULL);
     assert(strlen(alias) <= sNAMEMAX);
-    if ((cur = insert_stringpair(&alias_tab, name, alias, strlen(name))) == NULL)
+    if ((cur = insert_stringpair(&alias_tab, name, alias, strlen(name))) == NULL) {
         error(103); /* insufficient memory (fatal error) */
+    }
     return cur;
 }
 
@@ -270,8 +279,9 @@ SC_FUNC stringpair* insert_subst(char* pattern, char* substitution, int prefixle
 
     assert(pattern != NULL);
     assert(substitution != NULL);
-    if ((cur = insert_stringpair(&substpair, pattern, substitution, prefixlen)) == NULL)
+    if ((cur = insert_stringpair(&substpair, pattern, substitution, prefixlen)) == NULL) {
         error(103); /* insufficient memory (fatal error) */
+    }
     adjustindex(*pattern);
 
     if (pc_deprecate != NULL) {
@@ -303,8 +313,9 @@ SC_FUNC stringpair* find_subst(char* name, int length)
     assert(length > 0);
     assert(*name >= 'A' && *name <= 'Z' || *name >= 'a' && *name <= 'z' || *name == '_' || *name == PUBLIC_CHAR);
     item = substindex[(int)*name - PUBLIC_CHAR];
-    if (item != NULL)
+    if (item != NULL) {
         item = find_stringpair(item, name, length);
+    }
 
     if (item && (item->flags & flgDEPRECATED) != 0) {
         static char macro[128];
@@ -331,10 +342,12 @@ SC_FUNC int delete_subst(char* name, int length)
     assert(length > 0);
     assert(*name >= 'A' && *name <= 'Z' || *name >= 'a' && *name <= 'z' || *name == '_' || *name == PUBLIC_CHAR);
     item = substindex[(int)*name - PUBLIC_CHAR];
-    if (item != NULL)
+    if (item != NULL) {
         item = find_stringpair(item, name, length);
-    if (item == NULL)
+    }
+    if (item == NULL) {
         return FALSE;
+    }
     delete_stringpair(&substpair, item);
     adjustindex(*name);
     return TRUE;
@@ -344,8 +357,9 @@ SC_FUNC void delete_substtable(void)
 {
     int i;
     delete_stringpairtable(&substpair);
-    for (i = 0; i < sizeof substindex / sizeof substindex[0]; i++)
+    for (i = 0; i < sizeof substindex / sizeof substindex[0]; i++) {
         substindex[i] = NULL;
+    }
 }
 
 #endif /* !defined NO_SUBST */
@@ -374,8 +388,9 @@ static stringlist inputfiles = {NULL, NULL};
 
 SC_FUNC stringlist* insert_inputfile(char* string)
 {
-    if (sc_status != statFIRST)
+    if (sc_status != statFIRST) {
         return insert_string(&inputfiles, string);
+    }
     return NULL;
 }
 
@@ -441,8 +456,9 @@ static valuepair heaplist = {NULL, 0, 0};
 SC_FUNC valuepair* push_heaplist(long first, long second)
 {
     valuepair *cur, *last;
-    if ((cur = malloc(sizeof(valuepair))) == NULL)
+    if ((cur = malloc(sizeof(valuepair))) == NULL) {
         error(103); /* insufficient memory (fatal error) */
+    }
 
     cur->first = first;
     cur->second = second;
@@ -457,8 +473,9 @@ SC_FUNC valuepair* push_heaplist(long first, long second)
 SC_FUNC int popfront_heaplist(long* first, long* second)
 {
     valuepair* front = heaplist.next;
-    if (front == NULL)
+    if (front == NULL) {
         return 0;
+    }
 
     /* copy fields */
     *first = front->first;
@@ -501,8 +518,9 @@ SC_FUNC stringlist* insert_dbgline(int linenr)
 {
     if (sc_status == statWRITE && (sc_debug & sSYMBOLIC) != 0) {
         char string[40];
-        if (linenr > 0)
+        if (linenr > 0) {
             linenr--; /* line numbers are zero-based in the debug information */
+        }
         sprintf(string, "L:%08lx %04x", (long)code_idx, linenr);
         return insert_string(&dbgstrings, string);
     } /* if */
@@ -527,19 +545,23 @@ SC_FUNC stringlist* insert_dbgsymbol(symbol* sym)
         funcdisplayname(symname, sym->name);
         /* address tag:name codestart codeend ident vclass [tag:dim ...] */
 #if PAWN_CELL_SIZE == 32
-        if (sym->ident == iFUNCTN)
+        if (sym->ident == iFUNCTN) {
             sprintf(string, "S:%08x %x:%s %08x %08x %x %x", sym->addr, sym->tag, symname, sym->addr, sym->codeaddr,
                 sym->ident, sym->vclass);
-        else
+        }
+        else {
             sprintf(string, "S:%08x %x:%s %08x %08x %x %x", sym->addr, sym->tag, symname, sym->codeaddr, code_idx,
                 sym->ident, sym->vclass);
+        }
 #elif PAWN_CELL_SIZE == 64
-        if (sym->ident == iFUNCTN)
+        if (sym->ident == iFUNCTN) {
             sprintf(string, "S:%08Lx %x:%s %08Lx %08Lx %x %x", (LONGCAST)sym->addr, sym->tag, symname, sym->addr,
                 sym->codeaddr, sym->ident, sym->vclass);
-        else
+        }
+        else {
             sprintf(string, "S:%08Lx %x:%s %08Lx %08Lx %x %x", (LONGCAST)sym->addr, sym->tag, symname, sym->codeaddr,
                 code_idx, sym->ident, sym->vclass);
+        }
 #endif
         if (sym->ident == iARRAY || sym->ident == iREFARRAY) {
             symbol* sub;

@@ -128,8 +128,9 @@ SC_FUNC int check_userop(void (*oper)(void), int tag1, int tag2, int numparam, v
      * a quick exit.
      */
     assert(numparam == 1 || numparam == 2);
-    if (tag1 == 0 && (numparam == 1 || tag2 == 0))
+    if (tag1 == 0 && (numparam == 1 || tag2 == 0)) {
         return FALSE;
+    }
 
     savepri = savealt = FALSE;
     /* find the name with the operator */
@@ -137,8 +138,9 @@ SC_FUNC int check_userop(void (*oper)(void), int tag1, int tag2, int numparam, v
         if (oper == NULL) {
             /* assignment operator: a special case */
             strcpy(opername, "=");
-            if (lval != NULL && (lval->ident == iARRAYCELL || lval->ident == iARRAYCHAR))
+            if (lval != NULL && (lval->ident == iARRAYCELL || lval->ident == iARRAYCHAR)) {
                 savealt = TRUE;
+            }
         }
         else {
             assert((sizeof binoperstr / sizeof binoperstr[0]) == (sizeof op1 / sizeof op1[0]));
@@ -166,8 +168,9 @@ SC_FUNC int check_userop(void (*oper)(void), int tag1, int tag2, int numparam, v
         } /* if */
     } /* if */
     /* if not found, quit */
-    if (opername[0] == '\0')
+    if (opername[0] == '\0') {
         return FALSE;
+    }
 
     /* create a symbol name from the tags and the operator name */
     assert(numparam == 1 || numparam == 2);
@@ -176,8 +179,9 @@ SC_FUNC int check_userop(void (*oper)(void), int tag1, int tag2, int numparam, v
     sym = findglb(symbolname);
     if (sym == NULL /*|| (sym->usage & uDEFINE)==0*/) { /* ??? should not check uDEFINE; first pass clears these bits */
         /* check for commutative operators */
-        if (tag1 == tag2 || oper == NULL || !commutative(oper))
+        if (tag1 == tag2 || oper == NULL || !commutative(oper)) {
             return FALSE; /* not commutative, cannot swap operands */
+        }
         /* if arrived here, the operator is commutative and the tags are different,
          * swap tags and try again
          */
@@ -185,18 +189,21 @@ SC_FUNC int check_userop(void (*oper)(void), int tag1, int tag2, int numparam, v
         operator_symname(symbolname, opername, tag2, tag1, numparam, tag1);
         swapparams = TRUE;
         sym = findglb(symbolname);
-        if (sym == NULL /*|| (sym->usage & uDEFINE)==0*/)
+        if (sym == NULL /*|| (sym->usage & uDEFINE)==0*/) {
             return FALSE;
+        }
     } /* if */
 
     /* check existance and the proper declaration of this function */
     if ((sym->usage & uMISSING) != 0 || (sym->usage & uPROTOTYPED) == 0) {
         char symname[2 * sNAMEMAX + 16]; /* allow space for user defined operators */
         funcdisplayname(symname, sym->name);
-        if ((sym->usage & uMISSING) != 0)
+        if ((sym->usage & uMISSING) != 0) {
             error(4, symname); /* function not defined */
-        if ((sym->usage & uPROTOTYPED) == 0)
+        }
+        if ((sym->usage & uPROTOTYPED) == 0) {
             error(71, symname); /* operator must be declared before use */
+        }
     } /* if */
 
     /* we don't want to use the redefined operator in the function that
@@ -205,8 +212,9 @@ SC_FUNC int check_userop(void (*oper)(void), int tag1, int tag2, int numparam, v
      *    fixed:operator+(fixed:a, fixed:b)
      *        return a + b
      */
-    if (sym == curfunc)
+    if (sym == curfunc) {
         return FALSE;
+    }
 
     /* for increment and decrement operators, the symbol must first be loaded
      * (and stored back afterwards)
@@ -214,9 +222,10 @@ SC_FUNC int check_userop(void (*oper)(void), int tag1, int tag2, int numparam, v
     if (oper == user_inc || oper == user_dec) {
         assert(!savepri);
         assert(lval != NULL);
-        if (lval->ident == iARRAYCELL || lval->ident == iARRAYCHAR)
+        if (lval->ident == iARRAYCELL || lval->ident == iARRAYCHAR) {
             pushreg(sPRI); /* save current address in PRI */
-        rvalue(lval);      /* get the symbol's value in PRI */
+        }
+        rvalue(lval); /* get the symbol's value in PRI */
     } /* if */
 
     assert(!savepri || !savealt); /* either one MAY be set, but not both */
@@ -263,22 +272,26 @@ SC_FUNC int check_userop(void (*oper)(void), int tag1, int tag2, int numparam, v
     pushval((cell)paramspassed * sizeof(cell));
     assert(sym->ident == iFUNCTN);
     ffcall(sym, NULL, paramspassed);
-    if (sc_status != statSKIP)
+    if (sc_status != statSKIP) {
         markusage(sym, uREAD); /* do not mark as "used" when this call itself is skipped */
-    if ((sym->usage & uNATIVE) != 0 && sym->x.lib != NULL)
+    }
+    if ((sym->usage & uNATIVE) != 0 && sym->x.lib != NULL) {
         sym->x.lib->value += 1; /* increment "usage count" of the library */
-    sideeffect = TRUE;          /* assume functions carry out a side-effect */
+    }
+    sideeffect = TRUE; /* assume functions carry out a side-effect */
     assert(resulttag != NULL);
     *resulttag = sym->tag; /* save tag of the called function */
 
-    if (savepri || savealt)
+    if (savepri || savealt) {
         popreg(sALT); /* restore the saved PRI/ALT that into ALT */
+    }
     if (oper == user_inc || oper == user_dec) {
         assert(lval != NULL);
-        if (lval->ident == iARRAYCELL || lval->ident == iARRAYCHAR)
+        if (lval->ident == iARRAYCELL || lval->ident == iARRAYCHAR) {
             popreg(sALT); /* restore address (in ALT) */
-        store(lval);      /* store PRI in the symbol */
-        moveto1();        /* make sure PRI is restored on exit */
+        }
+        store(lval); /* store PRI in the symbol */
+        moveto1();   /* make sure PRI is restored on exit */
     } /* if */
     return TRUE;
 }
@@ -289,8 +302,9 @@ SC_FUNC int matchtag(int formaltag, int actualtag, int allowcoerce)
         /* if the formal tag is zero and the actual tag is not "fixed", the actual
          * tag is "coerced" to zero
          */
-        if (!allowcoerce || formaltag != 0 || (actualtag & FIXEDTAG) != 0)
+        if (!allowcoerce || formaltag != 0 || (actualtag & FIXEDTAG) != 0) {
             return FALSE;
+        }
     } /* if */
     return TRUE;
 }
@@ -360,10 +374,12 @@ static int skim(int* opstr, void (*testfunc)(int), int dropval, int endval, int 
         if (allconst) {
             if (hits) {
                 /* one operator was already found */
-                if (testfunc == jmp_ne0)
+                if (testfunc == jmp_ne0) {
                     lval->constval = lval->constval || constval;
-                else
+                }
+                else {
                     lval->constval = lval->constval && constval;
+                }
             } /* if */
             constval = lval->constval; /* save result accumulated so far */
         } /* if */
@@ -422,10 +438,12 @@ static int skim(int* opstr, void (*testfunc)(int), int dropval, int endval, int 
  */
 static void dropout(int lvalue, void (*testfunc)(int val), int exit1, value* lval)
 {
-    if (lvalue)
+    if (lvalue) {
         rvalue(lval);
-    else if (lval->ident == iCONSTEXPR)
+    }
+    else if (lval->ident == iCONSTEXPR) {
         ldconst(lval->constval, sPRI);
+    }
     (*testfunc)(exit1);
 }
 
@@ -433,8 +451,9 @@ static void checkfunction(value* lval)
 {
     symbol* sym = lval->sym;
 
-    if (sym == NULL || (sym->ident != iFUNCTN && sym->ident != iREFFUNC))
+    if (sym == NULL || (sym->ident != iFUNCTN && sym->ident != iREFFUNC)) {
         return; /* no known symbol, or not a function result */
+    }
 
     if ((sym->usage & uDEFINE) != 0) {
         /* function is defined, can now check the return value (but make an
@@ -463,20 +482,25 @@ static int plnge(int* opstr, int opoff, int (*hier)(value* lval), value* lval, c
     value lval2 = {0};
 
     lvalue = plnge1(hier, lval);
-    if (nextop(&opidx, opstr) == 0)
+    if (nextop(&opidx, opstr) == 0) {
         return lvalue; /* no operator in "opstr" found */
-    if (lvalue)
+    }
+    if (lvalue) {
         rvalue(lval);
+    }
     count = 0;
     do {
-        if (chkbitwise && count++ > 0 && bitwise_opercount != 0)
+        if (chkbitwise && count++ > 0 && bitwise_opercount != 0) {
             error(212);
+        }
         opidx += opoff; /* add offset to index returned by nextop() */
         plnge2(op1[opidx], hier, lval, &lval2);
-        if (op1[opidx] == ob_and || op1[opidx] == ob_or)
+        if (op1[opidx] == ob_and || op1[opidx] == ob_or) {
             bitwise_opercount++;
-        if (forcetag != NULL)
+        }
+        if (forcetag != NULL) {
             lval->tag = pc_addtag(forcetag);
+        }
     }
     while (nextop(&opidx, opstr)); /* do */
     return FALSE; /* result of expression is not an lvalue */
@@ -497,16 +521,19 @@ static int plnge_rel(int* opstr, int opoff, int (*hier)(value* lval), value* lva
     /* this function should only be called for relational operators */
     assert(op1[opoff] == os_le);
     lvalue = plnge1(hier, lval);
-    if (nextop(&opidx, opstr) == 0)
+    if (nextop(&opidx, opstr) == 0) {
         return lvalue; /* no operator in "opstr" found */
-    if (lvalue)
+    }
+    if (lvalue) {
         rvalue(lval);
+    }
     count = 0;
     lval->boolresult = TRUE;
     do {
         /* same check as in plnge(), but "chkbitwise" is always TRUE */
-        if (count > 0 && bitwise_opercount != 0)
+        if (count > 0 && bitwise_opercount != 0) {
             error(212);
+        }
         if (count > 0) {
             relop_prefix();
             boolresult = lval->boolresult;
@@ -515,8 +542,9 @@ static int plnge_rel(int* opstr, int opoff, int (*hier)(value* lval), value* lva
         } /* if */
         opidx += opoff;
         plnge2(op1[opidx], hier, lval, &lval2);
-        if (count++ > 0)
+        if (count++ > 0) {
             relop_suffix();
+        }
     }
     while (nextop(&opidx, opstr)); /* enddo */
     lval->constval = lval->boolresult;
@@ -536,8 +564,9 @@ static int plnge1(int (*hier)(value* lval), value* lval)
 
     stgget(&index, &cidx); /* mark position in code generator */
     lvalue = (*hier)(lval);
-    if (lval->ident == iCONSTEXPR)
+    if (lval->ident == iCONSTEXPR) {
         stgdel(index, cidx); /* load constant later */
+    }
     return lvalue;
 }
 
@@ -553,18 +582,21 @@ static void plnge2(void (*oper)(void), int (*hier)(value* lval), value* lval1, v
 
     stgget(&index, &cidx);            /* mark position in code generator */
     if (lval1->ident == iCONSTEXPR) { /* constant on left side; it is not yet loaded */
-        if (plnge1(hier, lval2))
+        if (plnge1(hier, lval2)) {
             rvalue(lval2); /* load lvalue now */
-        else if (lval2->ident == iCONSTEXPR)
+        }
+        else if (lval2->ident == iCONSTEXPR) {
             ldconst(lval2->constval << dbltest(oper, lval2, lval1), sPRI);
+        }
         ldconst(lval1->constval << dbltest(oper, lval2, lval1), sALT);
         /* ^ doubling of constants operating on integer addresses */
         /*   is restricted to "add" and "subtract" operators */
     }
     else { /* non-constant on left side */
         pushreg(sPRI);
-        if (plnge1(hier, lval2))
+        if (plnge1(hier, lval2)) {
             rvalue(lval2);
+        }
         if (lval2->ident == iCONSTEXPR) { /* constant on right side */
             if (commutative(oper)) {      /* test for commutative operators */
                 value lvaltmp = {0};
@@ -587,10 +619,12 @@ static void plnge2(void (*oper)(void), int (*hier)(value* lval), value* lval1, v
         }
         else { /* non-constants on both sides */
             popreg(sALT);
-            if (dbltest(oper, lval1, lval2))
+            if (dbltest(oper, lval1, lval2)) {
                 cell2addr(); /* double primary register */
-            if (dbltest(oper, lval2, lval1))
+            }
+            if (dbltest(oper, lval2, lval1)) {
                 cell2addr_alt(); /* double secondary register */
+            }
         } /* if */
     } /* if */
     if (oper) {
@@ -621,14 +655,16 @@ static void plnge2(void (*oper)(void), int (*hier)(value* lval), value* lval1, v
         else if (lval1->ident == iCONSTEXPR && lval2->ident == iCONSTEXPR) {
             /* only constant expression if both constant */
             stgdel(index, cidx); /* scratch generated code and calculate */
-            if (!matchtag(lval1->tag, lval2->tag, FALSE))
+            if (!matchtag(lval1->tag, lval2->tag, FALSE)) {
                 error(213); /* tagname mismatch */
+            }
             lval1->constval = calc(lval1->constval, oper, lval2->constval, &lval1->boolresult);
         }
         else {
-            if (!matchtag(lval1->tag, lval2->tag, FALSE))
+            if (!matchtag(lval1->tag, lval2->tag, FALSE)) {
                 error(213); /* tagname mismatch */
-            (*oper)();      /* do the (signed) operation */
+            }
+            (*oper)(); /* do the (signed) operation */
             lval1->ident = iEXPRESSION;
         } /* if */
     } /* if */
@@ -641,42 +677,60 @@ static cell truemodulus(cell a, cell b)
 
 static cell calc(cell left, void (*oper)(), cell right, char* boolresult)
 {
-    if (oper == ob_or)
+    if (oper == ob_or) {
         return (left | right);
-    else if (oper == ob_xor)
+    }
+    else if (oper == ob_xor) {
         return (left ^ right);
-    else if (oper == ob_and)
+    }
+    else if (oper == ob_and) {
         return (left & right);
-    else if (oper == ob_eq)
+    }
+    else if (oper == ob_eq) {
         return (left == right);
-    else if (oper == ob_ne)
+    }
+    else if (oper == ob_ne) {
         return (left != right);
-    else if (oper == os_le)
+    }
+    else if (oper == os_le) {
         return *boolresult &= (char)(left <= right), right;
-    else if (oper == os_ge)
+    }
+    else if (oper == os_ge) {
         return *boolresult &= (char)(left >= right), right;
-    else if (oper == os_lt)
+    }
+    else if (oper == os_lt) {
         return *boolresult &= (char)(left < right), right;
-    else if (oper == os_gt)
+    }
+    else if (oper == os_gt) {
         return *boolresult &= (char)(left > right), right;
-    else if (oper == os_sar)
+    }
+    else if (oper == os_sar) {
         return (left >> (int)right);
-    else if (oper == ou_sar)
+    }
+    else if (oper == ou_sar) {
         return ((ucell)left >> (ucell)right);
-    else if (oper == ob_sal)
+    }
+    else if (oper == ob_sal) {
         return ((ucell)left << (int)right);
-    else if (oper == ob_add)
+    }
+    else if (oper == ob_add) {
         return (left + right);
-    else if (oper == ob_sub)
+    }
+    else if (oper == ob_sub) {
         return (left - right);
-    else if (oper == os_mult)
+    }
+    else if (oper == os_mult) {
         return (left * right);
-    else if (oper == os_div)
+    }
+    else if (oper == os_div) {
         return (left - truemodulus(left, right)) / right;
-    else if (oper == os_mod)
+    }
+    else if (oper == os_mod) {
         return truemodulus(left, right);
-    else
+    }
+    else {
         error(29); /* invalid expression, assumed 0 (this should never occur) */
+    }
     return 0;
 }
 
@@ -685,21 +739,26 @@ SC_FUNC int expression(cell* val, int* tag, symbol** symptr, int chkfuncresult)
     int locheap = decl_heap;
     value lval = {0};
 
-    if (hier14(&lval))
+    if (hier14(&lval)) {
         rvalue(&lval);
+    }
     /* scrap any arrays left on the heap */
     assert(decl_heap >= locheap);
     modheap((locheap - decl_heap) * sizeof(cell)); /* remove heap space, so negative delta */
     decl_heap = locheap;
 
-    if (lval.ident == iCONSTEXPR && val != NULL) /* constant expression */
+    if (lval.ident == iCONSTEXPR && val != NULL) { /* constant expression */
         *val = lval.constval;
-    if (tag != NULL)
+    }
+    if (tag != NULL) {
         *tag = lval.tag;
-    if (symptr != NULL)
+    }
+    if (symptr != NULL) {
         *symptr = lval.sym;
-    if (chkfuncresult)
+    }
+    if (chkfuncresult) {
         checkfunction(&lval);
+    }
     return lval.ident;
 }
 
@@ -712,10 +771,12 @@ static cell array_totalsize(symbol* sym)
     length = sym->dim.array.length;
     if (sym->dim.array.level > 0) {
         cell sublength = array_totalsize(finddepend(sym));
-        if (sublength > 0)
+        if (sublength > 0) {
             length = length + length * sublength;
-        else
+        }
+        else {
             length = 0;
+        }
     } /* if */
     return length;
 }
@@ -758,16 +819,20 @@ static int hier14(value* lval1)
      * constant, and that negative array indices are invalid (so actually, any
      * negative value would do).
      */
-    for (i = 0; i < sDIMEN_MAX; i++)
+    for (i = 0; i < sDIMEN_MAX; i++) {
         arrayidx1[i] = arrayidx2[i] = (cell)(-1UL << (sizeof(cell) * 8 - 1));
+    }
     org_arrayidx = lval1->arrayidx; /* save current pointer, to reset later */
-    if (lval1->arrayidx == NULL)
+    if (lval1->arrayidx == NULL) {
         lval1->arrayidx = arrayidx1;
+    }
     lvalue = plnge1(hier13, lval1);
-    if (lval1->ident != iARRAYCELL && lval1->ident != iARRAYCHAR)
+    if (lval1->ident != iARRAYCELL && lval1->ident != iARRAYCHAR) {
         lval1->arrayidx = NULL;
-    if (lval1->ident == iCONSTEXPR) /* load constant here */
+    }
+    if (lval1->ident == iCONSTEXPR) { /* load constant here */
         ldconst(lval1->constval, sPRI);
+    }
     tok = lex(&val, &st);
     switch (tok) {
         case taOR:
@@ -805,8 +870,9 @@ static int hier14(value* lval1)
             break;
         case '=': /* simple assignment */
             oper = NULL;
-            if (sc_intest)
+            if (sc_intest) {
                 error(211); /* possibly unintended assignment */
+            }
             break;
         default:
             lexpush();
@@ -823,21 +889,25 @@ static int hier14(value* lval1)
     }
     else if (lval1->ident == iARRAY || lval1->ident == iREFARRAY) {
         /* array assignment is permitted too (with restrictions) */
-        if (oper)
+        if (oper) {
             return error(23); /* array assignment must be simple assigment */
+        }
         assert(lval1->sym != NULL);
-        if (array_totalsize(lval1->sym) == 0)
+        if (array_totalsize(lval1->sym) == 0) {
             return error(46, lval1->sym->name); /* unknown array size */
+        }
         lvalue = TRUE;
     } /* if */
 
     /* operand on left side of assignment must be lvalue */
-    if (!lvalue)
+    if (!lvalue) {
         return error(22); /* must be lvalue */
+    }
     /* may not change "constant" parameters */
     assert(lval1->sym != NULL);
-    if ((lval1->sym->usage & uCONST) != 0)
-        return error(22);     /* assignment to const argument */
+    if ((lval1->sym->usage & uCONST) != 0) {
+        return error(22); /* assignment to const argument */
+    }
     sc_allowproccall = FALSE; /* may no longer use "procedure call" syntax */
 
     lval3 = *lval1;                 /* save symbol to enable storage of expresion result */
@@ -851,18 +921,22 @@ static int hier14(value* lval1)
         } /* if */
         lval2.arrayidx = arrayidx2;
         plnge2(oper, hier14, lval1, &lval2);
-        if (lval2.ident != iARRAYCELL && lval2.ident != iARRAYCHAR)
+        if (lval2.ident != iARRAYCELL && lval2.ident != iARRAYCHAR) {
             lval2.arrayidx = NULL;
-        if (oper)
+        }
+        if (oper) {
             popreg(sALT);
+        }
         if (!oper && lval3.arrayidx != NULL && lval2.arrayidx != NULL && lval3.ident == lval2.ident &&
             lval3.sym == lval2.sym) {
             int same = TRUE;
             assert(lval2.arrayidx == arrayidx2);
-            for (i = 0; i < sDIMEN_MAX; i++)
+            for (i = 0; i < sDIMEN_MAX; i++) {
                 same = same && (lval3.arrayidx[i] == lval2.arrayidx[i]);
-            if (same)
+            }
+            if (same) {
                 error(226, lval3.sym->name); /* self-assignment */
+            }
         } /* if */
     }
     else {
@@ -873,10 +947,12 @@ static int hier14(value* lval1)
         else {
             /* if direct fetch and simple assignment: no "push"
              * and "pop" needed -> call hier14() directly, */
-            if (hier14(&lval2))
+            if (hier14(&lval2)) {
                 rvalue(&lval2); /* instead of plnge2(). */
-            else if (lval2.ident == iVARIABLE)
+            }
+            else if (lval2.ident == iVARIABLE) {
                 lval2.ident = iEXPRESSION; /* mark as "rvalue" if it is not an "lvalue" */
+            }
             checkfunction(&lval2);
             /* check whether lval2 and lval3 (old lval1) refer to the same variable */
             if (lval2.ident == iVARIABLE && lval3.ident == lval2.ident && lval3.sym == lval2.sym) {
@@ -908,21 +984,24 @@ static int hier14(value* lval1)
             lval3.sym->dim.array.level == 0) {
             ltlength = (int)lval3.constval;
         } /* if */
-        if (lval2.ident != iARRAY && lval2.ident != iREFARRAY && (lval2.sym == NULL || lval2.constval <= 0))
+        if (lval2.ident != iARRAY && lval2.ident != iREFARRAY && (lval2.sym == NULL || lval2.constval <= 0)) {
             error(33, lval3.sym->name); /* array must be indexed */
+        }
         if (lval2.sym != NULL) {
             if (lval2.constval == 0) {
                 val = lval2.sym->dim.array.length; /* array variable */
             }
             else {
                 val = lval2.constval;
-                if (lval2.sym->dim.array.level != 0)
+                if (lval2.sym->dim.array.level != 0) {
                     error(28, lval2.sym->name);
+                }
             } /* if */
             level = lval2.sym->dim.array.level;
             idxtag = lval2.sym->x.idxtag;
-            if (level == 0 && idxtag == 0 && lval3.sym->x.idxtag == 0)
+            if (level == 0 && idxtag == 0 && lval3.sym->x.idxtag == 0) {
                 exactmatch = FALSE;
+            }
         }
         else {
             val = lval2.constval; /* literal array */
@@ -934,16 +1013,20 @@ static int hier14(value* lval1)
              */
             if (val < 0) {
                 val = -val;
-                if (lval3.sym->x.idxtag == 0)
+                if (lval3.sym->x.idxtag == 0) {
                     exactmatch = FALSE;
+                }
             } /* if */
         } /* if */
-        if (lval3.sym->dim.array.level != level)
+        if (lval3.sym->dim.array.level != level) {
             return error(48); /* array dimensions must match */
-        else if (ltlength < val || (exactmatch && ltlength > val) || val == 0)
+        }
+        else if (ltlength < val || (exactmatch && ltlength > val) || val == 0) {
             return error(47); /* array sizes must match */
-        else if (lval3.ident != iARRAYCELL && !matchtag(lval3.sym->x.idxtag, idxtag, TRUE))
+        }
+        else if (lval3.ident != iARRAYCELL && !matchtag(lval3.sym->x.idxtag, idxtag, TRUE)) {
             error(229, (lval2.sym != NULL) ? lval2.sym->name : lval3.sym->name); /* index tag mismatch */
+        }
         if (level > 0) {
             /* check the sizes of all sublevels too */
             symbol* sym1 = lval3.sym;
@@ -962,10 +1045,12 @@ static int hier14(value* lval1)
                 /* ^^^ both arrays have the same dimensions (this was checked
                  *     earlier) so the dependend should always be found
                  */
-                if (sym1->dim.array.length != sym2->dim.array.length)
+                if (sym1->dim.array.length != sym2->dim.array.length) {
                     error(47); /* array sizes must match */
-                else if (!matchtag(sym1->x.idxtag, sym2->x.idxtag, TRUE))
+                }
+                else if (!matchtag(sym1->x.idxtag, sym2->x.idxtag, TRUE)) {
                     error(229, sym2->name); /* index tag mismatch */
+                }
             } /* for */
             /* get the total size in cells of the multi-dimensional array */
             val = array_totalsize(lval3.sym);
@@ -974,8 +1059,9 @@ static int hier14(value* lval1)
     }
     else {
         /* left operand is not an array, right operand should then not be either */
-        if (lval2.ident == iARRAY || lval2.ident == iREFARRAY)
+        if (lval2.ident == iARRAY || lval2.ident == iREFARRAY) {
             error(6); /* must be assigned to an array */
+        }
     } /* if */
     if (leftarray) {
         memcopy(val * sizeof(cell));
@@ -991,8 +1077,9 @@ static int hier14(value* lval1)
            are not tagged and the array is an array of floats.
         */
         if (lval3.sym && lval3.sym->tag != 0) {
-            if (!matchtag(lval3.sym->tag, lval2.tag, TRUE))
+            if (!matchtag(lval3.sym->tag, lval2.tag, TRUE)) {
                 error(213);
+            }
         }
         else if (lval3.tag && !lval2.tag && lval2.forceuntag) {
             /* Because of the above fix included in AMXX 1.60, a regression has been introduced
@@ -1010,8 +1097,9 @@ static int hier14(value* lval1)
             error(213);
         }
     }
-    if (lval3.sym)
+    if (lval3.sym) {
         markusage(lval3.sym, uWRITTEN);
+    }
     sideeffect = TRUE;
     bitwise_opercount = bwcount;
     lval1->ident = iEXPRESSION;
@@ -1057,10 +1145,12 @@ static int hier13(value* lval)
             modheap(heap1 * sizeof(cell));
             decl_heap += heap1; /* equilibrate the heap (see comment below) */
         } /* if */
-        if (hier13(lval))
+        if (hier13(lval)) {
             rvalue(lval);
-        if (lval->ident == iCONSTEXPR) /* load constant here */
+        }
+        if (lval->ident == iCONSTEXPR) { /* load constant here */
             ldconst(lval->constval, sPRI);
+        }
         sc_allowtags = (short)POPSTK_I(); /* restore */
         heap1 = decl_heap - locheap;      /* save heap space used in "true" branch */
         assert(heap1 >= 0);
@@ -1072,10 +1162,12 @@ static int hier13(value* lval)
             modheap(heap2 * sizeof(cell));
             decl_heap += heap2; /* equilibrate the heap (see comment below) */
         } /* if */
-        if (hier13(&lval2))
+        if (hier13(&lval2)) {
             rvalue(&lval2);
-        if (lval2.ident == iCONSTEXPR) /* load constant here */
+        }
+        if (lval2.ident == iCONSTEXPR) { /* load constant here */
             ldconst(lval2.constval, sPRI);
+        }
         heap2 = decl_heap - locheap; /* save heap space used in "false" branch */
         assert(heap2 >= 0);
         array1 = (lval->ident == iARRAY || lval->ident == iREFARRAY);
@@ -1089,8 +1181,9 @@ static int hier13(value* lval)
             error(33, ptr); /* array must be indexed */
         } /* if */
         /* ??? if both are arrays, should check dimensions */
-        if (!matchtag(lval->tag, lval2.tag, FALSE))
+        if (!matchtag(lval->tag, lval2.tag, FALSE)) {
             error(213); /* tagname mismatch ('true' and 'false' expressions) */
+        }
         setlabel(flab2);
         if (sc_status == statFIRST) {
             /* Calculate the max. heap space used by either branch and save values of
@@ -1108,11 +1201,13 @@ static int hier13(value* lval)
                                         * expression */
         } /* if */
         assert(sc_status != statWRITE || heap1 == heap2);
-        if (lval->ident == iARRAY)
+        if (lval->ident == iARRAY) {
             lval->ident = iREFARRAY; /* iARRAY becomes iREFARRAY */
-        else if (lval->ident != iREFARRAY)
+        }
+        else if (lval->ident != iREFARRAY) {
             lval->ident = iEXPRESSION; /* iREFARRAY stays iREFARRAY, rest becomes iEXPRESSION */
-        return FALSE;                  /* conditional expression is no lvalue */
+        }
+        return FALSE; /* conditional expression is no lvalue */
     }
     else {
         return lvalue;
@@ -1197,38 +1292,46 @@ static int hier2(value* lval)
     tok = lex(&val, &st);
     switch (tok) {
         case tINC: /* ++lval */
-            if (!hier2(lval))
+            if (!hier2(lval)) {
                 return error(22); /* must be lvalue */
+            }
             assert(lval->sym != NULL);
-            if ((lval->sym->usage & uCONST) != 0)
+            if ((lval->sym->usage & uCONST) != 0) {
                 return error(22); /* assignment to const argument */
-            if (!check_userop(user_inc, lval->tag, 0, 1, lval, &lval->tag))
+            }
+            if (!check_userop(user_inc, lval->tag, 0, 1, lval, &lval->tag)) {
                 inc(lval); /* increase variable first */
-            rvalue(lval);  /* and read the result into PRI */
+            }
+            rvalue(lval); /* and read the result into PRI */
             lval->ident = iEXPRESSION;
             sideeffect = TRUE;
             return FALSE; /* result is no longer lvalue */
         case tDEC:        /* --lval */
-            if (!hier2(lval))
+            if (!hier2(lval)) {
                 return error(22); /* must be lvalue */
+            }
             assert(lval->sym != NULL);
-            if ((lval->sym->usage & uCONST) != 0)
+            if ((lval->sym->usage & uCONST) != 0) {
                 return error(22); /* assignment to const argument */
-            if (!check_userop(user_dec, lval->tag, 0, 1, lval, &lval->tag))
+            }
+            if (!check_userop(user_dec, lval->tag, 0, 1, lval, &lval->tag)) {
                 dec(lval); /* decrease variable first */
-            rvalue(lval);  /* and read the result into PRI */
+            }
+            rvalue(lval); /* and read the result into PRI */
             lval->ident = iEXPRESSION;
             sideeffect = TRUE;
             return FALSE; /* result is no longer lvalue */
         case '~':         /* ~ (one's complement) */
-            if (hier2(lval))
+            if (hier2(lval)) {
                 rvalue(lval);
+            }
             invert(); /* bitwise NOT */
             lval->constval = ~lval->constval;
             return FALSE;
         case '!': /* ! (logical negate) */
-            if (hier2(lval))
+            if (hier2(lval)) {
                 rvalue(lval);
+            }
             if (check_userop(lneg, lval->tag, 0, 1, NULL, &lval->tag)) {
                 lval->ident = iEXPRESSION;
                 lval->constval = 0;
@@ -1240,8 +1343,9 @@ static int hier2(value* lval)
             } /* if */
             return FALSE;
         case '-': /* unary - (two's complement) */
-            if (hier2(lval))
+            if (hier2(lval)) {
                 rvalue(lval);
+            }
             /* make a special check for a constant expression with the tag of a
              * rational number, so that we can simple swap the sign of that constant.
              */
@@ -1278,45 +1382,58 @@ static int hier2(value* lval)
             return lvalue;
         case tDEFINED:
             paranthese = 0;
-            while (matchtoken('('))
+            while (matchtoken('(')) {
                 paranthese++;
+            }
             tok = lex(&val, &st);
-            if (tok != tSYMBOL)
+            if (tok != tSYMBOL) {
                 return error(20, st); /* illegal symbol name */
+            }
             sym = findloc(st);
-            if (sym == NULL)
+            if (sym == NULL) {
                 sym = findglb(st);
-            if (sym != NULL && sym->ident != iFUNCTN && sym->ident != iREFFUNC && (sym->usage & uDEFINE) == 0)
+            }
+            if (sym != NULL && sym->ident != iFUNCTN && sym->ident != iREFFUNC && (sym->usage & uDEFINE) == 0) {
                 sym = NULL; /* symbol is not a function, it is in the table, but not "defined" */
+            }
             val = (sym != NULL);
-            if (!val && find_subst(st, strlen(st)) != NULL)
+            if (!val && find_subst(st, strlen(st)) != NULL) {
                 val = 1;
+            }
             clear_value(lval);
             lval->ident = iCONSTEXPR;
             lval->constval = val;
             lval->tag = pc_addtag("bool");
             ldconst(lval->constval, sPRI);
-            while (paranthese--)
+            while (paranthese--) {
                 needtoken(')');
+            }
             return FALSE;
         case tSIZEOF:
             paranthese = 0;
-            while (matchtoken('('))
+            while (matchtoken('(')) {
                 paranthese++;
+            }
             tok = lex(&val, &st);
-            if (tok != tSYMBOL)
+            if (tok != tSYMBOL) {
                 return error(20, st); /* illegal symbol name */
+            }
             sym = findloc(st);
-            if (sym == NULL)
+            if (sym == NULL) {
                 sym = findglb(st);
-            if (sym == NULL)
+            }
+            if (sym == NULL) {
                 return error(17, st); /* undefined symbol */
-            if (sym->ident == iCONSTEXPR)
+            }
+            if (sym->ident == iCONSTEXPR) {
                 error(39); /* constant symbol has no size */
-            else if (sym->ident == iFUNCTN || sym->ident == iREFFUNC)
+            }
+            else if (sym->ident == iFUNCTN || sym->ident == iREFFUNC) {
                 error(72); /* "function" symbol has no size */
-            else if ((sym->usage & uDEFINE) == 0)
+            }
+            else if ((sym->usage & uDEFINE) == 0) {
                 return error(17, st); /* undefined symbol (symbol is in the table, but it is "used" only) */
+            }
             clear_value(lval);
             lval->ident = iCONSTEXPR;
             lval->constval = 1; /* preset */
@@ -1328,43 +1445,54 @@ static int hier2(value* lval)
                     if (level == sym->dim.array.level && matchtoken(tSYMBOL)) {
                         char* idxname;
                         tokeninfo(&val, &idxname);
-                        if ((idxsym = findconst(idxname)) == NULL)
+                        if ((idxsym = findconst(idxname)) == NULL) {
                             error(80, idxname); /* unknown symbol, or non-constant */
+                        }
                     } /* if */
                     needtoken(']');
                 } /* for */
-                if (level > sym->dim.array.level + 1)
+                if (level > sym->dim.array.level + 1) {
                     error(28, sym->name); /* invalid subscript */
-                else if (level == sym->dim.array.level + 1)
+                }
+                else if (level == sym->dim.array.level + 1) {
                     lval->constval = (idxsym != NULL && idxsym->dim.array.length > 0) ? idxsym->dim.array.length : 1;
-                else
+                }
+                else {
                     lval->constval = array_levelsize(sym, level);
-                if (lval->constval == 0 && strchr((char*)lptr, PREPROC_TERM) == NULL)
+                }
+                if (lval->constval == 0 && strchr((char*)lptr, PREPROC_TERM) == NULL) {
                     error(224, st); /* indeterminate array size in "sizeof" expression */
+                }
             } /* if */
             ldconst(lval->constval, sPRI);
-            while (paranthese--)
+            while (paranthese--) {
                 needtoken(')');
+            }
             return FALSE;
         case tTAGOF:
             paranthese = 0;
-            while (matchtoken('('))
+            while (matchtoken('(')) {
                 paranthese++;
+            }
             tok = lex(&val, &st);
-            if (tok != tSYMBOL && tok != tLABEL)
+            if (tok != tSYMBOL && tok != tLABEL) {
                 return error(20, st); /* illegal symbol name */
+            }
             if (tok == tLABEL) {
                 constvalue* tagsym = find_constval(&tagname_tab, st, 0);
                 tag = (int)((tagsym != NULL) ? tagsym->value : 0);
             }
             else {
                 sym = findloc(st);
-                if (sym == NULL)
+                if (sym == NULL) {
                     sym = findglb(st);
-                if (sym == NULL)
+                }
+                if (sym == NULL) {
                     return error(17, st); /* undefined symbol */
-                if ((sym->usage & uDEFINE) == 0)
+                }
+                if ((sym->usage & uDEFINE) == 0) {
                     return error(17, st); /* undefined symbol (symbol is in the table, but it is "used" only) */
+                }
                 tag = sym->tag;
             } /* if */
             if (sym != NULL && (sym->ident == iARRAY || sym->ident == iREFARRAY)) {
@@ -1375,23 +1503,27 @@ static int hier2(value* lval)
                     if (level == sym->dim.array.level && matchtoken(tSYMBOL)) {
                         char* idxname;
                         tokeninfo(&val, &idxname);
-                        if ((idxsym = findconst(idxname)) == NULL)
+                        if ((idxsym = findconst(idxname)) == NULL) {
                             error(80, idxname); /* unknown symbol, or non-constant */
+                        }
                     } /* if */
                     needtoken(']');
                 } /* for */
-                if (level > sym->dim.array.level + 1)
+                if (level > sym->dim.array.level + 1) {
                     error(28, sym->name); /* invalid subscript */
-                else if (level == sym->dim.array.level + 1 && idxsym != NULL)
+                }
+                else if (level == sym->dim.array.level + 1 && idxsym != NULL) {
                     tag = idxsym->x.idxtag;
+                }
             } /* if */
             exporttag(tag);
             clear_value(lval);
             lval->ident = iCONSTEXPR;
             lval->constval = tag | PUBLICTAG;
             ldconst(lval->constval, sPRI);
-            while (paranthese--)
+            while (paranthese--) {
                 needtoken(')');
+            }
             return FALSE;
         default:
             lexpush();
@@ -1414,44 +1546,56 @@ static int hier2(value* lval)
                 tok = lex(&val, &st);
                 switch (tok) {
                     case tINC: /* lval++ */
-                        if (!lvalue)
+                        if (!lvalue) {
                             return error(22); /* must be lvalue */
+                        }
                         assert(lval->sym != NULL);
-                        if ((lval->sym->usage & uCONST) != 0)
+                        if ((lval->sym->usage & uCONST) != 0) {
                             return error(22); /* assignment to const argument */
+                        }
                         /* on incrementing array cells, the address in PRI must be saved for
                          * incremening the value, whereas the current value must be in PRI
                          * on exit.
                          */
                         saveresult = (lval->ident == iARRAYCELL || lval->ident == iARRAYCHAR);
-                        if (saveresult)
+                        if (saveresult) {
                             pushreg(sPRI); /* save address in PRI */
-                        rvalue(lval);      /* read current value into PRI */
-                        if (saveresult)
+                        }
+                        rvalue(lval); /* read current value into PRI */
+                        if (saveresult) {
                             swap1(); /* save PRI on the stack, restore address in PRI */
-                        if (!check_userop(user_inc, lval->tag, 0, 1, lval, &lval->tag))
+                        }
+                        if (!check_userop(user_inc, lval->tag, 0, 1, lval, &lval->tag)) {
                             inc(lval); /* increase variable afterwards */
-                        if (saveresult)
+                        }
+                        if (saveresult) {
                             popreg(sPRI); /* restore PRI (result of rvalue()) */
+                        }
                         lval->ident = iEXPRESSION;
                         sideeffect = TRUE;
                         return FALSE; /* result is no longer lvalue */
                     case tDEC:        /* lval-- */
-                        if (!lvalue)
+                        if (!lvalue) {
                             return error(22); /* must be lvalue */
+                        }
                         assert(lval->sym != NULL);
-                        if ((lval->sym->usage & uCONST) != 0)
+                        if ((lval->sym->usage & uCONST) != 0) {
                             return error(22); /* assignment to const argument */
+                        }
                         saveresult = (lval->ident == iARRAYCELL || lval->ident == iARRAYCHAR);
-                        if (saveresult)
+                        if (saveresult) {
                             pushreg(sPRI); /* save address in PRI */
-                        rvalue(lval);      /* read current value into PRI */
-                        if (saveresult)
+                        }
+                        rvalue(lval); /* read current value into PRI */
+                        if (saveresult) {
                             swap1(); /* save PRI on the stack, restore address in PRI */
-                        if (!check_userop(user_dec, lval->tag, 0, 1, lval, &lval->tag))
+                        }
+                        if (!check_userop(user_dec, lval->tag, 0, 1, lval, &lval->tag)) {
                             dec(lval); /* decrease variable afterwards */
-                        if (saveresult)
+                        }
+                        if (saveresult) {
                             popreg(sPRI); /* restore PRI (result of rvalue()) */
+                        }
                         lval->ident = iEXPRESSION;
                         sideeffect = TRUE;
                         return FALSE;
@@ -1461,8 +1605,9 @@ static int hier2(value* lval)
                             lval->constval = (lval->constval + sizeof(cell) - 1) / sizeof(cell);
                         }
                         else {
-                            if (lvalue)
-                                rvalue(lval);           /* fetch value if not already in PRI */
+                            if (lvalue) {
+                                rvalue(lval); /* fetch value if not already in PRI */
+                            }
                             char2addr();                /* from characters to bytes */
                             addconst(sizeof(cell) - 1); /* make sure the value is rounded up */
                             addr2cell();                /* truncate to number of cells */
@@ -1530,13 +1675,16 @@ restart:
             } /* if */
             stgget(&index, &cidx); /* mark position in code generator */
             pushreg(sPRI);         /* save base address of the array */
-            if (hier14(&lval2))    /* create expression for the array index */
+            if (hier14(&lval2)) {  /* create expression for the array index */
                 rvalue(&lval2);
-            if (lval2.ident == iARRAY || lval2.ident == iREFARRAY)
+            }
+            if (lval2.ident == iARRAY || lval2.ident == iREFARRAY) {
                 error(33, lval2.sym->name); /* array must be indexed */
+            }
             needtoken(close);
-            if (!matchtag(sym->x.idxtag, lval2.tag, TRUE))
+            if (!matchtag(sym->x.idxtag, lval2.tag, TRUE)) {
                 error(213);
+            }
             if (lval2.ident == iCONSTEXPR) {   /* constant expression */
                 stgdel(index, cidx);           /* scratch generated code */
                 if (lval1->arrayidx != NULL) { /* keep constant index, for checking */
@@ -1545,8 +1693,9 @@ restart:
                 } /* if */
                 if (close == ']') {
                     /* normal array index */
-                    if (lval2.constval < 0 || (sym->dim.array.length != 0 && sym->dim.array.length <= lval2.constval))
+                    if (lval2.constval < 0 || (sym->dim.array.length != 0 && sym->dim.array.length <= lval2.constval)) {
                         error(32, sym->name); /* array index out of bounds */
+                    }
                     if (lval2.constval != 0) {
 /* don't add offsets for zero subscripts */
 #if PAWN_CELL_SIZE == 16
@@ -1565,8 +1714,9 @@ restart:
                     /* character index */
                     if (lval2.constval < 0 ||
                         (sym->dim.array.length != 0 &&
-                            sym->dim.array.length * ((8 * sizeof(cell)) / sCHARBITS) <= (ucell)lval2.constval))
+                            sym->dim.array.length * ((8 * sizeof(cell)) / sCHARBITS) <= (ucell)lval2.constval)) {
                         error(32, sym->name); /* array index out of bounds */
+                    }
                     if (lval2.constval != 0) {
 /* don't add offsets for zero subscripts */
 #if sCHARBITS == 16
@@ -1591,19 +1741,22 @@ restart:
                 /* array index is not constant */
                 lval1->arrayidx = NULL; /* reset, so won't be checked */
                 if (close == ']') {
-                    if (sym->dim.array.length != 0)
+                    if (sym->dim.array.length != 0) {
                         ffbounds(sym->dim.array.length - 1); /* run time check for array bounds */
-                    cell2addr();                             /* normal array index */
+                    }
+                    cell2addr(); /* normal array index */
                 }
                 else {
-                    if (sym->dim.array.length != 0)
+                    if (sym->dim.array.length != 0) {
                         ffbounds(sym->dim.array.length * (32 / sCHARBITS) - 1);
+                    }
                     char2addr(); /* character array index */
                 } /* if */
                 popreg(sALT);
                 ob_add(); /* base address was popped into secondary register */
-                if (close != ']')
+                if (close != ']') {
                     charalign(); /* align character index into array */
+                }
             } /* if */
             /* the indexed item may be another array (multi-dimensional arrays) */
             assert(cursym == sym && sym != NULL); /* should still be set */
@@ -1658,8 +1811,9 @@ restart:
             }
             else {
                 assert(sym != NULL);
-                if (cursym != &dummysymbol)
+                if (cursym != &dummysymbol) {
                     lval1->tag = sym->tag;
+                }
                 lval1->constval = 0;
             } /* if */
             /* a cell in an array is an lvalue, a character in an array is not
@@ -1674,8 +1828,9 @@ restart:
                      * function so that the usage can be marked.
                      */
                     sym = fetchfunc(lastsymbol, 0);
-                    if (sym == NULL)
+                    if (sym == NULL) {
                         error(103); /* insufficient memory */
+                    }
                     markusage(sym, uREAD);
                 }
                 else {
@@ -1732,8 +1887,9 @@ static int primary(value* lval)
         sc_intest = FALSE;   /* no longer in "test" expression */
         sc_allowtags = TRUE; /* allow tagnames to be used in parenthesized expressions */
         sc_allowproccall = FALSE;
-        do
+        do {
             lvalue = hier14(lval);
+        }
         while (matchtoken(','));
         needtoken(')');
         lexclr(FALSE); /* clear lex() push-back, it should have been
@@ -1777,12 +1933,14 @@ static int primary(value* lval)
                  * stub in the first pass (i.e. it was "used" but never declared or
                  * implemented, issue an error
                  */
-                if ((sym->usage & uPROTOTYPED) == 0)
+                if ((sym->usage & uPROTOTYPED) == 0) {
                     error(17, st);
+                }
             }
             else {
-                if ((sym->usage & uDEFINE) == 0)
+                if ((sym->usage & uDEFINE) == 0) {
                     error(17, st);
+                }
                 lval->sym = sym;
                 lval->ident = sym->ident;
                 lval->tag = sym->tag;
@@ -1796,15 +1954,17 @@ static int primary(value* lval)
             } /* if */
         }
         else {
-            if (!sc_allowproccall)
+            if (!sc_allowproccall) {
                 return error(17, st); /* undefined symbol */
+            }
             /* an unknown symbol, but used in a way compatible with the "procedure
              * call" syntax. So assume that the symbol refers to a function.
              */
             assert(sc_status == statFIRST);
             sym = fetchfunc(st, 0);
-            if (sym == NULL)
+            if (sym == NULL) {
                 error(103); /* insufficient memory */
+            }
         } /* if */
         assert(sym != NULL);
         assert(sym->ident == iFUNCTN || sym->ident == iREFFUNC);
@@ -1843,8 +2003,9 @@ static void setdefarray(cell* string, cell size, cell array_sz, cell* dataaddr, 
     if (sc_status == statWRITE && *dataaddr < 0) {
         int i;
         *dataaddr = (litidx + glb_declared) * sizeof(cell);
-        for (i = 0; i < size; i++)
+        for (i = 0; i < size; i++) {
             litadd(*string++);
+        }
     } /* if */
 
     /* if the function is known not to modify the array (meaning that it also
@@ -1877,9 +2038,11 @@ static int findnamedarg(arginfo* arg, char* name)
 {
     int i;
 
-    for (i = 0; arg[i].ident != 0 && arg[i].ident != iVARARGS; i++)
-        if (strcmp(arg[i].name, name) == 0)
+    for (i = 0; arg[i].ident != 0 && arg[i].ident != iVARARGS; i++) {
+        if (strcmp(arg[i].name, name) == 0) {
             return i;
+        }
+    }
     return -1;
 }
 
@@ -1889,10 +2052,12 @@ static int checktag(int tags[], int numtags, int exprtag)
 
     assert(tags != 0);
     assert(numtags > 0);
-    for (i = 0; i < numtags; i++)
-        if (matchtag(tags[i], exprtag, TRUE))
+    for (i = 0; i < numtags; i++) {
+        if (matchtag(tags[i], exprtag, TRUE)) {
             return TRUE; /* matching tag */
-    return FALSE;        /* no tag matched */
+        }
+    }
+    return FALSE; /* no tag matched */
 }
 
 enum {
@@ -1952,8 +2117,9 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
     nesting++;
     assert(nest_stkusage >= 0);
 #if !defined NDEBUG
-    if (nesting == 1)
+    if (nesting == 1) {
         assert(nest_stkusage == 0);
+    }
 #endif
 
     if ((sym->flags & flgDEPRECATED) != 0) {
@@ -1981,18 +2147,21 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
         close = matchtoken(tTERM);
         if (close) {
             close = !matchtoken('.');
-            if (!close)
+            if (!close) {
                 lexpush(); /* reset the '.' */
+            }
         } /* if */
     } /* if */
     if (!close) {
         do {
             if (matchtoken('.')) {
                 namedparams = TRUE;
-                if (needtoken(tSYMBOL))
+                if (needtoken(tSYMBOL)) {
                     tokeninfo(&lexval, &lexstr);
-                else
+                }
+                else {
                     lexstr = "";
+                }
                 argpos = findnamedarg(arg, lexstr);
                 if (argpos < 0) {
                     error(17, lexstr); /* undefined symbol */
@@ -2002,19 +2171,22 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
                 argidx = argpos;
             }
             else {
-                if (namedparams)
+                if (namedparams) {
                     error(44); /* positional parameters must precede named parameters */
+                }
                 argpos = nargs;
             } /* if */
             /* the number of arguments this was already checked at the declaration
              * of the function; check it again for functions with a variable
              * argument list
              */
-            if (argpos >= sMAXARGS)
-                error(45);                        /* too many function arguments */
+            if (argpos >= sMAXARGS) {
+                error(45); /* too many function arguments */
+            }
             stgmark((char)(sEXPRSTART + argpos)); /* mark beginning of new expression in stage */
-            if (arglist[argpos] != ARG_UNHANDLED)
+            if (arglist[argpos] != ARG_UNHANDLED) {
                 error(58); /* argument already set */
+            }
             if (matchtoken('_')) {
                 arglist[argpos] = ARG_IGNORED; /* flag argument as "present, but ignored" */
                 if (arg[argidx].ident == 0 || arg[argidx].ident == iVARARGS) {
@@ -2023,8 +2195,9 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
                 else if (!arg[argidx].hasdefault) {
                     error(34, nargs + 1); /* argument has no default value */
                 } /* if */
-                if (arg[argidx].ident != 0 && arg[argidx].ident != iVARARGS)
+                if (arg[argidx].ident != 0 && arg[argidx].ident != iVARARGS) {
                     argidx++;
+                }
                 /* The rest of the code to handle default values is at the bottom
                  * of this routine where default values for unspecified parameters
                  * are (also) handled. Note that above, the argument is flagged as
@@ -2062,8 +2235,9 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
                         }
                         else if (lval.ident == iCONSTEXPR || lval.ident == iEXPRESSION || lval.ident == iARRAYCHAR) {
                             /* fetch value if needed */
-                            if (lval.ident == iARRAYCHAR)
+                            if (lval.ident == iARRAYCHAR) {
                                 rvalue(&lval);
+                            }
                             /* allocate a cell on the heap and store the
                              * value (already in PRI) there */
                             setheap_pri(); /* address of the value on the heap in PRI */
@@ -2072,33 +2246,42 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
                         } /* if */
                         /* ??? handle const array passed by reference */
                         /* otherwise, the address is already in PRI */
-                        if (lval.sym != NULL)
+                        if (lval.sym != NULL) {
                             markusage(lval.sym, uWRITTEN);
-                        if (!checktag(arg[argidx].tags, arg[argidx].numtags, lval.tag))
+                        }
+                        if (!checktag(arg[argidx].tags, arg[argidx].numtags, lval.tag)) {
                             error(213);
-                        if (lval.tag != 0)
+                        }
+                        if (lval.tag != 0) {
                             append_constval(&taglst, arg[argidx].name, lval.tag, 0);
+                        }
                         break;
                     case iVARIABLE:
                         if (lval.ident == iLABEL || lval.ident == iFUNCTN || lval.ident == iREFFUNC ||
-                            lval.ident == iARRAY || lval.ident == iREFARRAY)
+                            lval.ident == iARRAY || lval.ident == iREFARRAY) {
                             error(35, argidx + 1); /* argument type mismatch */
-                        if (lvalue)
+                        }
+                        if (lvalue) {
                             rvalue(&lval); /* get value (direct or indirect) */
+                        }
                         /* otherwise, the expression result is already in PRI */
                         assert(arg[argidx].numtags > 0);
                         check_userop(NULL, lval.tag, arg[argidx].tags[0], 2, NULL, &lval.tag);
-                        if (!checktag(arg[argidx].tags, arg[argidx].numtags, lval.tag))
+                        if (!checktag(arg[argidx].tags, arg[argidx].numtags, lval.tag)) {
                             error(213);
-                        if (lval.tag != 0)
+                        }
+                        if (lval.tag != 0) {
                             append_constval(&taglst, arg[argidx].name, lval.tag, 0);
+                        }
                         argidx++; /* argument done */
                         break;
                     case iREFERENCE:
-                        if (!lvalue || lval.ident == iARRAYCHAR)
+                        if (!lvalue || lval.ident == iARRAYCHAR) {
                             error(35, argidx + 1); /* argument type mismatch */
-                        if (lval.sym != NULL && (lval.sym->usage & uCONST) != 0 && (arg[argidx].usage & uCONST) == 0)
+                        }
+                        if (lval.sym != NULL && (lval.sym->usage & uCONST) != 0 && (arg[argidx].usage & uCONST) == 0) {
                             error(35, argidx + 1); /* argument type mismatch */
+                        }
                         if (lval.ident == iVARIABLE || lval.ident == iREFERENCE) {
                             if (lvalue) {
                                 assert(lval.sym != NULL);
@@ -2111,21 +2294,25 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
                             } /* if */
                         } /* if */
                         /* otherwise, the address is already in PRI */
-                        if (!checktag(arg[argidx].tags, arg[argidx].numtags, lval.tag))
+                        if (!checktag(arg[argidx].tags, arg[argidx].numtags, lval.tag)) {
                             error(213);
-                        if (lval.tag != 0)
+                        }
+                        if (lval.tag != 0) {
                             append_constval(&taglst, arg[argidx].name, lval.tag, 0);
+                        }
                         argidx++; /* argument done */
-                        if (lval.sym != NULL)
+                        if (lval.sym != NULL) {
                             markusage(lval.sym, uWRITTEN);
+                        }
                         break;
                     case iREFARRAY:
                         if (lval.ident != iARRAY && lval.ident != iREFARRAY && lval.ident != iARRAYCELL) {
                             error(35, argidx + 1); /* argument type mismatch */
                             break;
                         } /* if */
-                        if (lval.sym != NULL && (lval.sym->usage & uCONST) != 0 && (arg[argidx].usage & uCONST) == 0)
+                        if (lval.sym != NULL && (lval.sym->usage & uCONST) != 0 && (arg[argidx].usage & uCONST) == 0) {
                             error(35, argidx + 1); /* argument type mismatch */
+                        }
                         /* Verify that the dimensions match with those in arg[argidx].
                          * A literal array always has a single dimension.
                          * An iARRAYCELL parameter is also assumed to have a single dimension,
@@ -2138,8 +2325,9 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
                             else if (arg[argidx].dim[0] != 0) {
                                 assert(arg[argidx].dim[0] > 0);
                                 if (lval.ident == iARRAYCELL) {
-                                    if (lval.constval == 0 || arg[argidx].dim[0] != lval.constval)
+                                    if (lval.constval == 0 || arg[argidx].dim[0] != lval.constval) {
                                         error(47); /* array sizes must match */
+                                    }
                                 }
                                 else {
                                     assert(lval.constval != 0); /* literal array must have a size */
@@ -2148,16 +2336,18 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
                                      * the function argument.
                                      */
                                     if ((lval.constval > 0 && arg[argidx].dim[0] != lval.constval) ||
-                                        (lval.constval < 0 && arg[argidx].dim[0] < -lval.constval))
+                                        (lval.constval < 0 && arg[argidx].dim[0] < -lval.constval)) {
                                         error(47); /* array sizes must match */
+                                    }
                                 } /* if */
                             } /* if */
                             if (lval.ident != iARRAYCELL || lval.constval > 0) {
                                 /* save array size, for default values with uSIZEOF flag */
                                 cell array_sz = lval.constval;
                                 assert(array_sz != 0); /* literal array must have a size */
-                                if (array_sz < 0)
+                                if (array_sz < 0) {
                                     array_sz = -array_sz;
+                                }
                                 append_constval(&arrayszlst, arg[argidx].name, array_sz, 0);
                             } /* if */
                         }
@@ -2165,17 +2355,20 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
                             symbol* sym = lval.sym;
                             short level = 0;
                             assert(sym != NULL);
-                            if (sym->dim.array.level + 1 != arg[argidx].numdim)
+                            if (sym->dim.array.level + 1 != arg[argidx].numdim) {
                                 error(48); /* array dimensions must match */
+                            }
                             /* the lengths for all dimensions must match, unless the dimension
                              * length was defined at zero (which means "undefined")
                              */
                             while (sym->dim.array.level > 0) {
                                 assert(level < sDIMEN_MAX);
-                                if (arg[argidx].dim[level] != 0 && sym->dim.array.length != arg[argidx].dim[level])
+                                if (arg[argidx].dim[level] != 0 && sym->dim.array.length != arg[argidx].dim[level]) {
                                     error(47); /* array sizes must match */
-                                else if (!matchtag(arg[argidx].idxtag[level], sym->x.idxtag, TRUE))
+                                }
+                                else if (!matchtag(arg[argidx].idxtag[level], sym->x.idxtag, TRUE)) {
                                     error(229, sym->name); /* index tag mismatch */
+                                }
                                 append_constval(&arrayszlst, arg[argidx].name, sym->dim.array.length, level);
                                 sym = finddepend(sym);
                                 assert(sym != NULL);
@@ -2184,17 +2377,21 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
                             /* the last dimension is checked too, again, unless it is zero */
                             assert(level < sDIMEN_MAX);
                             assert(sym != NULL);
-                            if (arg[argidx].dim[level] != 0 && sym->dim.array.length != arg[argidx].dim[level])
+                            if (arg[argidx].dim[level] != 0 && sym->dim.array.length != arg[argidx].dim[level]) {
                                 error(47); /* array sizes must match */
-                            else if (!matchtag(arg[argidx].idxtag[level], sym->x.idxtag, TRUE))
+                            }
+                            else if (!matchtag(arg[argidx].idxtag[level], sym->x.idxtag, TRUE)) {
                                 error(229, sym->name); /* index tag mismatch */
+                            }
                             append_constval(&arrayszlst, arg[argidx].name, sym->dim.array.length, level);
                         } /* if */
                         /* address already in PRI */
-                        if (!checktag(arg[argidx].tags, arg[argidx].numtags, lval.tag))
+                        if (!checktag(arg[argidx].tags, arg[argidx].numtags, lval.tag)) {
                             error(213);
-                        if (lval.tag != 0)
+                        }
+                        if (lval.tag != 0) {
                             append_constval(&taglst, arg[argidx].name, lval.tag, 0);
+                        }
                         // ??? set uWRITTEN?
                         argidx++; /* argument done */
                         break;
@@ -2207,15 +2404,18 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
             nargs++;
             if (matchparanthesis) {
                 close = matchtoken(')');
-                if (!close)              /* if not paranthese... */
-                    if (!needtoken(',')) /* ...should be comma... */
-                        break;           /* ...but abort loop if neither */
+                if (!close) {              /* if not paranthese... */
+                    if (!needtoken(',')) { /* ...should be comma... */
+                        break;             /* ...but abort loop if neither */
+                    }
+                }
             }
             else {
                 close = !matchtoken(',');
-                if (close) {                   /* if not comma... */
-                    if (needtoken(tTERM) == 1) /* ...must be end of statement */
-                        lexpush();             /* push again, because end of statement is analised later */
+                if (close) {                     /* if not comma... */
+                    if (needtoken(tTERM) == 1) { /* ...must be end of statement */
+                        lexpush();               /* push again, because end of statement is analised later */
+                    }
                 } /* if */
             } /* if */
         }
@@ -2223,8 +2423,9 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
     } /* if */
     /* check remaining function arguments (they may have default values) */
     for (argidx = 0; arg[argidx].ident != 0 && arg[argidx].ident != iVARARGS; argidx++) {
-        if (arglist[argidx] == ARG_DONE)
+        if (arglist[argidx] == ARG_DONE) {
             continue; /* already seen and handled this argument */
+        }
         /* in this first stage, we also skip the arguments with uSIZEOF and uTAGOF;
          * these are handled last
          */
@@ -2277,8 +2478,9 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
         else {
             error(88, argidx); /* argument count mismatch */
         } /* if */
-        if (arglist[argidx] == ARG_UNHANDLED)
+        if (arglist[argidx] == ARG_UNHANDLED) {
             nargs++;
+        }
         arglist[argidx] = ARG_DONE;
     } /* for */
     /* now a second loop to catch the arguments with default values that are
@@ -2287,8 +2489,9 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
     for (argidx = 0; arg[argidx].ident != 0 && arg[argidx].ident != iVARARGS; argidx++) {
         constvalue* asz;
         cell array_sz;
-        if (arglist[argidx] == ARG_DONE)
-            continue;                           /* already seen and handled this argument */
+        if (arglist[argidx] == ARG_DONE) {
+            continue; /* already seen and handled this argument */
+        }
         stgmark((char)(sEXPRSTART + argidx));   /* mark beginning of new expression in stage */
         assert(arg[argidx].ident == iVARIABLE); /* if "sizeof", must be single cell */
         /* if unseen, must be "sizeof" or "tagof" */
@@ -2301,8 +2504,9 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
             asz = find_constval(&arrayszlst, arg[argidx].defvalue.size.symname, arg[argidx].defvalue.size.level);
             if (asz != NULL) {
                 array_sz = asz->value;
-                if (array_sz == 0)
+                if (array_sz == 0) {
                     error(224, arg[argidx].name); /* indeterminate array size in "sizeof" expression */
+                }
             }
             else {
                 array_sz = 1;
@@ -2322,21 +2526,25 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
         pushreg(sPRI); /* store the function argument on the stack */
         markexpr(sPARM, NULL, 0);
         nest_stkusage++;
-        if (arglist[argidx] == ARG_UNHANDLED)
+        if (arglist[argidx] == ARG_UNHANDLED) {
             nargs++;
+        }
         arglist[argidx] = ARG_DONE;
     } /* for */
     stgmark(sENDREORDER); /* mark end of reversed evaluation */
     pushval((cell)nargs * sizeof(cell));
     nest_stkusage++;
     ffcall(sym, NULL, nargs);
-    if (sc_status != statSKIP)
+    if (sc_status != statSKIP) {
         markusage(sym, uREAD); /* do not mark as "used" when this call itself is skipped */
-    if ((sym->usage & uNATIVE) != 0 && sym->x.lib != NULL)
+    }
+    if ((sym->usage & uNATIVE) != 0 && sym->x.lib != NULL) {
         sym->x.lib->value += 1; /* increment "usage count" of the library */
+    }
     modheap(-heapalloc * sizeof(cell));
-    if (symret != NULL)
-        popreg(sPRI);  /* pop hidden parameter as function result */
+    if (symret != NULL) {
+        popreg(sPRI); /* pop hidden parameter as function result */
+    }
     sideeffect = TRUE; /* assume functions carry out a side-effect */
     sc_allowproccall = FALSE;
     delete_consttable(&arrayszlst); /* clear list of array sizes */
@@ -2347,21 +2555,26 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
         long totalsize;
         totalsize = declared + decl_heap + 1; /* local variables & return value size,
                                                * +1 for PROC opcode */
-        if (lval_result->ident == iREFARRAY)
+        if (lval_result->ident == iREFARRAY) {
             totalsize++; /* add hidden parameter (on the stack) */
-        if ((sym->usage & uNATIVE) == 0)
+        }
+        if ((sym->usage & uNATIVE) == 0) {
             totalsize++; /* add "call" opcode */
+        }
         totalsize += nest_stkusage;
-        if (!curfunc) /* if we got here, the function is invalid! */
+        if (!curfunc) { /* if we got here, the function is invalid! */
             return;
-        if (curfunc->x.stacksize < totalsize)
+        }
+        if (curfunc->x.stacksize < totalsize) {
             curfunc->x.stacksize = totalsize;
+        }
         nest_stkusage -= nargs + heapalloc + 1; /* stack/heap space, +1 for argcount param */
         /* if there is a syntax error in the script, the stack calculation is
          * probably incorrect; but we may not allow it to drop below zero
          */
-        if (nest_stkusage < 0)
+        if (nest_stkusage < 0) {
             nest_stkusage = 0;
+        }
     }
 
     /* scrap any arrays left on the heap, with the exception of the array that
@@ -2384,12 +2597,15 @@ static void callfunction(symbol* sym, value* lval_result, int matchparanthesis)
  */
 static int dbltest(void (*oper)(), value* lval1, value* lval2)
 {
-    if ((oper != ob_add) && (oper != ob_sub))
+    if ((oper != ob_add) && (oper != ob_sub)) {
         return 0;
-    if (lval1->ident != iARRAY)
+    }
+    if (lval1->ident != iARRAY) {
         return 0;
-    if (lval2->ident == iARRAY)
+    }
+    if (lval2->ident == iARRAY) {
         return 0;
+    }
     return sizeof(cell) / 2; /* 1 for 16-bit, 2 for 32-bit */
 }
 
@@ -2472,17 +2688,21 @@ static int constant(value* lval)
             stgget(&index, &cidx); /* mark position in code generator */
             ident = expression(&item, &tag, NULL, FALSE);
             stgdel(index, cidx); /* scratch generated code */
-            if (ident != iCONSTEXPR)
+            if (ident != iCONSTEXPR) {
                 error(8); /* must be constant expression */
-            if (lasttag < 0)
+            }
+            if (lasttag < 0) {
                 lasttag = tag;
-            else if (!matchtag(lasttag, tag, FALSE))
+            }
+            else if (!matchtag(lasttag, tag, FALSE)) {
                 error(213); /* tagname mismatch */
-            litadd(item);   /* store expression result in literal table */
+            }
+            litadd(item); /* store expression result in literal table */
         }
         while (matchtoken(','));
-        if (!needtoken('}'))
+        if (!needtoken('}')) {
             lexclr(FALSE);
+        }
         ldconst((val + glb_declared) * sizeof(cell), sPRI);
         lval->ident = iARRAY;          /* pretend this is a global array */
         lval->constval = litidx - val; /* constval == the size of the literal array */

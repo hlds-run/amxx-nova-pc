@@ -76,10 +76,12 @@ static constvalue* find_automaton(const char* name, int* last)
     *last = 0;
     ptr = sc_automaton_tab.next;
     while (ptr != NULL) {
-        if (strcmp(name, ptr->name) == 0)
+        if (strcmp(name, ptr->name) == 0) {
             return ptr;
-        if (ptr->index > *last)
+        }
+        if (ptr->index > *last) {
             *last = ptr->index;
+        }
         ptr = ptr->next;
     } /* while */
     return NULL;
@@ -124,10 +126,12 @@ static constvalue* find_state(const char* name, int fsa, int* last)
     ptr = sc_state_tab.next;
     while (ptr != NULL) {
         if (ptr->index == fsa) {
-            if (strcmp(name, ptr->name) == 0)
+            if (strcmp(name, ptr->name) == 0) {
                 return ptr;
-            if ((int)ptr->value > *last)
+            }
+            if ((int)ptr->value > *last) {
                 *last = (int)ptr->value;
+            }
         } /* if */
         ptr = ptr->next;
     } /* while */
@@ -179,15 +183,17 @@ SC_FUNC void state_buildlist(int** list, int* listsize, int* count, int stateid)
          */
         *listsize += 4;
         *list = (int*)realloc(*list, *listsize * sizeof(int));
-        if (*list == NULL)
+        if (*list == NULL) {
             error(103); /* insufficient memory */
+        }
     } /* if */
 
     /* find the insertion point (the list has to stay sorted) */
     for (idx = 0; idx < *count && *list[idx] < stateid; idx++)
         /* nothing */;
-    if (idx < *count)
+    if (idx < *count) {
         memmove(&(*list)[idx + 1], &(*list)[idx], (int)((*count - idx + 1) * sizeof(int)));
+    }
     (*list)[idx] = stateid;
     *count += 1;
 }
@@ -202,14 +208,16 @@ static statelist* state_findlist(int* list, int count, int fsa, int* last)
     *last = 0;
     ptr = statelist_tab.next;
     while (ptr != NULL) {
-        if (ptr->listid > *last)
+        if (ptr->listid > *last) {
             *last = ptr->listid;
+        }
         if (ptr->fsa == fsa && ptr->numstates == count) {
             /* compare all states */
             for (i = 0; i < count && ptr->states[i] == list[i]; i++)
                 /* nothing */;
-            if (i == count)
+            if (i == count) {
                 return ptr;
+            }
         } /* if */
         ptr = ptr->next;
     } /* while */
@@ -235,8 +243,9 @@ SC_FUNC int state_addlist(int* list, int count, int fsa)
     assert(count > 0);
     ptr = state_findlist(list, count, fsa, &last);
     if (ptr == NULL) {
-        if ((ptr = (statelist*)malloc(sizeof(statelist))) == NULL)
+        if ((ptr = (statelist*)malloc(sizeof(statelist))) == NULL) {
             error(103); /* insufficient memory */
+        }
         if ((ptr->states = (int*)malloc(count * sizeof(int))) == NULL) {
             free(ptr);
             error(103); /* insufficient memory */
@@ -276,8 +285,9 @@ SC_FUNC int state_getfsa(int listid)
 SC_FUNC int state_count(int listid)
 {
     statelist* ptr = state_getlist_ptr(listid);
-    if (ptr == NULL)
+    if (ptr == NULL) {
         return 0; /* unknown list, no states in it */
+    }
     return ptr->numstates;
 }
 
@@ -287,11 +297,14 @@ SC_FUNC int state_inlist(int listid, int state)
     int i;
 
     ptr = state_getlist_ptr(listid);
-    if (ptr == NULL)
+    if (ptr == NULL) {
         return FALSE; /* unknown list, state not in it */
-    for (i = 0; i < ptr->numstates; i++)
-        if (ptr->states[i] == state)
+    }
+    for (i = 0; i < ptr->numstates; i++) {
+        if (ptr->states[i] == state) {
             return TRUE;
+        }
+    }
     return FALSE;
 }
 
@@ -318,26 +331,34 @@ SC_FUNC void state_conflict(symbol* root)
 
     assert(root != NULL);
     for (sym = root->next; sym != NULL; sym = sym->next) {
-        if (sym->parent != NULL || sym->ident != iFUNCTN)
+        if (sym->parent != NULL || sym->ident != iFUNCTN) {
             continue; /* hierarchical data type or no function */
-        if (sym->states == NULL)
+        }
+        if (sym->states == NULL) {
             continue; /* this function has no states */
+        }
         for (srcptr = sym->states->next; srcptr != NULL; srcptr = srcptr->next) {
-            if (srcptr->index == -1)
+            if (srcptr->index == -1) {
                 continue; /* state list id -1 is a special case */
+            }
             psrc = state_getlist_ptr(srcptr->index);
             assert(psrc != NULL);
             for (tgtptr = srcptr->next; tgtptr != NULL; tgtptr = tgtptr->next) {
-                if (tgtptr->index == -1)
+                if (tgtptr->index == -1) {
                     continue; /* state list id -1 is a special case */
+                }
                 ptgt = state_getlist_ptr(tgtptr->index);
                 assert(ptgt != NULL);
-                if (psrc->fsa != ptgt->fsa && strcmp(sym->name, uENTRYFUNC) != 0)
+                if (psrc->fsa != ptgt->fsa && strcmp(sym->name, uENTRYFUNC) != 0) {
                     error(83, sym->name); /* this function is part of another machine */
-                for (s = 0; s < psrc->numstates; s++)
-                    for (t = 0; t < ptgt->numstates; t++)
-                        if (psrc->states[s] == ptgt->states[t])
+                }
+                for (s = 0; s < psrc->numstates; s++) {
+                    for (t = 0; t < ptgt->numstates; t++) {
+                        if (psrc->states[s] == ptgt->states[t]) {
                             error(84, sym->name); /* state conflict */
+                        }
+                    }
+                }
             } /* for (tgtptr) */
         } /* for (srcptr) */
     } /* for (sym) */

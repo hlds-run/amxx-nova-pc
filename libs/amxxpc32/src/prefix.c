@@ -110,19 +110,23 @@ char* br_locate(void* symbol)
 
     f = fopen("/proc/self/maps", "r");
     if (!f) {
-        if (fallback_func)
+        if (fallback_func) {
             return fallback_func(symbol, fallback_data);
-        else
+        }
+        else {
             return NULL;
+        }
     }
 
     while (!feof(f)) {
         unsigned long start, end;
 
-        if (!fgets(line, sizeof(line), f))
+        if (!fgets(line, sizeof(line), f)) {
             continue;
-        if (!strstr(line, " r-xp ") || !strchr(line, '/'))
+        }
+        if (!strstr(line, " r-xp ") || !strchr(line, '/')) {
             continue;
+        }
 
         sscanf(line, "%lx-%lx ", &start, &end);
         if (symbol >= (void*)start && symbol < (void*)end) {
@@ -134,8 +138,9 @@ char* br_locate(void* symbol)
 
             /* Get rid of the newline */
             tmp = strrchr(path, '\n');
-            if (tmp)
+            if (tmp) {
                 *tmp = 0;
+            }
 
             /* Get rid of "(deleted)" */
             len = strlen(path);
@@ -173,8 +178,9 @@ char* br_locate_prefix(void* symbol)
     br_return_val_if_fail(symbol != NULL, NULL);
 
     path = br_locate(symbol);
-    if (!path)
+    if (!path) {
         return NULL;
+    }
 
     prefix = br_extract_prefix(path);
     free(path);
@@ -203,17 +209,21 @@ char* br_prepend_prefix(void* symbol, char* path)
     br_return_val_if_fail(path != NULL, NULL);
 
     tmp = br_locate_prefix(symbol);
-    if (!tmp)
+    if (!tmp) {
         return NULL;
+    }
 
-    if (strcmp(tmp, "/") == 0)
+    if (strcmp(tmp, "/") == 0) {
         newpath = strdup(path);
-    else
+    }
+    else {
         newpath = br_strcat(tmp, path);
+    }
 
     /* Get rid of compiler warning ("br_prepend_prefix never used") */
-    if (0)
+    if (0) {
         br_prepend_prefix(NULL, NULL);
+    }
 
     free(tmp);
     return newpath;
@@ -244,14 +254,16 @@ static void br_thread_local_store_fini()
 
 static void br_str_free(void* str)
 {
-    if (str)
+    if (str) {
         free(str);
+    }
 }
 
 static void br_thread_local_store_init()
 {
-    if (pthread_key_create(&br_thread_key, br_str_free) == 0)
+    if (pthread_key_create(&br_thread_key, br_str_free) == 0) {
         atexit(br_thread_local_store_fini);
+    }
 }
 
 #else /* BR_PTHREADS */
@@ -261,8 +273,9 @@ static char* br_last_value = (char*)NULL;
 
 static void br_free_last_value()
 {
-    if (br_last_value)
+    if (br_last_value) {
         free(br_last_value);
+    }
 }
 
     #endif /* ENABLE_BINRELOC */
@@ -306,8 +319,9 @@ const char* br_thread_local_store(char* str)
         initialized = 1;
     }
 
-    if (br_last_value)
+    if (br_last_value) {
         free(br_last_value);
+    }
     br_last_value = str;
     #endif /* BR_PTHREADS */
 
@@ -329,10 +343,12 @@ char* br_strcat(const char* str1, const char* str2)
     char* result;
     size_t len1, len2;
 
-    if (!str1)
+    if (!str1) {
         str1 = "";
-    if (!str2)
+    }
+    if (!str2) {
         str2 = "";
+    }
 
     len1 = strlen(str1);
     len2 = strlen(str2);
@@ -354,10 +370,12 @@ static char* br_strndup(char* str, size_t size)
     br_return_val_if_fail(str != (char*)NULL, (char*)NULL);
 
     len = strlen(str);
-    if (!len)
+    if (!len) {
         return strdup("");
-    if (size > len)
+    }
+    if (size > len) {
         size = len;
+    }
 
     result = (char*)calloc(sizeof(char), len + 1);
     memcpy(result, str, size);
@@ -382,18 +400,21 @@ char* br_extract_dir(const char* path)
     br_return_val_if_fail(path != (char*)NULL, (char*)NULL);
 
     end = strrchr(path, '/');
-    if (!end)
+    if (!end) {
         return strdup(".");
+    }
 
-    while (end > path && *end == '/')
+    while (end > path && *end == '/') {
         end--;
+    }
     result = br_strndup((char*)path, end - path + 1);
     if (!*result) {
         free(result);
         return strdup("/");
     }
-    else
+    else {
         return result;
+    }
 }
 
 /**
@@ -415,11 +436,13 @@ char* br_extract_prefix(const char* path)
 
     br_return_val_if_fail(path != (char*)NULL, (char*)NULL);
 
-    if (!*path)
+    if (!*path) {
         return strdup("/");
+    }
     end = strrchr(path, '/');
-    if (!end)
+    if (!end) {
         return strdup(path);
+    }
 
     tmp = br_strndup((char*)path, end - path);
     if (!*tmp) {
@@ -427,8 +450,9 @@ char* br_extract_prefix(const char* path)
         return strdup("/");
     }
     end = strrchr(tmp, '/');
-    if (!end)
+    if (!end) {
         return tmp;
+    }
 
     result = br_strndup(tmp, end - tmp);
     free(tmp);

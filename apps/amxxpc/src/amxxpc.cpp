@@ -49,10 +49,12 @@ int main(int argc, char** argv)
 #else
     #if defined(__linux__)
     HINSTANCE lib = NULL;
-    if (FileExists("./amxxpc32.so"))
+    if (FileExists("./amxxpc32.so")) {
         lib = dlmount("./amxxpc32.so");
-    else
+    }
+    else {
         lib = dlmount("amxxpc32.so");
+    }
     #elif defined(__APPLE__)
     HINSTANCE lib = dlmount("amxxpc32.dylib");
     #else
@@ -132,8 +134,9 @@ int main(int argc, char** argv)
 
     char* newfile = new char[strlen(file) + 3];
     strcpy(newfile, file);
-    if (!strstr(file, ".amxx") && !strstr(file, ".AMXX"))
+    if (!strstr(file, ".amxx") && !strstr(file, ".AMXX")) {
         strcat(newfile, "x");
+    }
 
     FILE* fp = fopen(newfile, "wb");
     if (!fp) {
@@ -284,10 +287,12 @@ char* swiext(const char* file, const char* ext, int isO)
 
     if (pos > -1) {
         for (i = pos; i < fileLen; i++) {
-            if (j < extLen)
+            if (j < extLen) {
                 newbuffer[i] = ext[j++];
-            else
+            }
+            else {
                 break;
+            }
         }
         newbuffer[i] = '\0';
     }
@@ -306,8 +311,9 @@ char* FindFileName(int argc, char** argv)
     for (i = 1; i < argc; i++) {
         if (argv[i][0] == '-' && argv[i][1] == 'o') {
             if (argv[i][2] == ' ' || argv[i][2] == '\0') {
-                if (i == argc - 1)
+                if (i == argc - 1) {
                     return NULL;
+                }
                 return swiext(&argv[i + 1][2], "amx", 1);
             }
             else {
@@ -352,8 +358,9 @@ void show_help()
 bool FileExists(const char* file)
 {
     FILE* fp = fopen(file, "rb");
-    if (!fp)
+    if (!fp) {
         return false;
+    }
     fclose(fp);
     return true;
 }

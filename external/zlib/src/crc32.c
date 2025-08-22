@@ -152,8 +152,9 @@ local z_crc_t multmodp(z_crc_t a, z_crc_t b)
     for (;;) {
         if (a & m) {
             p ^= b;
-            if ((a & (m - 1)) == 0)
+            if ((a & (m - 1)) == 0) {
                 break;
+            }
         }
         m >>= 1;
         b = b & 1 ? (b >> 1) ^ POLY : b >> 1;
@@ -171,8 +172,9 @@ local z_crc_t x2nmodp(z_off64_t n, unsigned k)
 
     p = (z_crc_t)1 << 31; /* x^0 == 1 */
     while (n) {
-        if (n & 1)
+        if (n & 1) {
             p = multmodp(x2n_table[k & 31], p);
+        }
         n >>= 1;
         k++;
     }
@@ -228,9 +230,10 @@ struct once_s {
 local void once(once_t* state, void (*init)(void))
 {
     if (!atomic_load(&state->done)) {
-        if (atomic_flag_test_and_set(&state->begun))
+        if (atomic_flag_test_and_set(&state->begun)) {
             while (!atomic_load(&state->done))
                 ;
+        }
         else {
             init();
             atomic_store(&state->done, 1);
@@ -262,9 +265,10 @@ local int test_and_set(int volatile* flag)
 local void once(once_t* state, void (*init)(void))
 {
     if (!state->done) {
-        if (test_and_set(&state->begun))
+        if (test_and_set(&state->begun)) {
             while (!state->done)
                 ;
+        }
         else {
             init();
             state->done = 1;
@@ -310,8 +314,9 @@ local void make_crc_table(void)
     /* initialize the CRC of bytes tables */
     for (i = 0; i < 256; i++) {
         p = i;
-        for (j = 0; j < 8; j++)
+        for (j = 0; j < 8; j++) {
             p = p & 1 ? (p >> 1) ^ POLY : p >> 1;
+        }
         crc_table[i] = p;
     #ifdef W
         crc_big_table[i] = byte_swap(p);
@@ -321,8 +326,9 @@ local void make_crc_table(void)
     /* initialize the x^2^n mod p(x) table */
     p = (z_crc_t)1 << 30; /* x^1 */
     x2n_table[0] = p;
-    for (n = 1; n < 32; n++)
+    for (n = 1; n < 32; n++) {
         x2n_table[n] = p = multmodp(p, p);
+    }
 
     #ifdef W
     /* initialize the braiding tables -- needs x2n_table[] */
@@ -346,8 +352,9 @@ local void make_crc_table(void)
         z_word_t big[8][256];
 
         out = fopen("crc32.h", "w");
-        if (out == NULL)
+        if (out == NULL) {
             return;
+        }
 
         /* write out little-endian CRC table to crc32.h */
         fprintf(out, "/* crc32.h -- tables for rapid CRC calculation\n"
@@ -461,9 +468,10 @@ local void write_table(FILE* out, const z_crc_t FAR* table, int k)
 {
     int n;
 
-    for (n = 0; n < k; n++)
+    for (n = 0; n < k; n++) {
         fprintf(out, "%s0x%08lx%s", n == 0 || n % 5 ? "" : "    ", (unsigned long)(table[n]),
             n == k - 1 ? "" : (n % 5 == 4 ? ",\n" : ", "));
+    }
 }
 
 /*
@@ -474,9 +482,10 @@ local void write_table32hi(FILE* out, const z_word_t FAR* table, int k)
 {
     int n;
 
-    for (n = 0; n < k; n++)
+    for (n = 0; n < k; n++) {
         fprintf(out, "%s0x%08lx%s", n == 0 || n % 5 ? "" : "    ", (unsigned long)(table[n] >> 32),
             n == k - 1 ? "" : (n % 5 == 4 ? ",\n" : ", "));
+    }
 }
 
 /*
@@ -490,9 +499,10 @@ local void write_table64(FILE* out, const z_word_t FAR* table, int k)
 {
     int n;
 
-    for (n = 0; n < k; n++)
+    for (n = 0; n < k; n++) {
         fprintf(out, "%s0x%016llx%s", n == 0 || n % 3 ? "" : "    ", (unsigned long long)(table[n]),
             n == k - 1 ? "" : (n % 3 == 2 ? ",\n" : ", "));
+    }
 }
 
 /* Actually do the deed. */
@@ -568,8 +578,9 @@ unsigned long ZEXPORT crc32_z(unsigned long crc, const unsigned char FAR* buf, z
     z_size_t num;
 
     /* Return initial CRC, if requested. */
-    if (buf == Z_NULL)
+    if (buf == Z_NULL) {
         return 0;
+    }
 
     #ifdef DYNAMIC_CRC_TABLE
     once(&made, make_crc_table);
@@ -663,16 +674,18 @@ unsigned long ZEXPORT crc32_z(unsigned long crc, const unsigned char FAR* buf, z
 local z_crc_t crc_word(z_word_t data)
 {
     int k;
-    for (k = 0; k < W; k++)
+    for (k = 0; k < W; k++) {
         data = (data >> 8) ^ crc_table[data & 0xff];
+    }
     return (z_crc_t)data;
 }
 
 local z_word_t crc_word_big(z_word_t data)
 {
     int k;
-    for (k = 0; k < W; k++)
+    for (k = 0; k < W; k++) {
         data = (data << 8) ^ crc_big_table[(data >> ((W - 1) << 3)) & 0xff];
+    }
     return data;
 }
 
@@ -682,8 +695,9 @@ local z_word_t crc_word_big(z_word_t data)
 unsigned long ZEXPORT crc32_z(unsigned long crc, const unsigned char FAR* buf, z_size_t len)
 {
     /* Return initial CRC, if requested. */
-    if (buf == Z_NULL)
+    if (buf == Z_NULL) {
         return 0;
+    }
 
     #ifdef DYNAMIC_CRC_TABLE
     once(&made, make_crc_table);

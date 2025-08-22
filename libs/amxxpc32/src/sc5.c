@@ -92,15 +92,17 @@ SC_FUNC int error(int number, ...)
      * the error reporting is enabled only in the second pass (and only when
      * actually producing output). Fatal errors may never be ignored.
      */
-    if ((errflag || sc_status != statWRITE) && (number < 100 || number >= 200))
+    if ((errflag || sc_status != statWRITE) && (number < 100 || number >= 200)) {
         return 0;
+    }
 
     /* also check for disabled warnings */
     if (number >= 200) {
         int index = (number - 200) / 8;
         int mask = 1 << ((number - 200) % 8);
-        if ((warndisable.mask[index] & mask) != 0)
+        if ((warndisable.mask[index] & mask) != 0) {
             return 0;
+        }
     } /* if */
 
     if (number < 100) {
@@ -126,16 +128,21 @@ SC_FUNC int error(int number, ...)
         }
     } /* if */
 
-    if (errline > 0)
+    if (errline > 0) {
         errstart = errline; /* forced error position, set single line destination */
-    else
+    }
+    else {
         errline = fline; /* normal error, errstart may (or may not) have been marked, endpoint is current line */
-    if (errstart > errline)
+    }
+    if (errstart > errline) {
         errstart = errline; /* special case: error found at end of included file */
-    if (errfile >= 0)
+    }
+    if (errfile >= 0) {
         filename = get_inputfile(errfile); /* forced filename */
-    else
+    }
+    else {
         filename = inpfname; /* current file */
+    }
     assert(filename != NULL);
 
     va_start(argptr, number);
@@ -152,10 +159,12 @@ SC_FUNC int error(int number, ...)
     else {
         FILE* fp = fopen(errfname, "a");
         if (fp != NULL) {
-            if (errstart >= 0 && errstart != errline)
+            if (errstart >= 0 && errstart != errline) {
                 fprintf(fp, "%s(%d -- %d) : %s %03d: ", filename, errstart, errline, pre, number);
-            else
+            }
+            else {
                 fprintf(fp, "%s(%d) : %s %03d: ", filename, errline, pre, number);
+            }
             vfprintf(fp, msg, argptr);
             fclose(fp);
         } /* if */
@@ -178,14 +187,17 @@ SC_FUNC int error(int number, ...)
     errline = -1;
     errfile = -1;
     /* check whether we are seeing many errors on the same line */
-    if ((errstart < 0 && lastline != fline) || lastline < errstart || lastline > fline || fcurrent != lastfile)
+    if ((errstart < 0 && lastline != fline) || lastline < errstart || lastline > fline || fcurrent != lastfile) {
         errorcount = 0;
+    }
     lastline = fline;
     lastfile = fcurrent;
-    if (!is_warning)
+    if (!is_warning) {
         errorcount++;
-    if (errorcount >= 3)
+    }
+    if (errorcount >= 3) {
         error(107); /* too many error/warning messages on one line */
+    }
 
     return 0;
 }
@@ -232,11 +244,13 @@ int pc_enablewarning(int number, int enable)
     int index;
     unsigned char mask;
 
-    if (number < 200)
+    if (number < 200) {
         return FALSE; /* errors and fatal errors cannot be disabled */
+    }
     number -= 200;
-    if (number >= NUM_WARNINGS)
+    if (number >= NUM_WARNINGS) {
         return FALSE;
+    }
 
     index = number / 8;
     mask = (unsigned char)(1 << (number % 8));
@@ -292,8 +306,9 @@ SC_FUNC void popwarnings(void)
  */
 SC_FUNC void clear_warningstack(void)
 {
-    if (warndisable.next != NULL)
+    if (warndisable.next != NULL) {
         error(96); /* #pragma warning push without pop */
+    }
     while (warndisable.next != NULL) {
         warnstack* p = warndisable.next;
         warndisable.next = p->next;

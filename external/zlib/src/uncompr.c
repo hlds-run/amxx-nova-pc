@@ -49,8 +49,9 @@ int ZEXPORT uncompress2(Bytef* dest, uLongf* destLen, const Bytef* source, uLong
     stream.opaque = (voidpf)0;
 
     err = inflateInit(&stream);
-    if (err != Z_OK)
+    if (err != Z_OK) {
         return err;
+    }
 
     stream.next_out = dest;
     stream.avail_out = 0;
@@ -69,10 +70,12 @@ int ZEXPORT uncompress2(Bytef* dest, uLongf* destLen, const Bytef* source, uLong
     while (err == Z_OK);
 
     *sourceLen -= len + stream.avail_in;
-    if (dest != buf)
+    if (dest != buf) {
         *destLen = stream.total_out;
-    else if (stream.total_out && err == Z_BUF_ERROR)
+    }
+    else if (stream.total_out && err == Z_BUF_ERROR) {
         left = 1;
+    }
 
     inflateEnd(&stream);
     return err == Z_STREAM_END                             ? Z_OK

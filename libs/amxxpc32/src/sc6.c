@@ -59,8 +59,9 @@ static ucell hex2long(char* s, char** n)
     int digit;
 
     /* ignore leading whitespace */
-    while (*s == ' ' || *s == '\t')
+    while (*s == ' ' || *s == '\t') {
         s++;
+    }
 
     /* allow a negation sign to create the two's complement of numbers */
     if (*s == '-') {
@@ -70,21 +71,27 @@ static ucell hex2long(char* s, char** n)
 
     assert((*s >= '0' && *s <= '9') || (*s >= 'a' && *s <= 'f') || (*s >= 'A' && *s <= 'F'));
     for (;;) {
-        if (*s >= '0' && *s <= '9')
+        if (*s >= '0' && *s <= '9') {
             digit = *s - '0';
-        else if (*s >= 'a' && *s <= 'f')
+        }
+        else if (*s >= 'a' && *s <= 'f') {
             digit = *s - 'a' + 10;
-        else if (*s >= 'A' && *s <= 'F')
+        }
+        else if (*s >= 'A' && *s <= 'F') {
             digit = *s - 'A' + 10;
-        else
+        }
+        else {
             break; /* probably whitespace */
+        }
         result = (result << 4) | digit;
         s++;
     } /* for */
-    if (n != NULL)
+    if (n != NULL) {
         *n = s;
-    if (negate)
+    }
+    if (negate) {
         result = (~result) + 1; /* take two's complement of the result */
+    }
     return (ucell)result;
 }
 
@@ -93,12 +100,14 @@ static ucell getparam(char* s, char** n)
     ucell result = 0;
     for (;;) {
         result += hex2long(s, &s);
-        if (*s != '+')
+        if (*s != '+') {
             break;
+        }
         s++;
     } /* for */
-    if (n != NULL)
+    if (n != NULL) {
         *n = s;
+    }
     return result;
 }
 
@@ -172,8 +181,9 @@ static uint64_t* align64(uint64_t* v)
 
 static char* skipwhitespace(char* str)
 {
-    while (isspace(*str))
+    while (isspace(*str)) {
         str++;
+    }
     return str;
 }
 
@@ -212,13 +222,16 @@ static void write_encoded(FILE* fbin, ucell* c, int num)
                 p >>= 7;
             } /* for */
             /* skip leading zeros */
-            while (index > 1 && t[index - 1] == 0 && (t[index - 2] & 0x40) == 0)
+            while (index > 1 && t[index - 1] == 0 && (t[index - 2] & 0x40) == 0) {
                 index--;
+            }
             /* skip leading -1s */
-            if (index == ENC_MAX && t[index - 1] == ENC_MASK && (t[index - 2] & 0x40) != 0)
+            if (index == ENC_MAX && t[index - 1] == ENC_MASK && (t[index - 2] & 0x40) != 0) {
                 index--;
-            while (index > 1 && t[index - 1] == 0x7f && (t[index - 2] & 0x40) != 0)
+            }
+            while (index > 1 && t[index - 1] == 0x7f && (t[index - 2] & 0x40) != 0) {
                 index--;
+            }
             /* write high byte first, write continuation bits */
             assert(index > 0);
             while (index-- > 0) {
@@ -228,8 +241,9 @@ static void write_encoded(FILE* fbin, ucell* c, int num)
             } /* while */
             bytes_in += sizeof *c;
             assert(AMX_COMPACTMARGIN > 2);
-            if (bytes_out - bytes_in >= AMX_COMPACTMARGIN - 2)
+            if (bytes_out - bytes_in >= AMX_COMPACTMARGIN - 2) {
                 longjmp(compact_err, 1);
+            }
         }
         else {
             assert((pc_lengthbin(fbin) % sizeof(cell)) == 0);
@@ -252,8 +266,9 @@ static cell noop(FILE* fbin, char* params, cell opcode)
 #endif
 static cell parm0(FILE* fbin, char* params, cell opcode)
 {
-    if (fbin != NULL)
+    if (fbin != NULL) {
         write_encoded(fbin, (ucell*)&opcode, 1);
+    }
     return opcodes(1);
 }
 
@@ -277,11 +292,13 @@ static cell do_dump(FILE* fbin, char* params, cell opcode)
 
     while (*params != '\0') {
         p = getparam(params, &params);
-        if (fbin != NULL)
+        if (fbin != NULL) {
             write_encoded(fbin, &p, 1);
+        }
         num++;
-        while (isspace(*params))
+        while (isspace(*params)) {
             params++;
+        }
     } /* while */
     return num * sizeof(cell);
 }
@@ -536,8 +553,9 @@ static int findopcode(char* instr, int maxlen)
     int low, high, mid, cmp;
     char str[MAX_INSTR_LEN];
 
-    if (maxlen >= MAX_INSTR_LEN)
+    if (maxlen >= MAX_INSTR_LEN) {
         return 0;
+    }
     strncpy(str, instr, maxlen);
     str[maxlen] = '\0'; /* make sure the string is zero terminated */
     /* look up the instruction with a binary search
@@ -550,16 +568,19 @@ static int findopcode(char* instr, int maxlen)
         mid = (low + high) / 2;
         assert(opcodelist[mid].name != NULL);
         cmp = stricmp(str, opcodelist[mid].name);
-        if (cmp > 0)
+        if (cmp > 0) {
             low = mid + 1;
-        else
+        }
+        else {
             high = mid;
+        }
     } /* while */
 
     assert(low == high);
-    if (stricmp(str, opcodelist[low].name) == 0)
+    if (stricmp(str, opcodelist[low].name) == 0) {
         return low; /* found */
-    return 0;       /* not found, return special index */
+    }
+    return 0; /* not found, return special index */
 }
 
 SC_FUNC int assemble(FILE* fout, FILE* fin)
@@ -611,18 +632,21 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
     for (sym = glbtab.next; sym != NULL; sym = sym->next) {
         int match = 0;
         if (sym->ident == iFUNCTN) {
-            if ((sym->usage & uNATIVE) != 0 && (sym->usage & uREAD) != 0 && sym->addr >= 0)
+            if ((sym->usage & uNATIVE) != 0 && (sym->usage & uREAD) != 0 && sym->addr >= 0) {
                 match = ++numnatives;
-            if ((sym->usage & uPUBLIC) != 0 && (sym->usage & uDEFINE) != 0)
+            }
+            if ((sym->usage & uPUBLIC) != 0 && (sym->usage & uDEFINE) != 0) {
                 match = ++numpublics;
+            }
             if (strcmp(sym->name, uMAINFUNC) == 0) {
                 assert(sym->vclass == sGLOBAL);
                 mainaddr = sym->addr;
             } /* if */
         }
         else if (sym->ident == iVARIABLE || sym->ident == iARRAY || sym->ident == iREFARRAY) {
-            if ((sym->usage & uPUBLIC) != 0 && (sym->usage & (uREAD | uWRITTEN)) != 0)
+            if ((sym->usage & uPUBLIC) != 0 && (sym->usage & (uREAD | uWRITTEN)) != 0) {
                 match = ++numpubvars;
+            }
         } /* if */
         if (match) {
             char alias[sNAMEMAX + 1];
@@ -665,8 +689,9 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
      */
     assert(sc_dataalign != 0);
     padding = (int)(sc_dataalign - (sizeof hdr + nametablesize) % sc_dataalign);
-    if (padding == sc_dataalign)
+    if (padding == sc_dataalign) {
         padding = 0;
+    }
 
     /* write the abstract machine header */
     memset(&hdr, 0, sizeof hdr);
@@ -674,10 +699,12 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
     hdr.file_version = CUR_FILE_VERSION;
     hdr.amx_version = MIN_AMX_VERSION;
     hdr.flags = (short)(sc_debug & sSYMBOLIC);
-    if (sc_compress)
+    if (sc_compress) {
         hdr.flags |= AMX_FLAG_COMPACT;
-    if (sc_debug == 0)
+    }
+    if (sc_debug == 0) {
         hdr.flags |= AMX_FLAG_NOCHECKS;
+    }
     hdr.defsize = sizeof(AMX_FUNCSTUBNT);
     hdr.publics = sizeof hdr; /* public table starts right after the header */
     hdr.natives = hdr.publics + numpublics * sizeof(AMX_FUNCSTUBNT);
@@ -694,8 +721,9 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
     pc_writebin(fout, &hdr, sizeof hdr);
 
     /* dump zeros up to the rest of the header, so that we can easily "seek" */
-    for (nameofs = sizeof hdr; nameofs < hdr.cod; nameofs++)
+    for (nameofs = sizeof hdr; nameofs < hdr.cod; nameofs++) {
         putc(0, fout);
+    }
     nameofs = hdr.nametable + sizeof(int16_t);
 
     /* write the public functions table */
@@ -731,8 +759,9 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
      */
     if (numnatives > 0) {
         nativelist = (symbol**)malloc(numnatives * sizeof(symbol*));
-        if (nativelist == NULL)
+        if (nativelist == NULL) {
             error(103); /* insufficient memory */
+        }
 #if !defined NDEBUG
         memset(nativelist, 0, numnatives * sizeof(symbol*)); /* for NULL checking */
 #endif
@@ -852,16 +881,18 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
         /* only very short programs have zero labels; no first pass is needed
          * if there are no labels */
         lbltab = (cell*)malloc(sc_labnum * sizeof(cell));
-        if (lbltab == NULL)
+        if (lbltab == NULL) {
             error(103); /* insufficient memory */
+        }
         codeindex = 0;
         pc_resetasm(fin);
         while (pc_readasm(fin, line, sizeof line) != NULL) {
             stripcomment(line);
             instr = skipwhitespace(line);
             /* ignore empty lines */
-            if (*instr == '\0')
+            if (*instr == '\0') {
                 continue;
+            }
             if (tolower(*instr) == 'l' && *(instr + 1) == '.') {
                 int lindex = (int)hex2long(instr + 2, NULL);
                 assert(lindex >= 0 && lindex < sc_labnum);
@@ -879,8 +910,9 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
                     *params = '\0';
                     error(104, instr); /* invalid assembler instruction */
                 } /* if */
-                if (opcodelist[i].segment == sIN_CSEG)
+                if (opcodelist[i].segment == sIN_CSEG) {
                     codeindex += opcodelist[i].func(NULL, skipwhitespace(params), opcodelist[i].opcode);
+                }
             } /* if */
         } /* while */
     } /* if */
@@ -895,8 +927,9 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
             instr = skipwhitespace(line);
             /* ignore empty lines and labels (labels have a special syntax, so these
              * must be parsed separately) */
-            if (*instr == '\0' || (tolower(*instr) == 'l' && *(instr + 1) == '.'))
+            if (*instr == '\0' || (tolower(*instr) == 'l' && *(instr + 1) == '.')) {
                 continue;
+            }
             /* get to the end of the instruction (make use of the '\n' that fgets()
              * added at the end of the line; this way we will *always* drop on a
              * whitespace character) */
@@ -905,12 +938,14 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
             assert(params > instr);
             i = findopcode(instr, (int)(params - instr));
             assert(opcodelist[i].name != NULL);
-            if (opcodelist[i].segment == pass)
+            if (opcodelist[i].segment == pass) {
                 opcodelist[i].func(fout, skipwhitespace(params), opcodelist[i].opcode);
+            }
         } /* while */
     } /* for */
-    if (bytes_out - bytes_in > 0)
+    if (bytes_out - bytes_in > 0) {
         error(106); /* compression buffer overflow */
+    }
 
     if (lbltab != NULL) {
         free(lbltab);
@@ -919,13 +954,16 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
 #endif
     } /* if */
 
-    if (sc_compress)
+    if (sc_compress) {
         hdr.size = pc_lengthbin(fout); /* get this value before appending debug info */
-    if (!writeerror && (sc_debug & sSYMBOLIC) != 0)
+    }
+    if (!writeerror && (sc_debug & sSYMBOLIC) != 0) {
         append_dbginfo(fout); /* optionally append debug file */
+    }
 
-    if (writeerror)
+    if (writeerror) {
         error(101, "disk full");
+    }
 
     /* adjust the header */
     size = (int)hdr.cod; /* save, the value in the header may be swapped */
@@ -1024,9 +1062,11 @@ static void append_dbginfo(FILE* fout)
             name = strchr(str + 2, ':');
             assert(name != NULL);
             dbghdr.size += sizeof(AMX_DBG_SYMBOL) + strlen(skipwhitespace(name + 1));
-            if ((prevstr = strchr(name, '[')) != NULL)
-                while ((prevstr = strchr(prevstr + 1, ':')) != NULL)
+            if ((prevstr = strchr(name, '[')) != NULL) {
+                while ((prevstr = strchr(prevstr + 1, ':')) != NULL) {
                     dbghdr.size += sizeof(AMX_DBG_SYMDIM);
+                }
+            }
         } /* if */
     } /* for */
 
@@ -1125,8 +1165,9 @@ static void append_dbginfo(FILE* fout)
             } /* if */
             writeerror |= !pc_writebin(fout, &dbgsym, sizeof dbgsym - 1);
             writeerror |= !pc_writebin(fout, symname, strlen(symname) + 1);
-            for (dim = 0; dim < dbgsym.dim; dim++)
+            for (dim = 0; dim < dbgsym.dim; dim++) {
                 writeerror |= !pc_writebin(fout, &dbgidxtag[dim], sizeof dbgidxtag[dim]);
+            }
         } /* if */
     } /* for */
 

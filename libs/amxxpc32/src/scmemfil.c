@@ -65,8 +65,9 @@ int mfdump(MEMFILE* mf)
     assert(mf != NULL);
     /* create the file */
     fp = fopen(mf->name, "wb");
-    if (fp == NULL)
+    if (fp == NULL) {
         return 0;
+    }
 
     okay = 1;
     okay = okay & (fwrite(mf->base, mf->usedoffs, 1, fp) == (size_t)mf->usedoffs);
@@ -85,8 +86,9 @@ long mfseek(MEMFILE* mf, long offset, int whence)
     long length;
 
     assert(mf != NULL);
-    if (mf->usedoffs == 0)
+    if (mf->usedoffs == 0) {
         return 0L; /* early exit: not a single byte in the file */
+    }
 
     /* find the size of the memory file */
     length = mflength(mf);
@@ -105,10 +107,12 @@ long mfseek(MEMFILE* mf, long offset, int whence)
     } /* switch */
 
     /* clamp to the file length limit */
-    if (offset < 0)
+    if (offset < 0) {
         offset = 0;
-    else if (offset > length)
+    }
+    else if (offset > length) {
         offset = length;
+    }
 
     /* set new position and return it */
     memfile_seek(mf, offset);
@@ -134,8 +138,9 @@ char* mfgets(MEMFILE* mf, char* string, unsigned int size)
     assert(mf != NULL);
 
     read = mfread(mf, (unsigned char*)string, size);
-    if (read == 0)
+    if (read == 0) {
         return NULL;
+    }
     seek = 0L;
 
     /* make sure that the string is zero-terminated */
@@ -157,8 +162,9 @@ char* mfgets(MEMFILE* mf, char* string, unsigned int size)
 
     /* undo over-read */
     assert(seek <= 0); /* should seek backward only */
-    if (seek != 0)
+    if (seek != 0) {
         mfseek(mf, seek, SEEK_CUR);
+    }
 
     return string;
 }

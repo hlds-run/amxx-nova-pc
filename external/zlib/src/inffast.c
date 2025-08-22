@@ -253,8 +253,9 @@ void ZLIB_INTERNAL inflate_fast(z_streamp strm, unsigned start)
                     }
                     if (len) {
                         *out++ = *from++;
-                        if (len > 1)
+                        if (len > 1) {
                             *out++ = *from++;
+                        }
                     }
                 }
                 else {
@@ -268,8 +269,9 @@ void ZLIB_INTERNAL inflate_fast(z_streamp strm, unsigned start)
                     while (len > 2);
                     if (len) {
                         *out++ = *from++;
-                        if (len > 1)
+                        if (len > 1) {
                             *out++ = *from++;
+                        }
                     }
                 }
             }
