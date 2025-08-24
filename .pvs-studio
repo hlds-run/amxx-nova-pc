@@ -1,0 +1,2 @@
+exclude-path = */_deps/*
+exclude-path = */external/*

@@ -25,6 +25,7 @@ option(ENABLE_RTTI          "Enable support for run-time type information"      
 option(ENABLE_EXCEPTIONS    "Enable support for exception handling"                             ON )
 option(ENABLE_ASAN          "Enable AddressSanitizer"                                           OFF)
 option(ENABLE_UBSAN         "Enable UndefinedBehaviorSanitizer"                                 OFF)
+option(ENABLE_PVS_STUDIO    "Enable static analysis with PVS-Studio"                            OFF)
 option(ENABLE_LINK_TRACE    "Enable linker trace flag (detailed output of the linking process)" OFF)
 
 #-------------------------------------------------------------------------------
@@ -46,8 +47,8 @@ if(NUM_CORES EQUAL 0)
   set(NUM_CORES 4)
 endif()
 
-if(PROCESSOR_CORES GREATER 8)
-  set(PROCESSOR_CORES 8)
+if(NUM_CORES GREATER 8)
+  set(NUM_CORES 8)
 endif()
 
 string(TIMESTAMP CURRENT_YEAR "%Y")
@@ -157,8 +158,10 @@ set(CMAKE_ERROR_DEPRECATED ON)
 #-------------------------------------------------------------------------------
 
 include("FetchContent")
+include("cmake/CMakeUtilities.cmake")
 include("cmake/CompileOptions.cmake")
 include("cmake/SetupGitHooks.cmake")
+include("cmake/PvsStudio.cmake")
 
 if(UNIX)
   find_package(Threads REQUIRED)
@@ -171,3 +174,20 @@ endif()
 add_subdirectory("external/zlib")
 add_subdirectory("libs/amxxpc32")
 add_subdirectory("apps/amxxpc")
+
+#-------------------------------------------------------------------------------
+# Static Analysis Tools
+#-------------------------------------------------------------------------------
+
+get_targets_in_directories(
+  PROJECT_TARGETS
+  EXCLUDE_TESTS TRUE
+  EXCLUDE_IFACE_LIBS TRUE
+  DIRECTORIES "apps" "libs"
+)
+
+if(ENABLE_PVS_STUDIO)
+  enable_pvs_studio(TARGETS ${PROJECT_TARGETS}
+    CXX_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/apps/amxxpc"
+  )
+endif()

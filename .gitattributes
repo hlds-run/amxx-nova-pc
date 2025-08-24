@@ -183,6 +183,7 @@ CMakeLists.txt          eol=lf
 .gitattributes          eol=lf
 .gitignore              eol=lf
 *.json                  eol=lf
+*.pvs-studio            eol=lf
 *.sha512                eol=lf
 *.yml                   eol=lf
 

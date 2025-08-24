@@ -162,6 +162,38 @@
       "hidden": true
     },
     {
+      "name": "debug",
+      "description": "Debug build configuration",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "hidden": true
+    },
+    {
+      "name": "release",
+      "description": "Release build configuration",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      },
+      "hidden": true
+    },
+    {
+      "name": "minsizerel",
+      "description": "Minimal size release build configuration",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      },
+      "hidden": true
+    },
+    {
+      "name": "reldebinfo",
+      "description": "Release with debug information build configuration",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      },
+      "hidden": true
+    },
+    {
       "name": "ninja-gcc-linux",
       "inherits": [
         "base",
@@ -178,6 +210,19 @@
         "clang",
         "linux"
       ]
+    },
+    {
+      "name": "pvs-studio-ninja-gcc-linux-reldebinfo",
+      "inherits": [
+        "base",
+        "ninja",
+        "gcc",
+        "linux",
+        "reldebinfo"
+      ],
+      "cacheVariables": {
+        "ENABLE_PVS_STUDIO": "ON"
+      }
     },
     {
       "name": "ninja-msvc-windows",
@@ -217,6 +262,19 @@
       ],
       "cacheVariables": {
         "CMAKE_GENERATOR_TOOLSET": "ClangCL"
+      }
+    },
+    {
+      "name": "pvs-studio-ninja-msvc-windows-reldebinfo",
+      "inherits": [
+        "base",
+        "ninja",
+        "msvc",
+        "windows",
+        "reldebinfo"
+      ],
+      "cacheVariables": {
+        "ENABLE_PVS_STUDIO": "ON"
       }
     }
   ],
@@ -311,6 +369,19 @@
       "inherits": [
         "base",
         "linux"
+      ]
+    },
+    {
+      "name": "pvs-studio-ninja-gcc-linux-reldebinfo",
+      "displayName": "SA: PVS-Studio Ninja GCC",
+      "description": "Run PVS-Studio using Ninja generator and GCC compiler",
+      "configurePreset": "pvs-studio-ninja-gcc-linux-reldebinfo",
+      "inherits": [
+        "base",
+        "linux"
+      ],
+      "targets": [
+        "pvs_analysis"
       ]
     },
     {
@@ -443,6 +514,19 @@
       "inherits": [
         "base",
         "windows"
+      ]
+    },
+    {
+      "name": "pvs-studio-ninja-msvc-windows-reldebinfo",
+      "displayName": "SA: PVS-Studio Ninja MSVC",
+      "description": "Run PVS-Studio using Ninja generator and MSVC compiler",
+      "configurePreset": "pvs-studio-ninja-msvc-windows-reldebinfo",
+      "inherits": [
+        "base",
+        "windows"
+      ],
+      "targets": [
+        "pvs_analysis"
       ]
     }
   ]

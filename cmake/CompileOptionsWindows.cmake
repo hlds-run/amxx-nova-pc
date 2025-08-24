@@ -33,14 +33,6 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
 #-------------------------------------------------------------------------------
 
 add_compile_definitions(
-  # Shared library definitions
-  $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:_USRDLL>
-  $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:_WINDLL>
-  $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:_WINDOWS>
-
-  # Static library definitions
-  $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,STATIC_LIBRARY>:_LIB>
-
   # Enable/disable exception support
   $<$<BOOL:${ENABLE_EXCEPTIONS}>:_HAS_EXCEPTIONS=1>
   $<$<NOT:$<BOOL:${ENABLE_EXCEPTIONS}>>:_HAS_EXCEPTIONS=0>
@@ -155,3 +147,41 @@ add_link_options(
 set(CMAKE_MSVC_RUNTIME_LIBRARY
   "MultiThreaded$<$<CONFIG:Debug>:Debug>$<$<NOT:$<BOOL:${LINK_STATIC_MSVC_RT}>>:DLL>"
 )
+
+#-------------------------------------------------------------------------------
+# Target Wrappers
+#-------------------------------------------------------------------------------
+
+function(setup_target_definitions tgt)
+  # Skip alias-targets
+  get_target_property(alias "${tgt}" ALIASED_TARGET)
+  if(alias)
+    return()
+  endif()
+
+  # Skip imported-targets
+  get_target_property(imported "${tgt}" IMPORTED)
+  if(imported)
+    return()
+  endif()
+
+  target_compile_definitions("${tgt}" PRIVATE
+    # Shared library definitions
+    $<$<STREQUAL:$<TARGET_PROPERTY:${tgt},TYPE>,SHARED_LIBRARY>:_USRDLL>
+    $<$<STREQUAL:$<TARGET_PROPERTY:${tgt},TYPE>,SHARED_LIBRARY>:_WINDLL>
+    $<$<STREQUAL:$<TARGET_PROPERTY:${tgt},TYPE>,SHARED_LIBRARY>:_WINDOWS>
+
+    # Static library definitions
+    $<$<STREQUAL:$<TARGET_PROPERTY:${tgt},TYPE>,STATIC_LIBRARY>:_LIB>
+  )
+endfunction()
+
+function(add_library tgt)
+  _add_library("${tgt}" ${ARGN})
+  setup_target_definitions("${tgt}")
+endfunction()
+
+function(add_executable tgt)
+  _add_executable("${tgt}" ${ARGN})
+  setup_target_definitions("${tgt}")
+endfunction()
