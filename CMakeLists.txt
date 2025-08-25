@@ -25,6 +25,7 @@ option(ENABLE_RTTI          "Enable support for run-time type information"      
 option(ENABLE_EXCEPTIONS    "Enable support for exception handling"                             ON )
 option(ENABLE_ASAN          "Enable AddressSanitizer"                                           OFF)
 option(ENABLE_UBSAN         "Enable UndefinedBehaviorSanitizer"                                 OFF)
+option(ENABLE_CPPCHECK      "Enable static analysis with Cppcheck"                              OFF)
 option(ENABLE_PVS_STUDIO    "Enable static analysis with PVS-Studio"                            OFF)
 option(ENABLE_LINK_TRACE    "Enable linker trace flag (detailed output of the linking process)" OFF)
 
@@ -161,6 +162,7 @@ include("FetchContent")
 include("cmake/CMakeUtilities.cmake")
 include("cmake/CompileOptions.cmake")
 include("cmake/SetupGitHooks.cmake")
+include("cmake/Cppcheck.cmake")
 include("cmake/PvsStudio.cmake")
 
 if(UNIX)
@@ -185,6 +187,13 @@ get_targets_in_directories(
   EXCLUDE_IFACE_LIBS TRUE
   DIRECTORIES "apps" "libs"
 )
+
+if(ENABLE_CPPCHECK)
+  enable_cppcheck(TARGETS ${PROJECT_TARGETS}
+    CHECK_LEVEL "exhaustive"
+    ENABLE "warning"
+  )
+endif()
 
 if(ENABLE_PVS_STUDIO)
   enable_pvs_studio(TARGETS ${PROJECT_TARGETS}

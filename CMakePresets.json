@@ -212,6 +212,19 @@
       ]
     },
     {
+      "name": "cppcheck-ninja-gcc-linux-reldebinfo",
+      "inherits": [
+        "base",
+        "ninja",
+        "gcc",
+        "linux",
+        "reldebinfo"
+      ],
+      "cacheVariables": {
+        "ENABLE_CPPCHECK": "ON"
+      }
+    },
+    {
       "name": "pvs-studio-ninja-gcc-linux-reldebinfo",
       "inherits": [
         "base",
@@ -262,6 +275,19 @@
       ],
       "cacheVariables": {
         "CMAKE_GENERATOR_TOOLSET": "ClangCL"
+      }
+    },
+    {
+      "name": "cppcheck-ninja-msvc-windows-reldebinfo",
+      "inherits": [
+        "base",
+        "ninja",
+        "msvc",
+        "windows",
+        "reldebinfo"
+      ],
+      "cacheVariables": {
+        "ENABLE_CPPCHECK": "ON"
       }
     },
     {
@@ -366,6 +392,16 @@
       "description": "Build using Ninja Multi-Config generator and Clang compiler with RelWithDebInfo configuration",
       "configurePreset": "ninja-clang-linux",
       "configuration": "RelWithDebInfo",
+      "inherits": [
+        "base",
+        "linux"
+      ]
+    },
+    {
+      "name": "cppcheck-ninja-gcc-linux-reldebinfo",
+      "displayName": "SA: Cppcheck Ninja GCC",
+      "description": "Run Cppcheck using Ninja generator and GCC compiler",
+      "configurePreset": "cppcheck-ninja-gcc-linux-reldebinfo",
       "inherits": [
         "base",
         "linux"
@@ -511,6 +547,16 @@
       "description": "Build using Visual Studio 17 2022 generator and Clang compiler with RelWithDebInfo configuration",
       "configurePreset": "vs2022-clang-windows",
       "configuration": "RelWithDebInfo",
+      "inherits": [
+        "base",
+        "windows"
+      ]
+    },
+    {
+      "name": "cppcheck-ninja-msvc-windows-reldebinfo",
+      "displayName": "SA: Cppcheck Ninja MSVC",
+      "description": "Run Cppcheck using Ninja generator and MSVC compiler",
+      "configurePreset": "cppcheck-ninja-msvc-windows-reldebinfo",
       "inherits": [
         "base",
         "windows"

@@ -182,6 +182,7 @@ CMakeLists.txt          eol=lf
 .editorconfig           eol=lf
 .gitattributes          eol=lf
 .gitignore              eol=lf
+*.cppcheck              eol=lf
 *.json                  eol=lf
 *.pvs-studio            eol=lf
 *.sha512                eol=lf
