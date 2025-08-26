@@ -176,12 +176,13 @@ CMakeLists.txt          eol=lf
 #   Configs   #
 ###############
 
-.clang-format           eol=lf
 .devcontainer/*.clang   eol=lf linguist-language=Dockerfile
 .devcontainer/*.gnu     eol=lf linguist-language=Dockerfile
 .editorconfig           eol=lf
 .gitattributes          eol=lf
 .gitignore              eol=lf
+*.clang-format          eol=lf
+*.clang-tidy            eol=lf
 *.cppcheck              eol=lf
 *.json                  eol=lf
 *.pvs-studio            eol=lf

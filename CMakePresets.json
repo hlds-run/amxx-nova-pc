@@ -212,6 +212,19 @@
       ]
     },
     {
+      "name": "clang-tidy-ninja-clang-linux-reldebinfo",
+      "inherits": [
+        "base",
+        "ninja",
+        "clang",
+        "linux",
+        "reldebinfo"
+      ],
+      "cacheVariables": {
+        "ENABLE_CLANG_TIDY": "ON"
+      }
+    },
+    {
       "name": "cppcheck-ninja-gcc-linux-reldebinfo",
       "inherits": [
         "base",
@@ -275,6 +288,19 @@
       ],
       "cacheVariables": {
         "CMAKE_GENERATOR_TOOLSET": "ClangCL"
+      }
+    },
+    {
+      "name": "clang-tidy-ninja-clang-windows-reldebinfo",
+      "inherits": [
+        "base",
+        "ninja",
+        "clang-cl",
+        "windows",
+        "reldebinfo"
+      ],
+      "cacheVariables": {
+        "ENABLE_CLANG_TIDY": "ON"
       }
     },
     {
@@ -392,6 +418,16 @@
       "description": "Build using Ninja Multi-Config generator and Clang compiler with RelWithDebInfo configuration",
       "configurePreset": "ninja-clang-linux",
       "configuration": "RelWithDebInfo",
+      "inherits": [
+        "base",
+        "linux"
+      ]
+    },
+    {
+      "name": "clang-tidy-ninja-clang-linux-reldebinfo",
+      "displayName": "SA: Clang-Tidy Ninja Clang",
+      "description": "Run Clang-Tidy using Ninja generator and Clang compiler",
+      "configurePreset": "clang-tidy-ninja-clang-linux-reldebinfo",
       "inherits": [
         "base",
         "linux"
@@ -547,6 +583,16 @@
       "description": "Build using Visual Studio 17 2022 generator and Clang compiler with RelWithDebInfo configuration",
       "configurePreset": "vs2022-clang-windows",
       "configuration": "RelWithDebInfo",
+      "inherits": [
+        "base",
+        "windows"
+      ]
+    },
+    {
+      "name": "clang-tidy-ninja-clang-windows-reldebinfo",
+      "displayName": "SA: Clang-Tidy Ninja Clang",
+      "description": "Run Clang-Tidy using Ninja generator and Clang compiler",
+      "configurePreset": "clang-tidy-ninja-clang-windows-reldebinfo",
       "inherits": [
         "base",
         "windows"
