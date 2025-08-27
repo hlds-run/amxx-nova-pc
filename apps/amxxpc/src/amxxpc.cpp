@@ -31,7 +31,7 @@
 void ReadFileIntoPl(abl* pl, FILE* fp);
 bool CompressPl(abl* pl);
 void Pl2Bh(const abl* pl, BinPlugin* bh);
-void WriteBh(BinaryWriter* bw, const BinPlugin* bh);
+void WriteBh(const BinaryWriter* bw, const BinPlugin* bh);
 
 #if defined(EMSCRIPTEN)
 extern "C" void Compile32(int argc, char** argv);
@@ -155,7 +155,7 @@ int main(const int argc, char** argv)
         // entry is 4 ints and a byte
         static constexpr int kEntrySize = sizeof(int32_t) * 4 + sizeof(int8_t);
 
-        BinaryWriter bw(fp);
+        const BinaryWriter bw(fp);
 
         bw.WriteUInt32(MAGIC_HEADER2);
         bw.WriteUInt16(MAGIC_VERSION);
@@ -197,7 +197,7 @@ int main(const int argc, char** argv)
     exit(EXIT_SUCCESS);
 }
 
-void WriteBh(BinaryWriter* bw, const BinPlugin* bh)
+void WriteBh(const BinaryWriter* bw, const BinPlugin* bh)
 {
     bw->WriteUInt8(bh->cellsize);
     bw->WriteUInt32(bh->disksize);

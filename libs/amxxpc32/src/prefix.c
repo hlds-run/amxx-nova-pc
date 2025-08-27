@@ -103,19 +103,15 @@ static void* fallback_data = NULL;
 char* br_locate(void* symbol)
 {
     char line[5000];
-    FILE* f;
-    char* path;
 
     br_return_val_if_fail(symbol != NULL, NULL);
 
-    f = fopen("/proc/self/maps", "r");
+    FILE* f = fopen("/proc/self/maps", "r");
     if (!f) {
         if (fallback_func) {
             return fallback_func(symbol, fallback_data);
         }
-        else {
-            return NULL;
-        }
+        return NULL;
     }
 
     while (!feof(f)) {
@@ -130,20 +126,18 @@ char* br_locate(void* symbol)
 
         sscanf(line, "%lx-%lx ", &start, &end);
         if (symbol >= (void*)start && symbol < (void*)end) {
-            char* tmp;
-            size_t len;
 
             /* Extract the filename; it is always an absolute path */
-            path = strchr(line, '/');
+            char* path = strchr(line, '/');
 
             /* Get rid of the newline */
-            tmp = strrchr(path, '\n');
+            char* tmp = strrchr(path, '\n');
             if (tmp) {
                 *tmp = 0;
             }
 
             /* Get rid of "(deleted)" */
-            len = strlen(path);
+            size_t len = strlen(path);
             if (len > 10 && strcmp(path + len - 10, " (deleted)") == 0) {
                 tmp = path + len - 10;
                 *tmp = 0;
@@ -173,16 +167,15 @@ char* br_locate(void* symbol)
  */
 char* br_locate_prefix(void* symbol)
 {
-    char *path, *prefix;
 
     br_return_val_if_fail(symbol != NULL, NULL);
 
-    path = br_locate(symbol);
+    char* path = br_locate(symbol);
     if (!path) {
         return NULL;
     }
 
-    prefix = br_extract_prefix(path);
+    char* prefix = br_extract_prefix(path);
     free(path);
     return prefix;
 }
@@ -201,14 +194,14 @@ char* br_locate_prefix(void* symbol)
  * --> The application is /usr/bin/foo
  * br_prepend_prefix (&argc, "/share/foo/data.png");   --> Returns "/usr/share/foo/data.png"
  */
-char* br_prepend_prefix(void* symbol, char* path)
+char* br_prepend_prefix(void* symbol, const char* path)
 {
-    char *tmp, *newpath;
+    char* newpath;
 
     br_return_val_if_fail(symbol != NULL, NULL);
     br_return_val_if_fail(path != NULL, NULL);
 
-    tmp = br_locate_prefix(symbol);
+    char* tmp = br_locate_prefix(symbol);
     if (!tmp) {
         return NULL;
     }
@@ -241,9 +234,8 @@ static pthread_once_t br_thread_key_once = PTHREAD_ONCE_INIT;
 
 static void br_thread_local_store_fini()
 {
-    char* specific;
 
-    specific = (char*)pthread_getspecific(br_thread_key);
+    char* specific = (char*)pthread_getspecific(br_thread_key);
     if (specific) {
         free(specific);
         pthread_setspecific(br_thread_key, NULL);
@@ -303,11 +295,10 @@ static void br_free_last_value()
 const char* br_thread_local_store(char* str)
 {
     #if BR_PTHREADS
-    char* specific;
 
     pthread_once(&br_thread_key_once, br_thread_local_store_init);
 
-    specific = (char*)pthread_getspecific(br_thread_key);
+    char* specific = (char*)pthread_getspecific(br_thread_key);
     br_str_free(specific);
     pthread_setspecific(br_thread_key, str);
 
@@ -325,7 +316,7 @@ const char* br_thread_local_store(char* str)
     br_last_value = str;
     #endif /* BR_PTHREADS */
 
-    return (const char*)str;
+    return str;
 }
 
 #endif /* ENABLE_BINRELOC */

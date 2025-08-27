@@ -76,7 +76,7 @@ static int errline;  /* forced line number for the error message */
  *                     fcurrent   (reffered to only)
  *                     errflag    (altered)
  */
-SC_FUNC int error(int number, ...)
+SC_FUNC int error(const int number, ...)
 {
     static char* prefix[3] = {"error", "fatal error", "warning"};
     static int lastline, errorcount;

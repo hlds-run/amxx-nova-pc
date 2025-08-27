@@ -830,10 +830,10 @@ static int preproc_expr(cell* val, int* tag)
     assert(strlen(pline) < sLINEMAX);
     term = strchr(pline, '\0');
     assert(term != NULL);
-    chrcat(pline, PREPROC_TERM);        /* the "DEL" code (see SC.H) */
-    result = constexpr(val, tag, NULL); /* get value (or 0 on error) */
-    *term = '\0';                       /* erase the token (if still present) */
-    lexclr(FALSE);                      /* clear any "pushed" tokens */
+    chrcat(pline, PREPROC_TERM);             /* the "DEL" code (see SC.H) */
+    result = eval_constexpr(val, tag, NULL); /* get value (or 0 on error) */
+    *term = '\0';                            /* erase the token (if still present) */
+    lexclr(FALSE);                           /* clear any "pushed" tokens */
     return result;
 }
 

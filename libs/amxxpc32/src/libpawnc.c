@@ -48,7 +48,7 @@
     #if defined __WIN32__ || defined _WIN32 || defined WIN32 || defined __NT__
 __declspec(dllexport) void EXCOMPILER(const int argc, char** argv)
     #else
-void extern __attribute__((visibility("default"))) EXCOMPILER(int argc, char** argv)
+void extern __attribute__((visibility("default"))) EXCOMPILER(const int argc, char** argv)
     #endif
 {
     pc_compile(argc, argv);
@@ -154,7 +154,7 @@ typedef struct src_file_s {
  *    Several "source files" may be open at the same time. Specifically, one
  *    file can be open for reading and another for writing.
  */
-void* pc_opensrc(char* filename)
+void* pc_opensrc(const char* filename)
 {
     FILE* fp = NULL;
     long length;

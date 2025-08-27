@@ -23,42 +23,42 @@ bool BinaryWriter::WriteAddr(const void* buffer, const size_t size) const
     return true;
 }
 
-void BinaryWriter::WriteUInt32(uint32_t num)
+void BinaryWriter::WriteUInt32(const uint32_t num) const
 {
     if (!WriteAddr(&num, sizeof(uint32_t))) {
         throw -1;
     }
 }
 
-void BinaryWriter::WriteInt32(int32_t num)
+void BinaryWriter::WriteInt32(const int32_t num) const
 {
     if (!WriteAddr(&num, sizeof(int32_t))) {
         throw -1;
     }
 }
 
-void BinaryWriter::WriteUInt16(uint16_t num)
+void BinaryWriter::WriteUInt16(const uint16_t num) const
 {
     if (!WriteAddr(&num, sizeof(uint16_t))) {
         throw -1;
     }
 }
 
-void BinaryWriter::WriteInt16(int16_t num)
+void BinaryWriter::WriteInt16(const int16_t num) const
 {
     if (!WriteAddr(&num, sizeof(int16_t))) {
         throw -1;
     }
 }
 
-void BinaryWriter::WriteUInt8(uint8_t num)
+void BinaryWriter::WriteUInt8(const uint8_t num) const
 {
     if (!WriteAddr(&num, sizeof(uint8_t))) {
         throw -1;
     }
 }
 
-void BinaryWriter::WriteInt8(int8_t num)
+void BinaryWriter::WriteInt8(const int8_t num) const
 {
     if (!WriteAddr(&num, sizeof(int8_t))) {
         throw -1;
@@ -90,7 +90,7 @@ bool BinaryReader::ReadAddr(void* buffer, const size_t size) const
     return true;
 }
 
-uint32_t BinaryReader::ReadUInt32()
+uint32_t BinaryReader::ReadUInt32() const
 {
     uint32_t num;
 
@@ -101,7 +101,7 @@ uint32_t BinaryReader::ReadUInt32()
     return num;
 }
 
-int32_t BinaryReader::ReadInt32()
+int32_t BinaryReader::ReadInt32() const
 {
     int32_t num;
 
@@ -112,7 +112,7 @@ int32_t BinaryReader::ReadInt32()
     return num;
 }
 
-uint16_t BinaryReader::ReadUInt16()
+uint16_t BinaryReader::ReadUInt16() const
 {
     uint16_t num;
 
@@ -123,7 +123,7 @@ uint16_t BinaryReader::ReadUInt16()
     return num;
 }
 
-int16_t BinaryReader::ReadInt16()
+int16_t BinaryReader::ReadInt16() const
 {
     int16_t num;
 
@@ -134,7 +134,7 @@ int16_t BinaryReader::ReadInt16()
     return num;
 }
 
-uint8_t BinaryReader::ReadUInt8()
+uint8_t BinaryReader::ReadUInt8() const
 {
     uint8_t num;
 
@@ -145,7 +145,7 @@ uint8_t BinaryReader::ReadUInt8()
     return num;
 }
 
-int8_t BinaryReader::ReadInt8()
+int8_t BinaryReader::ReadInt8() const
 {
     int8_t num;
 

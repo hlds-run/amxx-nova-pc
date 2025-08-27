@@ -470,7 +470,7 @@ int pc_printf(const char* message, ...) INVISIBLE;
 int pc_error(int number, const char* message, char* filename, int firstline, int lastline, va_list argptr);
 
 /* input from source file */
-void* pc_opensrc(char* filename); /* reading only */
+void* pc_opensrc(const char* filename); /* reading only */
 void* pc_createsrc(const char* filename);
 void pc_closesrc(void* handle);                 /* never delete */
 void pc_resetsrc(void* handle, void* position); /* reset to a position marked earlier */
@@ -515,7 +515,7 @@ SC_FUNC void set_extension(char* filename, const char* extension, int force);
 SC_FUNC symbol* fetchfunc(char* name, int tag);
 SC_FUNC char* operator_symname(char* symname, char* opername, int tag1, int tag2, int numtags, int resulttag);
 SC_FUNC char* funcdisplayname(char* dest, char* funcname);
-SC_FUNC int constexpr(cell* val, int* tag, symbol** symptr);
+SC_FUNC int eval_constexpr(cell* val, int* tag, symbol** symptr);
 SC_FUNC constvalue* append_constval(constvalue* table, const char* name, cell val, short index);
 SC_FUNC constvalue* find_constval(const constvalue* table, const char* name, short index);
 SC_FUNC void delete_consttable(constvalue* table);

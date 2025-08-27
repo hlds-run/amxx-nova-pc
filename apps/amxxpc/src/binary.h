@@ -26,12 +26,12 @@ class BinaryReader {
   public:
     BinaryReader(FILE* fp);
     //~BinaryReader();
-    uint32_t ReadUInt32();
-    int32_t ReadInt32();
-    uint16_t ReadUInt16();
-    int16_t ReadInt16();
-    uint8_t ReadUInt8();
-    int8_t ReadInt8();
+    uint32_t ReadUInt32() const;
+    int32_t ReadInt32() const;
+    uint16_t ReadUInt16() const;
+    int16_t ReadInt16() const;
+    uint8_t ReadUInt8() const;
+    int8_t ReadInt8() const;
     char* ReadChars(char buffer[], size_t chars) const;
 
   private:
@@ -44,12 +44,12 @@ class BinaryWriter {
   public:
     BinaryWriter(FILE* fp);
 
-    void WriteUInt32(uint32_t num);
-    void WriteInt32(int32_t num);
-    void WriteUInt16(uint16_t num);
-    void WriteInt16(int16_t num);
-    void WriteUInt8(uint8_t num);
-    void WriteInt8(int8_t num);
+    void WriteUInt32(uint32_t num) const;
+    void WriteInt32(int32_t num) const;
+    void WriteUInt16(uint16_t num) const;
+    void WriteInt16(int16_t num) const;
+    void WriteUInt8(uint8_t num) const;
+    void WriteInt8(int8_t num) const;
     void WriteChars(const char buffer[], size_t chars) const;
 
   private:
