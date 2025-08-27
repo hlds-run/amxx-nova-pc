@@ -1099,8 +1099,8 @@ static int hier13(value* lval)
     const int lvalue = plnge1(hier12, lval);
     if (matchtoken('?')) {
         const int locheap = decl_heap; /* save current heap delta */
-        long heap1, heap2;             /* max. heap delta either branch */
-        valuepair* heaplist_node;
+        long heap1 = 0, heap2 = 0;     /* max. heap delta either branch */
+        valuepair* heaplist_node = NULL;
         const int flab1 = getlabel();
         const int flab2 = getlabel();
         value lval2 = {0};
@@ -1863,6 +1863,7 @@ static int primary(value* lval)
     cell val;
     symbol* sym;
 
+    assert(lval != NULL);
     if (matchtoken('(')) { /* sub-expression - (expression,...) */
         PUSHSTK_I(sc_intest)
         PUSHSTK_I(sc_allowtags)
@@ -1908,7 +1909,7 @@ static int primary(value* lval)
             return TRUE; /* return 1 if lvalue (not label or array) */
         } /* if */
         /* now try a global variable */
-        if ((sym = findglb(st)) != 0) {
+        if ((sym = findglb(st)) != NULL) {
             if (sym->ident == iFUNCTN || sym->ident == iREFFUNC) {
                 /* if the function is only in the table because it was inserted as a
                  * stub in the first pass (i.e. it was "used" but never declared or
@@ -1939,7 +1940,6 @@ static int primary(value* lval)
             /* an unknown symbol, but used in a way compatible with the "procedure
              * call" syntax. So assume that the symbol refers to a function.
              */
-            assert(sc_status == statFIRST);
             sym = fetchfunc(st, 0);
             if (sym == NULL) {
                 error(103); /* insufficient memory */
