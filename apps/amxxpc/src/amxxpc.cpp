@@ -226,6 +226,8 @@ bool CompressPl(abl* pl)
 
     if (err != Z_OK) {
         pc_printf("internal error - compression failed on first pass: %d\n", err);
+        delete[] pl->cmp;
+        pl->cmp = nullptr;
         exit(EXIT_FAILURE);
     }
 

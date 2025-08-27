@@ -3848,7 +3848,7 @@ static int declargs(symbol* sym)
             oldargcnt++;
         }
     }
-    int argcnt = 0; /* zero aruments up to now */
+    int argcnt = 0; /* zero arguments up to now */
     int ident = iVARIABLE;
     int numtags = 0;
     int fconst = FALSE;
@@ -3924,10 +3924,12 @@ static int declargs(symbol* sym)
                     }
                     if ((sym->usage & uPROTOTYPED) == 0) {
                         /* redimension the argument list, add the entry */
-                        sym->dim.arglist = (arginfo*)realloc(sym->dim.arglist, (argcnt + 2) * sizeof(arginfo));
-                        if (sym->dim.arglist == 0) {
-                            error(103); /* insufficient memory */
+                        arginfo* temp_arglist = (arginfo*)realloc(sym->dim.arglist, (argcnt + 2) * sizeof(arginfo));
+                        if (temp_arglist == NULL) {
+                            error(103);    /* insufficient memory */
+                            return argcnt; /* return current argument count to avoid further issues */
                         }
+                        sym->dim.arglist = temp_arglist;
                         memset(&sym->dim.arglist[argcnt + 1], 0, sizeof(arginfo)); /* keep the list terminated */
                         sym->dim.arglist[argcnt] = arg;
                     }
@@ -3960,21 +3962,23 @@ static int declargs(symbol* sym)
                     }
                     if ((sym->usage & uPROTOTYPED) == 0) {
                         /* redimension the argument list, add the entry iVARARGS */
-                        sym->dim.arglist = (arginfo*)realloc(sym->dim.arglist, (argcnt + 2) * sizeof(arginfo));
-                        if (sym->dim.arglist == 0) {
-                            error(103); /* insufficient memory */
+                        arginfo* temp_arglist = (arginfo*)realloc(sym->dim.arglist, (argcnt + 2) * sizeof(arginfo));
+                        if (temp_arglist == NULL) {
+                            error(103);    /* insufficient memory */
+                            return argcnt; /* return current argument count to avoid further issues */
                         }
+                        sym->dim.arglist = temp_arglist;
                         memset(&sym->dim.arglist[argcnt + 1], 0, sizeof(arginfo)); /* keep the list terminated */
                         sym->dim.arglist[argcnt].ident = iVARARGS;
                         sym->dim.arglist[argcnt].hasdefault = FALSE;
                         sym->dim.arglist[argcnt].defvalue.val = 0;
                         sym->dim.arglist[argcnt].defvalue_tag = 0;
                         sym->dim.arglist[argcnt].numtags = numtags;
-                        sym->dim.arglist[argcnt].tags = (int*)malloc(numtags * sizeof tags[0]);
+                        sym->dim.arglist[argcnt].tags = (int*)malloc(numtags * sizeof(tags[0]));
                         if (sym->dim.arglist[argcnt].tags == NULL) {
                             error(103); /* insufficient memory */
                         }
-                        memcpy(sym->dim.arglist[argcnt].tags, tags, numtags * sizeof tags[0]);
+                        memcpy(sym->dim.arglist[argcnt].tags, tags, numtags * sizeof(tags[0]));
                     }
                     else {
                         if (argcnt > oldargcnt || sym->dim.arglist[argcnt].ident != iVARARGS) {
