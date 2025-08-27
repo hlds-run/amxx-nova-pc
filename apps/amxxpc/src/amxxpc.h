@@ -35,8 +35,8 @@ typedef void* HINSTANCE;
 #include "binary.h"
 #include "zlib.h"
 
-typedef int (*COMPILER)(int argc, char** argv);
-typedef int (*PRINTF)(const char* message, ...);
+using COMPILER = int (*)(int argc, char** argv);
+using PRINTF = int (*)(const char* message, ...);
 
 char* FindFileName(int argc, char** argv);
 char* swiext(const char* file, const char* ext);

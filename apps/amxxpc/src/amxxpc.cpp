@@ -30,19 +30,19 @@
 
 void ReadFileIntoPl(abl* pl, FILE* fp);
 bool CompressPl(abl* pl);
-void Pl2Bh(abl* pl, BinPlugin* bh);
-void WriteBh(BinaryWriter* bw, BinPlugin* bh);
+void Pl2Bh(const abl* pl, BinPlugin* bh);
+void WriteBh(BinaryWriter* bw, const BinPlugin* bh);
 
 #if defined(EMSCRIPTEN)
 extern "C" void Compile32(int argc, char** argv);
 extern "C" int pc_printf(const char* message, ...);
 #else
-static PRINTF pc_printf = NULL;
+static PRINTF pc_printf = nullptr;
 #endif
 
-int main(int argc, char** argv)
+int main(const int argc, char** argv)
 {
-    struct abl pl32;
+    abl pl32;
 
 #if defined(EMSCRIPTEN)
     COMPILER sc32 = (COMPILER)Compile32;
@@ -58,7 +58,7 @@ int main(int argc, char** argv)
     #elif defined(__APPLE__)
     HINSTANCE lib = dlmount("amxxpc32.dylib");
     #else
-    HINSTANCE lib = dlmount("amxxpc32.dll");
+    const HINSTANCE lib = dlmount("amxxpc32.dll");
     #endif
     if (!lib) {
     #if defined(__linux__) || defined(__APPLE__)
@@ -69,7 +69,7 @@ int main(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
-    COMPILER sc32 = (COMPILER)dlsym(lib, "Compile32");
+    const auto sc32 = (COMPILER)dlsym(lib, "Compile32");
     pc_printf = (PRINTF)dlsym(lib, "pc_printf");
 #endif // EMSCRIPTEN
 
@@ -105,17 +105,17 @@ int main(int argc, char** argv)
 
     char* file = FindFileName(argc, argv);
 
-    if (file == NULL) {
+    if (file == nullptr) {
         pc_printf("Could not locate the output file.\n");
         exit(EXIT_FAILURE);
     }
-    else if (strstr(file, ".asm")) {
+    if (strstr(file, ".asm")) {
         pc_printf("Assembler output succeeded.\n");
         exit(EXIT_SUCCESS);
     }
     else {
         FILE* fp = fopen(file, "rb");
-        if (fp == NULL) {
+        if (fp == nullptr) {
             pc_printf("Could not locate output file %s (compile failed).\n", file);
             exit(EXIT_FAILURE);
         }
@@ -132,7 +132,7 @@ int main(int argc, char** argv)
 
     CompressPl(&pl32);
 
-    char* newfile = new char[strlen(file) + 3];
+    const auto newfile = new char[strlen(file) + 3];
     strcpy(newfile, file);
     if (!strstr(file, ".amxx") && !strstr(file, ".AMXX")) {
         strcat(newfile, "x");
@@ -150,10 +150,10 @@ int main(int argc, char** argv)
 
     try {
 
-        static const int kEntries = 1;
+        static constexpr int kEntries = 1;
 
         // entry is 4 ints and a byte
-        static const int kEntrySize = (sizeof(int32_t) * 4) + sizeof(int8_t);
+        static constexpr int kEntrySize = sizeof(int32_t) * 4 + sizeof(int8_t);
 
         BinaryWriter bw(fp);
 
@@ -197,7 +197,7 @@ int main(int argc, char** argv)
     exit(EXIT_SUCCESS);
 }
 
-void WriteBh(BinaryWriter* bw, BinPlugin* bh)
+void WriteBh(BinaryWriter* bw, const BinPlugin* bh)
 {
     bw->WriteUInt8(bh->cellsize);
     bw->WriteUInt32(bh->disksize);
@@ -206,7 +206,7 @@ void WriteBh(BinaryWriter* bw, BinPlugin* bh)
     bw->WriteUInt32(bh->offs);
 }
 
-void Pl2Bh(abl* pl, BinPlugin* bh)
+void Pl2Bh(const abl* pl, BinPlugin* bh)
 {
     bh->cellsize = pl->cellsize;
     bh->disksize = pl->cmpsize;
@@ -219,10 +219,10 @@ bool CompressPl(abl* pl)
     pl->cmpsize = compressBound(pl->size);
     pl->cmp = new char[pl->cmpsize];
 
-    int err = compress((Bytef*)(pl->cmp), (uLongf*)&(pl->cmpsize), (const Bytef*)(pl->data), pl->size);
+    const int err = compress((Bytef*)pl->cmp, (uLongf*)&pl->cmpsize, (const Bytef*)pl->data, pl->size);
 
     delete[] pl->data;
-    pl->data = NULL;
+    pl->data = nullptr;
 
     if (err != Z_OK) {
         pc_printf("internal error - compression failed on first pass: %d\n", err);
@@ -257,11 +257,11 @@ void ReadFileIntoPl(abl* pl, FILE* fp)
 // we get the full name of the file here
 // our job is to a] switch the .sma extension to .amx
 //  and to b] strip everything but the trailing name
-char* swiext(const char* file, const char* ext, int isO)
+char* swiext(const char* file, const char* ext, const int isO)
 {
     int i = 0, pos = -1, j = 0;
     int fileLen = strlen(file);
-    int extLen = strlen(ext);
+    const int extLen = strlen(ext);
     int odirFlag = -1;
 
     for (i = fileLen - 1; i >= 0; i--) {
@@ -276,13 +276,13 @@ char* swiext(const char* file, const char* ext, int isO)
         }
     }
 
-    char* newbuffer = new char[fileLen + strlen(ext) + 2];
+    const auto newbuffer = new char[fileLen + strlen(ext) + 2];
     fileLen += strlen(ext);
     if (odirFlag == -1) {
         strcpy(newbuffer, file);
     }
     else {
-        strcpy(newbuffer, &(file[odirFlag]));
+        strcpy(newbuffer, &file[odirFlag]);
     }
 
     if (pos > -1) {
@@ -304,7 +304,7 @@ char* swiext(const char* file, const char* ext, int isO)
     return newbuffer;
 }
 
-char* FindFileName(int argc, char** argv)
+char* FindFileName(const int argc, char** argv)
 {
     int i = 0;
     int save = -1;
@@ -312,13 +312,11 @@ char* FindFileName(int argc, char** argv)
         if (argv[i][0] == '-' && argv[i][1] == 'o') {
             if (argv[i][2] == ' ' || argv[i][2] == '\0') {
                 if (i == argc - 1) {
-                    return NULL;
+                    return nullptr;
                 }
                 return swiext(&argv[i + 1][2], "amx", 1);
             }
-            else {
-                return swiext(&(argv[i][2]), "amx", 1);
-            }
+            return swiext(&argv[i][2], "amx", 1);
         }
         if (argv[i][0] != '-') {
             save = i;
@@ -329,7 +327,7 @@ char* FindFileName(int argc, char** argv)
         return swiext(argv[save], "amx", 0);
     }
 
-    return NULL;
+    return nullptr;
 }
 
 void show_help()

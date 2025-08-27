@@ -43,7 +43,7 @@ HINSTANCE hinstDLL;
  */
 #if defined __WIN32__ || defined _WIN32 || defined WIN32
 
-BOOL WINAPI DllMain(HINSTANCE hinst, DWORD dwReason, LPVOID lpRes)
+BOOL WINAPI DllMain(const HINSTANCE hinst, const DWORD dwReason, const LPVOID lpRes)
 {
     UNUSED_PARAM(lpRes);
     switch (dwReason) {

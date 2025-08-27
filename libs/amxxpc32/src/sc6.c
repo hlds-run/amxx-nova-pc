@@ -83,16 +83,16 @@ static ucell hex2long(char* s, char** n)
         else {
             break; /* probably whitespace */
         }
-        result = (result << 4) | digit;
+        result = result << 4 | digit;
         s++;
     } /* for */
     if (n != NULL) {
         *n = s;
     }
     if (negate) {
-        result = (~result) + 1; /* take two's complement of the result */
+        result = ~result + 1; /* take two's complement of the result */
     }
-    return (ucell)result;
+    return result;
 }
 
 static ucell getparam(char* s, char** n)
@@ -197,7 +197,7 @@ static char* stripcomment(char* str)
     return str;
 }
 
-static void write_encoded(FILE* fbin, ucell* c, int num)
+static void write_encoded(FILE* fbin, const ucell* c, int num)
 {
 #if PAWN_CELL_SIZE == 16
     #define ENC_MAX 3     /* a 16-bit cell is encoded in max. 3 bytes */
@@ -213,7 +213,7 @@ static void write_encoded(FILE* fbin, ucell* c, int num)
     assert(fbin != NULL);
     while (num-- > 0) {
         if (sc_compress) {
-            ucell p = (ucell)*c;
+            ucell p = *c;
             unsigned char t[ENC_MAX];
             unsigned char code;
             int index;
@@ -235,7 +235,7 @@ static void write_encoded(FILE* fbin, ucell* c, int num)
             /* write high byte first, write continuation bits */
             assert(index > 0);
             while (index-- > 0) {
-                code = (unsigned char)((index == 0) ? t[index] : (t[index] | 0x80));
+                code = (unsigned char)(index == 0 ? t[index] : t[index] | 0x80);
                 writeerror |= !pc_writebin(fbin, &code, 1);
                 bytes_out++;
             } /* while */
@@ -246,7 +246,7 @@ static void write_encoded(FILE* fbin, ucell* c, int num)
             }
         }
         else {
-            assert((pc_lengthbin(fbin) % sizeof(cell)) == 0);
+            assert(pc_lengthbin(fbin) % sizeof(cell) == 0);
             writeerror |= !pc_writebin(fbin, aligncell(c), sizeof *c);
         } /* if */
         c++;
@@ -274,7 +274,7 @@ static cell parm0(FILE* fbin, char* params, cell opcode)
 
 static cell parm1(FILE* fbin, char* params, cell opcode)
 {
-    ucell p = getparam(params, NULL);
+    const ucell p = getparam(params, NULL);
     if (fbin != NULL) {
         write_encoded(fbin, (ucell*)&opcode, 1);
         write_encoded(fbin, &p, 1);
@@ -307,7 +307,6 @@ static cell do_call(FILE* fbin, char* params, cell opcode)
 {
     char name[sNAMEMAX + 1];
     int i;
-    symbol* sym;
     ucell p;
 
     for (i = 0; !isspace(*params); i++, params++) {
@@ -330,7 +329,7 @@ static cell do_call(FILE* fbin, char* params, cell opcode)
         /* look up the function address; note that the correct file number must
          * already have been set (in order for static globals to be found).
          */
-        sym = findglb(name);
+        const symbol* sym = findglb(name);
         assert(sym != NULL);
         assert(sym->ident == iFUNCTN || sym->ident == iREFFUNC);
         assert(sym->vclass == sGLOBAL);
@@ -346,10 +345,9 @@ static cell do_call(FILE* fbin, char* params, cell opcode)
 
 static cell do_jump(FILE* fbin, char* params, cell opcode)
 {
-    int i;
     ucell p;
 
-    i = (int)hex2long(params, NULL);
+    const int i = (int)hex2long(params, NULL);
     assert(i >= 0 && i < sc_labnum);
 
     if (fbin != NULL) {
@@ -363,10 +361,9 @@ static cell do_jump(FILE* fbin, char* params, cell opcode)
 
 static cell do_switch(FILE* fbin, char* params, cell opcode)
 {
-    int i;
     ucell p;
 
-    i = (int)hex2long(params, NULL);
+    const int i = (int)hex2long(params, NULL);
     assert(i >= 0 && i < sc_labnum);
 
     if (fbin != NULL) {
@@ -383,11 +380,10 @@ static cell do_switch(FILE* fbin, char* params, cell opcode)
 #endif
 static cell do_case(FILE* fbin, char* params, cell opcode)
 {
-    int i;
     ucell p, v;
 
     v = hex2long(params, &params);
-    i = (int)hex2long(params, NULL);
+    const int i = (int)hex2long(params, NULL);
     assert(i >= 0 && i < sc_labnum);
 
     if (fbin != NULL) {
@@ -548,9 +544,8 @@ static OPCODE opcodelist[] = {
 };
 
 #define MAX_INSTR_LEN 30
-static int findopcode(char* instr, int maxlen)
+static int findopcode(const char* instr, const int maxlen)
 {
-    int low, high, mid, cmp;
     char str[MAX_INSTR_LEN];
 
     if (maxlen >= MAX_INSTR_LEN) {
@@ -562,12 +557,12 @@ static int findopcode(char* instr, int maxlen)
      * the assembler is case insensitive to instructions (but case sensitive
      * to symbols)
      */
-    low = 1; /* entry 0 is reserved (for "not found") */
-    high = (sizeof opcodelist / sizeof opcodelist[0]) - 1;
+    int low = 1; /* entry 0 is reserved (for "not found") */
+    int high = sizeof opcodelist / sizeof opcodelist[0] - 1;
     while (low < high) {
-        mid = (low + high) / 2;
+        const int mid = (low + high) / 2;
         assert(opcodelist[mid].name != NULL);
-        cmp = stricmp(str, opcodelist[mid].name);
+        const int cmp = stricmp(str, opcodelist[mid].name);
         if (cmp > 0) {
             low = mid + 1;
         }
@@ -616,7 +611,7 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
      * for a non-existant opcode)
      */
     assert(opcodelist[1].name != NULL);
-    for (i = 2; i < (sizeof opcodelist / sizeof opcodelist[0]); i++) {
+    for (i = 2; i < sizeof opcodelist / sizeof opcodelist[0]; i++) {
         assert(opcodelist[i].name != NULL);
         assert(stricmp(opcodelist[i].name, opcodelist[i - 1].name) > 0);
     } /* for */
@@ -768,7 +763,7 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
         for (sym = glbtab.next; sym != NULL; sym = sym->next) {
             if (sym->ident == iFUNCTN && (sym->usage & uNATIVE) != 0 && (sym->usage & uREAD) != 0 && sym->addr >= 0) {
                 assert(sym->addr < numnatives);
-                nativelist[(int)sym->addr] = sym;
+                nativelist[sym->addr] = sym;
             } /* if */
         } /* for */
         count = 0;
@@ -905,7 +900,7 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
                 for (params = instr; *params != '\0' && !isspace(*params); params++)
                     /* nothing */;
                 assert(params > instr);
-                i = findopcode(instr, (int)(params - instr));
+                i = findopcode(instr, params - instr);
                 if (opcodelist[i].name == NULL) {
                     *params = '\0';
                     error(104, instr); /* invalid assembler instruction */
@@ -936,7 +931,7 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
             for (params = instr; *params != '\0' && !isspace(*params); params++)
                 /* nothing */;
             assert(params > instr);
-            i = findopcode(instr, (int)(params - instr));
+            i = findopcode(instr, params - instr);
             assert(opcodelist[i].name != NULL);
             if (opcodelist[i].segment == pass) {
                 opcodelist[i].func(fout, skipwhitespace(params), opcodelist[i].opcode);
@@ -966,7 +961,7 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
     }
 
     /* adjust the header */
-    size = (int)hdr.cod; /* save, the value in the header may be swapped */
+    size = hdr.cod; /* save, the value in the header may be swapped */
 #if BYTE_ORDER == BIG_ENDIAN
     align32(&hdr.size);
     align16(&hdr.magic);
@@ -1145,9 +1140,9 @@ static void append_dbginfo(FILE* fout)
             name = skipwhitespace(str + 1);
             str = strchr(name, ' ');
             assert(str != NULL);
-            assert((int)(str - name) < sizeof symname);
-            strncpy(symname, name, (int)(str - name));
-            symname[(int)(str - name)] = '\0';
+            assert(str - name < sizeof symname);
+            strncpy(symname, name, str - name);
+            symname[(str - name)] = '\0';
             dbgsym.codestart = hex2long(str, &str);
             dbgsym.codeend = hex2long(str, &str);
             dbgsym.ident = (char)hex2long(str, &str);
@@ -1182,7 +1177,7 @@ static void append_dbginfo(FILE* fout)
     /* automaton table */
     for (constptr = sc_automaton_tab.next; constptr != NULL; constptr = constptr->next) {
         assert(constptr->index == 0 && strlen(constptr->name) == 0 || strlen(constptr->name) > 0);
-        id1 = (int16_t)constptr->index;
+        id1 = constptr->index;
         address = (ucell)constptr->value;
         writeerror |= !pc_writebin(fout, &id1, sizeof id1);
         writeerror |= !pc_writebin(fout, &address, sizeof address);
@@ -1193,7 +1188,7 @@ static void append_dbginfo(FILE* fout)
     for (constptr = sc_state_tab.next; constptr != NULL; constptr = constptr->next) {
         assert(strlen(constptr->name) > 0);
         id1 = (int16_t)constptr->value;
-        id2 = (int16_t)constptr->index;
+        id2 = constptr->index;
         address = (ucell)constptr->value;
         writeerror |= !pc_writebin(fout, &id1, sizeof id1);
         writeerror |= !pc_writebin(fout, &id2, sizeof id2);

@@ -46,7 +46,7 @@
     #endif
 
     #if defined __WIN32__ || defined _WIN32 || defined WIN32 || defined __NT__
-__declspec(dllexport) void EXCOMPILER(int argc, char** argv)
+__declspec(dllexport) void EXCOMPILER(const int argc, char** argv)
     #else
 void extern __attribute__((visibility("default"))) EXCOMPILER(int argc, char** argv)
     #endif
@@ -76,11 +76,10 @@ int pc_printf(const char* message, ...)
 #endif
 {
 #if PAWN_CELL_SIZE == 32
-    int ret;
     va_list argptr;
 
     va_start(argptr, message);
-    ret = vprintf(message, argptr);
+    const int ret = vprintf(message, argptr);
     va_end(argptr);
 
     return ret;
@@ -103,13 +102,13 @@ int pc_printf(const char* message, ...)
  *    If the function returns 0, the parser attempts to continue compilation.
  *    On a non-zero return value, the parser aborts.
  */
-int pc_error(int number, char* message, char* filename, int firstline, int lastline, va_list argptr)
+int pc_error(const int number, const char* message, char* filename, const int firstline, const int lastline,
+    const va_list argptr)
 {
 #if PAWN_CELL_SIZE == 32
     static char* prefix[3] = {"error", "fatal error", "warning"};
 
     if (number != 0) {
-        char* pre;
         int idx;
 
         if (number < 100 || (number >= 200 && sc_warnings_are_errors)) {
@@ -122,7 +121,7 @@ int pc_error(int number, char* message, char* filename, int firstline, int lastl
             idx = 2;
         }
 
-        pre = prefix[idx];
+        char* pre = prefix[idx];
         if (firstline >= 0) {
             pc_printf("%s(%d -- %d) : %s %03d: ", filename, firstline, lastline, pre, number);
         }
@@ -218,9 +217,9 @@ err:
  *    Several "source files" may be open at the same time. Specifically, one
  *    file can be open for reading and another for writing.
  */
-void* pc_createsrc(char* filename)
+void* pc_createsrc(const char* filename)
 {
-    src_file_t* src = (src_file_t*)calloc(1, sizeof(src_file_t));
+    src_file_t* src = calloc(1, sizeof(src_file_t));
     if (!src) {
         return NULL;
     }
@@ -246,7 +245,7 @@ void* pc_createsrc(char* filename)
  */
 void pc_closesrc(void* handle)
 {
-    src_file_t* src = (src_file_t*)handle;
+    src_file_t* src = handle;
     if (!src) {
         return;
     }
@@ -264,8 +263,8 @@ void pc_closesrc(void* handle)
  */
 void pc_resetsrc(void* handle, void* position)
 {
-    src_file_t* src = (src_file_t*)handle;
-    ptrdiff_t pos = (ptrdiff_t)position;
+    src_file_t* src = handle;
+    const ptrdiff_t pos = (ptrdiff_t)position;
 
     assert(!src->fp);
     assert(pos >= 0 && src->buffer + pos <= src->end);
@@ -276,11 +275,11 @@ void pc_resetsrc(void* handle, void* position)
  * Reads a single line from the source file (or up to a maximum number of
  * characters if the line in the input file is too long).
  */
-char* pc_readsrc(void* handle, unsigned char* target, int maxchars)
+char* pc_readsrc(void* handle, unsigned char* target, const int maxchars)
 {
-    src_file_t* src = (src_file_t*)handle;
+    src_file_t* src = handle;
     char* outptr = (char*)target;
-    char* outend = outptr + maxchars;
+    const char* outend = outptr + maxchars;
 
     assert(!src->fp);
 
@@ -289,7 +288,7 @@ char* pc_readsrc(void* handle, unsigned char* target, int maxchars)
     }
 
     while (outptr < outend && src->pos < src->end) {
-        char c = *src->pos++;
+        const char c = *src->pos++;
         *outptr++ = c;
 
         if (c == '\n') {
@@ -318,16 +317,15 @@ char* pc_readsrc(void* handle, unsigned char* target, int maxchars)
  */
 int pc_writesrc(void* handle, unsigned char* source)
 {
-    char* str = (char*)source;
-    size_t len = strlen(str);
-    src_file_t* src = (src_file_t*)handle;
+    const char* str = (char*)source;
+    const size_t len = strlen(str);
+    src_file_t* src = handle;
 
     assert(src->fp && src->maxlength);
 
     if (src->pos + len > src->end) {
-        char* newbuf;
         size_t newmax = src->maxlength;
-        size_t newlen = (src->pos - src->buffer) + len;
+        const size_t newlen = src->pos - src->buffer + len;
         while (newmax < newlen) {
             // Grow by 1.5X
             newmax += newmax + newmax / 2;
@@ -336,7 +334,7 @@ int pc_writesrc(void* handle, unsigned char* source)
             }
         }
 
-        newbuf = (char*)realloc(src->buffer, newmax);
+        char* newbuf = realloc(src->buffer, newmax);
         if (!newbuf) {
             abort();
         }
@@ -351,17 +349,17 @@ int pc_writesrc(void* handle, unsigned char* source)
     return 0;
 }
 
-void* pc_getpossrc(void* handle)
+void* pc_getpossrc(const void* handle)
 {
-    src_file_t* src = (src_file_t*)handle;
+    const src_file_t* src = handle;
 
     assert(!src->fp);
-    return (void*)(ptrdiff_t)(src->pos - src->buffer);
+    return (void*)(src->pos - src->buffer);
 }
 
-int pc_eofsrc(void* handle)
+int pc_eofsrc(const void* handle)
 {
-    src_file_t* src = (src_file_t*)handle;
+    const src_file_t* src = handle;
 
     assert(!src->fp);
     return src->pos == src->end;
@@ -370,7 +368,7 @@ int pc_eofsrc(void* handle)
 /* should return a pointer, which is used as a "magic cookie" to all I/O
  * functions; return NULL for failure
  */
-void* pc_openasm(char* filename)
+void* pc_openasm(const char* filename)
 {
 #if defined __MSDOS__ || defined SC_LIGHT
     return fopen(filename, "w+t");
@@ -379,7 +377,7 @@ void* pc_openasm(char* filename)
 #endif
 }
 
-void pc_closeasm(void* handle, int deletefile)
+void pc_closeasm(void* handle, const int deletefile)
 {
 #if defined __MSDOS__ || defined SC_LIGHT
     if (handle != NULL) {
@@ -391,9 +389,9 @@ void pc_closeasm(void* handle, int deletefile)
 #else
     if (handle != NULL) {
         if (!deletefile) {
-            mfdump((MEMFILE*)handle);
+            mfdump(handle);
         }
-        mfclose((MEMFILE*)handle);
+        mfclose(handle);
     } /* if */
 #endif
 }
@@ -405,7 +403,7 @@ void pc_resetasm(void* handle)
     fflush((FILE*)handle);
     fseek((FILE*)handle, 0, SEEK_SET);
 #else
-    mfseek((MEMFILE*)handle, 0, SEEK_SET);
+    mfseek(handle, 0, SEEK_SET);
 #endif
 }
 
@@ -414,30 +412,30 @@ int pc_writeasm(void* handle, char* string)
 #if defined __MSDOS__ || defined SC_LIGHT
     return fputs(string, (FILE*)handle) >= 0;
 #else
-    return mfputs((MEMFILE*)handle, string);
+    return mfputs(handle, string);
 #endif
 }
 
-char* pc_readasm(void* handle, char* string, int maxchars)
+char* pc_readasm(void* handle, char* string, const int maxchars)
 {
 #if defined __MSDOS__ || defined SC_LIGHT
     return fgets(string, maxchars, (FILE*)handle);
 #else
-    return mfgets((MEMFILE*)handle, string, maxchars);
+    return mfgets(handle, string, maxchars);
 #endif
 }
 
 /* Should return a pointer, which is used as a "magic cookie" to all I/O
  * functions; return NULL for failure.
  */
-void* pc_openbin(char* filename)
+void* pc_openbin(const char* filename)
 {
     return fopen(filename, "wb");
 }
 
-void pc_closebin(void* handle, int deletefile)
+void pc_closebin(void* handle, const int deletefile)
 {
-    fclose((FILE*)handle);
+    fclose(handle);
     if (deletefile) {
         remove(binfname);
     }
@@ -447,18 +445,18 @@ void pc_closebin(void* handle, int deletefile)
  * Can seek to any location in the file.
  * The offset is always from the start of the file.
  */
-void pc_resetbin(void* handle, long offset)
+void pc_resetbin(void* handle, const long offset)
 {
-    fflush((FILE*)handle);
-    fseek((FILE*)handle, offset, SEEK_SET);
+    fflush(handle);
+    fseek(handle, offset, SEEK_SET);
 }
 
-int pc_writebin(void* handle, void* buffer, int size)
+int pc_writebin(void* handle, const void* buffer, const int size)
 {
-    return (int)fwrite(buffer, 1, size, (FILE*)handle) == size;
+    return (int)fwrite(buffer, 1, size, handle) == size;
 }
 
 long pc_lengthbin(void* handle)
 {
-    return ftell((FILE*)handle);
+    return ftell(handle);
 }

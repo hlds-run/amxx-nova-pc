@@ -2,7 +2,7 @@
 # Project Definition
 #-------------------------------------------------------------------------------
 
-project("AMXX Nova Pawn Compiler Lib")
+project("AMXX Nova Pawn Compiler Lib" LANGUAGES "C")
 
 #-------------------------------------------------------------------------------
 # Target Definition

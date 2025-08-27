@@ -83,7 +83,7 @@ static void parse(void);
 static void dumplits(void);
 static void dumpzero(int count);
 static void declfuncvar(int fpublic, int fstatic, int fstock, int fconst);
-static void declglb(char* firstname, int firsttag, int fpublic, int fstatic, int stock, int fconst);
+static void declglb(const char* firstname, int firsttag, int fpublic, int fstatic, int stock, int fconst);
 static int declloc(int fstatic);
 static void decl_const(int table);
 static void decl_enum(int table);
@@ -91,18 +91,18 @@ static cell needsub(int* tag, constvalue** enumroot);
 static void initials(int ident, int tag, cell* size, int dim[], int numdim, constvalue* enumroot);
 static cell initarray(int ident, int tag, int dim[], int numdim, int cur, int startlit, int counteddim[],
     constvalue* lastdim, constvalue* enumroot, int* errorfound);
-static cell initvector(int ident, int tag, cell size, int fillzero, constvalue* enumroot, int* errorfound);
+static cell initvector(int ident, int tag, cell size, int fillzero, const constvalue* enumroot, int* errorfound);
 static cell init(int ident, int* tag, int* errorfound);
 static void funcstub(int native);
-static int newfunc(char* firstname, int firsttag, int fpublic, int fstatic, int stock);
+static int newfunc(const char* firstname, int firsttag, int fpublic, int fstatic, int stock);
 static int declargs(symbol* sym);
 static void doarg(char* name, int ident, int offset, int tags[], int numtags, int fpublic, int fconst, arginfo* arg);
-static void make_report(symbol* root, FILE* log, char* sourcefile);
-static void reduce_referrers(symbol* root);
-static long max_stacksize(symbol* root, int* recursion);
-static int testsymbols(symbol* root, int level, int testlabs, int testconst);
-static void destructsymbols(symbol* root, int level);
-static constvalue* find_constval_byval(constvalue* table, cell val);
+static void make_report(const symbol* root, FILE* log, char* sourcefile);
+static void reduce_referrers(const symbol* root);
+static long max_stacksize(const symbol* root, int* recursion);
+static int testsymbols(const symbol* root, int level, int testlabs, int testconst);
+static void destructsymbols(const symbol* root, int level);
+static constvalue* find_constval_byval(const constvalue* table, cell val);
 static void statement(int* lastindent, int allow_decl);
 static void compound(int stmt_sameline);
 static int doexpr(
@@ -117,7 +117,7 @@ static void dofor(void);
 static void doswitch(void);
 static void dogoto(void);
 static void dolabel(void);
-static symbol* fetchlab(char* name);
+static symbol* fetchlab(const char* name);
 static void doreturn(void);
 static void dobreak(void);
 static void docont(void);
@@ -396,10 +396,9 @@ void inst_datetime_defines()
     char date[64];
     char ltime[64];
     time_t td;
-    struct tm* curtime;
 
     time(&td);
-    curtime = localtime(&td);
+    const struct tm* curtime = localtime(&td);
 
     strftime(date, 31, "\"%m/%d/%Y\"", curtime);
     strftime(ltime, 31, "\"%H:%M:%S\"", curtime);
@@ -408,20 +407,17 @@ void inst_datetime_defines()
     insert_subst("__TIME__", ltime, 8);
 }
 
-void inst_file_name(char* file, int strip_path)
+void inst_file_name(char* file, const int strip_path)
 {
     char newname[_MAX_PATH];
-    char* fileptr;
 
-    fileptr = NULL;
+    char* fileptr = NULL;
 
     if (strip_path) {
-        size_t i, len;
-        int slashchar;
 
-        len = strlen(file);
-        for (i = len - 1; i < len; i--) {
-            slashchar = file[i] == '/';
+        const size_t len = strlen(file);
+        for (size_t i = len - 1; i < len; i--) {
+            int slashchar = file[i] == '/';
 #if defined WIN32 || defined _WIN32
             slashchar = slashchar || file[i] == '\\';
 #endif
@@ -443,15 +439,12 @@ void inst_file_name(char* file, int strip_path)
 
 static void inst_binary_name(char* binfname)
 {
-    size_t i, len;
-    char* binptr;
     char newname[_MAX_PATH];
-    int slashchar;
 
-    binptr = NULL;
-    len = strlen(binfname);
-    for (i = len - 1; i < len; i--) {
-        slashchar = binfname[i] == '/';
+    char* binptr = NULL;
+    const size_t len = strlen(binfname);
+    for (size_t i = len - 1; i < len; i--) {
+        int slashchar = binfname[i] == '/';
 #if defined WIN32 || defined _WIN32
         slashchar = slashchar || binfname[i] == '\\';
 #endif
@@ -476,9 +469,9 @@ static void inst_binary_name(char* binfname)
 extern "C"
 #endif
     int
-    pc_compile(int argc, char* argv[])
+    pc_compile(const int argc, char* argv[])
 {
-    int entry, i, jmpcode;
+    int entry, jmpcode;
     int retcode;
     char incfname[_MAX_PATH];
     char reportname[_MAX_PATH];
@@ -555,7 +548,6 @@ extern "C"
         /* there are at least two or more source files */
         char *tname, *sname;
         void *ftmp, *fsrc;
-        int fidx;
 #if defined __WIN32__ || defined _WIN32
         tname = _tempnam(NULL, "pawn");
 #elif defined __MSDOS__ || defined _Windows
@@ -570,16 +562,16 @@ extern "C"
         close(mkstemp(buffer));
         tname = buffer;
 #endif
-        ftmp = (void*)pc_createsrc(tname);
-        for (fidx = 0; (sname = get_sourcefile(fidx)) != NULL; fidx++) {
+        ftmp = pc_createsrc(tname);
+        for (int fidx = 0; (sname = get_sourcefile(fidx)) != NULL; fidx++) {
             unsigned char tstring[128];
-            fsrc = (void*)pc_opensrc(sname);
+            fsrc = pc_opensrc(sname);
             if (fsrc == NULL) {
                 error(100, sname);
             }
-            pc_writesrc(ftmp, (unsigned char*)"#file ");
+            pc_writesrc(ftmp, "#file ");
             pc_writesrc(ftmp, (unsigned char*)sname);
-            pc_writesrc(ftmp, (unsigned char*)"\n");
+            pc_writesrc(ftmp, "\n");
             while (!pc_eofsrc(fsrc)) {
                 pc_readsrc(fsrc, tstring, sizeof tstring);
                 pc_writesrc(ftmp, tstring);
@@ -593,7 +585,7 @@ extern "C"
     else {
         strcpy(inpfname, get_sourcefile(0));
     } /* if */
-    inpf_org = (void*)pc_opensrc(inpfname);
+    inpf_org = pc_opensrc(inpfname);
     if (inpf_org == NULL) {
         error(100, inpfname);
     }
@@ -612,8 +604,8 @@ extern "C"
             error(101, binfname);
         }
     } /* if */
-    setconstants();                   /* set predefined constants and tagnames */
-    for (i = 0; i < skipinput; i++) { /* skip lines in the input file */
+    setconstants();                       /* set predefined constants and tagnames */
+    for (int i = 0; i < skipinput; i++) { /* skip lines in the input file */
         if (pc_readsrc(inpf_org, pline, sLINEMAX) != NULL) {
             fline++; /* keep line number up to date */
         }
@@ -780,10 +772,10 @@ cleanup:
         int recursion = 0, flag_exceed = 0;
         long stacksize = 0L;
         unsigned long maxStackUsage = 0L;
-        unsigned long dynamicStackSizeLimit = (long)sc_stksize * sizeof(cell);
+        const unsigned long dynamicStackSizeLimit = (long)sc_stksize * sizeof(cell);
 
         if (sc_amxlimit > 0) {
-            long totalsize = hdrsize + code_idx + glb_declared * sizeof(cell) + dynamicStackSizeLimit;
+            const long totalsize = hdrsize + code_idx + glb_declared * sizeof(cell) + dynamicStackSizeLimit;
             if (totalsize >= sc_amxlimit) {
                 flag_exceed = 1;
             }
@@ -880,13 +872,13 @@ cleanup:
     clear_warningstack();
     if (errnum != 0) {
         if (strlen(errfname) == 0) {
-            pc_printf("\n%d Error%s.\n", errnum, (errnum > 1) ? "s" : "");
+            pc_printf("\n%d Error%s.\n", errnum, errnum > 1 ? "s" : "");
         }
         retcode = 2;
     }
     else if (warnnum != 0) {
         if (strlen(errfname) == 0) {
-            pc_printf("\n%d Warning%s.\n", warnnum, (warnnum > 1) ? "s" : "");
+            pc_printf("\n%d Warning%s.\n", warnnum, warnnum > 1 ? "s" : "");
         }
         retcode = 1;
     }
@@ -911,7 +903,7 @@ cleanup:
 extern "C"
 #endif
     int
-    pc_addconstant(char* name, cell value, int tag)
+    pc_addconstant(char* name, const cell value, const int tag)
 {
     errorset(sFORCESET, 0); /* make sure error engine is silenced */
     sc_status = statIDLE;
@@ -926,8 +918,7 @@ extern "C"
     pc_addtag(char* name)
 {
     cell val;
-    constvalue* ptr;
-    int last, tag;
+    int tag;
 
     if (name == NULL) {
         /* no tagname was given, check for one */
@@ -938,8 +929,8 @@ extern "C"
     } /* if */
 
     assert(strchr(name, ':') == NULL); /* colon should already have been stripped */
-    last = 0;
-    ptr = tagname_tab.next;
+    int last = 0;
+    const constvalue* ptr = tagname_tab.next;
     while (ptr != NULL) {
         tag = (int)(ptr->value & TAGMASK);
         if (strcmp(name, ptr->name) == 0) {
@@ -957,7 +948,7 @@ extern "C"
     if (isupper(*name)) {
         tag |= (int)FIXEDTAG;
     }
-    append_constval(&tagname_tab, name, (cell)tag, 0);
+    append_constval(&tagname_tab, name, tag, 0);
     return tag;
 }
 
@@ -1052,13 +1043,12 @@ static void initglobals(void)
  * Set the default extension, or force an extension. To erase the
  * extension of a filename, set "extension" to an empty string.
  */
-SC_FUNC void set_extension(char* filename, char* extension, int force)
+SC_FUNC void set_extension(char* filename, const char* extension, const int force)
 {
-    char* ptr;
 
     assert(extension != NULL && (*extension == '\0' || *extension == '.'));
     assert(filename != NULL);
-    ptr = strrchr(filename, '.');
+    char* ptr = strrchr(filename, '.');
     if (ptr != NULL) {
         /* ignore extension on a directory or at the start of the filename */
         if (strchr(ptr, DIRSEP_CHAR) != NULL || ptr == filename || *(ptr - 1) == DIRSEP_CHAR) {
@@ -1075,7 +1065,7 @@ SC_FUNC void set_extension(char* filename, char* extension, int force)
 
 static const char* option_value(const char* optptr)
 {
-    return (*(optptr + 1) == '=' || *(optptr + 1) == ':') ? optptr + 2 : optptr + 1;
+    return *(optptr + 1) == '=' || *(optptr + 1) == ':' ? optptr + 2 : optptr + 1;
 }
 
 static int toggle_option(const char* optptr, int option)
@@ -1103,15 +1093,16 @@ static int toggle_option(const char* optptr, int option)
  */
 static void parserespf(char* filename, char* oname, char* ename, char* pname, char* rname, char* codepage);
 
-static void parseoptions(int argc, char** argv, char* oname, char* ename, char* pname, char* rname, char* codepage)
+static void parseoptions(
+    const int argc, char** argv, char* oname, char* ename, char* pname, char* rname, char* codepage)
 {
     char str[_MAX_PATH], *name;
     const char* ptr;
-    int arg, i, isoption;
+    int i, isoption;
 
     static const char stackusageinfo[4] = {'s', 'u', 'i', '\0'};
 
-    for (arg = 1; arg < argc; arg++) {
+    for (int arg = 1; arg < argc; arg++) {
 #if DIRSEP_CHAR == '/'
         isoption = argv[arg][0] == '-';
 #else
@@ -1122,7 +1113,7 @@ static void parseoptions(int argc, char** argv, char* oname, char* ename, char* 
             switch (*ptr) {
                 case 'A':
                     i = atoi(option_value(ptr));
-                    if ((i % sizeof(cell)) == 0) {
+                    if (i % sizeof(cell) == 0) {
                         sc_dataalign = i;
                     }
                     else {
@@ -1244,14 +1235,14 @@ static void parseoptions(int argc, char** argv, char* oname, char* ename, char* 
                 case 'S':
                     i = atoi(option_value(ptr));
                     if (i > 64) {
-                        sc_stksize = (cell)i; /* stack size has minimum size */
+                        sc_stksize = i; /* stack size has minimum size */
                     }
                     else {
                         about();
                     }
                     break;
                 case 's': {
-                    if (strlen(ptr) >= (sizeof(stackusageinfo) - 1)) {
+                    if (strlen(ptr) >= sizeof(stackusageinfo) - 1) {
                         if (*(ptr + 1) == stackusageinfo[1] && *(ptr + 2) == stackusageinfo[2]) {
                             ptr += 2;
                             sc_stkusageinfo = toggle_option(ptr, sc_stkusageinfo);
@@ -1289,7 +1280,7 @@ static void parseoptions(int argc, char** argv, char* oname, char* ename, char* 
                 case 'X':
                     i = atoi(option_value(ptr));
                     if (i > 64) {
-                        sc_amxlimit = (cell)i; /* abstract machine size has minimum size */
+                        sc_amxlimit = i; /* abstract machine size has minimum size */
                     }
                     else {
                         about();
@@ -1317,7 +1308,7 @@ static void parseoptions(int argc, char** argv, char* oname, char* ename, char* 
 #endif
         }
         else if ((ptr = strchr(argv[arg], '=')) != NULL) {
-            i = (int)(ptr - argv[arg]);
+            i = ptr - argv[arg];
             if (i > sNAMEMAX) {
                 i = sNAMEMAX;
                 error(200, argv[arg], sNAMEMAX); /* symbol too long, truncated to sNAMEMAX chars */
@@ -1368,16 +1359,15 @@ static void parserespf(char* filename, char* oname, char* ename, char* pname, ch
 {
     #define MAX_OPTIONS 100
     FILE* fp;
-    char *string, *ptr, **argv;
+    char *string, **argv;
     int argc;
-    long size;
 
     if ((fp = fopen(filename, "r")) == NULL) {
         error(100, filename); /* error reading input file */
     }
     /* load the complete file into memory */
     fseek(fp, 0L, SEEK_END);
-    size = ftell(fp);
+    const long size = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
     assert(size < INT_MAX);
     if ((string = (char*)malloc((int)size + 1)) == NULL) {
@@ -1394,7 +1384,7 @@ static void parserespf(char* filename, char* oname, char* ename, char* pname, ch
         error(103); /* insufficient memory */
     }
     /* fill the options table */
-    ptr = strtok(string, " \t\r\n");
+    char* ptr = strtok(string, " \t\r\n");
     for (argc = 1; argc < MAX_OPTIONS && ptr != NULL; argc++) {
         /* note: the routine skips argv[0], for compatibility with main() */
         argv[argc] = ptr;
@@ -1411,7 +1401,7 @@ static void parserespf(char* filename, char* oname, char* ename, char* pname, ch
 }
 #endif
 
-static void setopt(int argc, char** argv, char* oname, char* ename, char* pname, char* rname, char* codepage)
+static void setopt(const int argc, char** argv, char* oname, char* ename, char* pname, char* rname, char* codepage)
 {
     delete_sourcefiletable(); /* make sure it is empty */
     *oname = '\0';
@@ -1649,9 +1639,9 @@ static void setconstants(void)
     append_constval(&sc_automaton_tab, "", 0, 0); /* anonymous automaton */
 }
 
-static int getclassspec(int initialtok, int* fpublic, int* fstatic, int* fstock, int* fconst)
+static int getclassspec(const int initialtok, int* fpublic, int* fstatic, int* fstock, int* fconst)
 {
-    int tok, err;
+    int tok;
     cell val;
     char* str;
 
@@ -1678,7 +1668,7 @@ static int getclassspec(int initialtok, int* fpublic, int* fstatic, int* fstock,
             break;
     } /* switch */
 
-    err = 0;
+    int err = 0;
     do {
         tok = lex(&val, &str); /* read in (new) token */
         switch (tok) {
@@ -1731,13 +1721,13 @@ static int getclassspec(int initialtok, int* fpublic, int* fstatic, int* fstock,
  */
 static void parse(void)
 {
-    int tok, fconst, fstock, fstatic, fpublic;
+    int fconst, fstock, fstatic, fpublic;
     cell val;
     char* str;
 
     while (freading) {
         /* first try whether a declaration possibly is native or public */
-        tok = lex(&val, &str); /* read in (new) token */
+        const int tok = lex(&val, &str); /* read in (new) token */
         switch (tok) {
             case 0:
                 /* ignore zero's */
@@ -1823,14 +1813,13 @@ static void parse(void)
  */
 static void dumplits(void)
 {
-    int j, k;
 
-    k = 0;
+    int k = 0;
     while (k < litidx) {
         /* should be in the data segment */
         assert(curseg == 2);
         defstorage();
-        j = 16; /* 16 values per line */
+        int j = 16; /* 16 values per line */
         while (j && k < litidx) {
             outval(litq[k], FALSE);
             stgwrite(" ");
@@ -1853,32 +1842,31 @@ static void dumplits(void)
  */
 static void dumpzero(int count)
 {
-    int i;
 
     if (count <= 0) {
         return;
     }
     assert(curseg == 2);
     defstorage();
-    i = 0;
+    int i = 0;
     while (count-- > 0) {
         outval(0, FALSE);
         i = (i + 1) % 16;
-        stgwrite((i == 0 || count == 0) ? "\n" : " ");
+        stgwrite(i == 0 || count == 0 ? "\n" : " ");
         if (i == 0 && count > 0) {
             defstorage();
         }
     } /* while */
 }
 
-static void aligndata(int numbytes)
+static void aligndata(const int numbytes)
 {
     assert(numbytes % sizeof(cell) == 0); /* alignment must be a multiple of
                                            * the cell size */
     assert(numbytes != 0);
 
-    if ((((glb_declared + litidx) * sizeof(cell)) % numbytes) != 0) {
-        while ((((glb_declared + litidx) * sizeof(cell)) % numbytes) != 0) {
+    if ((glb_declared + litidx) * sizeof(cell) % numbytes != 0) {
+        while ((glb_declared + litidx) * sizeof(cell) % numbytes != 0) {
             litadd(0);
         }
     } /* if */
@@ -1891,9 +1879,7 @@ static void aligndata(int numbytes)
  */
 void sc_attachdocumentation(symbol* sym)
 {
-    int line;
-    size_t length;
-    char *str, *doc;
+    char* str;
 
     if (!sc_makereport || sc_status != statFIRST || sc_parsenum > 0) {
         /* just clear the entire table */
@@ -1906,8 +1892,8 @@ void sc_attachdocumentation(symbol* sym)
     assert(sym == NULL || sym->documentation == NULL || sym->states != NULL);
 
     /* first check the size */
-    length = 0;
-    for (line = 0; (str = get_docstring(line)) != NULL && *str != sDOCSEP; line++) {
+    size_t length = 0;
+    for (int line = 0; (str = get_docstring(line)) != NULL && *str != sDOCSEP; line++) {
         if (length > 0) {
             length++; /* count 1 extra for a separating space */
         }
@@ -1923,7 +1909,7 @@ void sc_attachdocumentation(symbol* sym)
         if (sym != NULL && sym->documentation != NULL) {
             length += strlen(sym->documentation) + 1 + 4; /* plus 4 for "<p/>" */
         }
-        doc = (char*)malloc((length + 1) * sizeof(char));
+        char* doc = malloc((length + 1) * sizeof(char));
         if (doc != NULL) {
             /* initialize string or concatenate */
             if (sym == NULL && sc_documentation != NULL) {
@@ -1974,7 +1960,7 @@ void sc_attachdocumentation(symbol* sym)
 
 static void insert_docstring_separator(void)
 {
-    char sep[2] = {sDOCSEP, '\0'};
+    const char sep[2] = {sDOCSEP, '\0'};
     insert_docstring(sep);
 }
 #else
@@ -1982,16 +1968,14 @@ static void insert_docstring_separator(void)
     #define insert_docstring_separator()
 #endif
 
-static void declfuncvar(int fpublic, int fstatic, int fstock, int fconst)
+static void declfuncvar(const int fpublic, const int fstatic, const int fstock, const int fconst)
 {
     char name[sNAMEMAX + 11];
-    int tok, tag;
     char* str;
     cell val;
-    int invalidfunc;
 
-    tag = pc_addtag(NULL);
-    tok = lex(&val, &str);
+    const int tag = pc_addtag(NULL);
+    const int tok = lex(&val, &str);
     /* if we arrived here, this may not be a declaration of a native function
      * or variable
      */
@@ -2020,7 +2004,7 @@ static void declfuncvar(int fpublic, int fstatic, int fstock, int fconst)
         assert(strlen(str) <= sNAMEMAX);
         strcpy(name, str);
         /* only variables can be "const" or both "public" and "stock" */
-        invalidfunc = fconst || (fpublic && fstock);
+        const int invalidfunc = fconst || (fpublic && fstock);
         if (invalidfunc || !newfunc(name, tag, fpublic, fstatic, fstock)) {
             /* if not a function, try a global variable */
             declglb(name, tag, fpublic, fstatic, fstock, fconst);
@@ -2035,7 +2019,8 @@ static void declfuncvar(int fpublic, int fstatic, int fstock, int fconst)
  *
  *  global references: glb_declared     (altered)
  */
-static void declglb(char* firstname, int firsttag, int fpublic, int fstatic, int fstock, int fconst)
+static void declglb(
+    const char* firstname, const int firsttag, const int fpublic, const int fstatic, const int fstock, const int fconst)
 {
     int ident, tag, ispublic;
     int idxtag[sDIMEN_MAX];
@@ -2100,7 +2085,7 @@ static void declglb(char* firstname, int firsttag, int fpublic, int fstatic, int
       if (ispublic)
         error(56,name);                 /* arrays cannot be public */
 #endif
-            dim[numdim++] = (int)size;
+            dim[numdim++] = size;
         } /* while */
         /* if this variable is never used (which can be detected only in the
          * second stage), shut off code generation
@@ -2126,10 +2111,10 @@ static void declglb(char* firstname, int firsttag, int fpublic, int fstatic, int
         initials(ident, tag, &size, dim, numdim, enumroot); /* stores values in the literal queue */
         assert(size >= litidx);
         if (numdim == 1) {
-            dim[0] = (int)size;
+            dim[0] = size;
         }
         dumplits(); /* dump the literal queue */
-        dumpzero((int)size - litidx);
+        dumpzero(size - litidx);
         litidx = 0;
         if (sym == NULL) { /* define only if not yet defined */
             sym = addvariable(name, sizeof(cell) * glb_declared, ident, sGLOBAL, tag, dim, numdim, idxtag);
@@ -2158,7 +2143,7 @@ static void declglb(char* firstname, int firsttag, int fpublic, int fstatic, int
             assert(glb_declared == glbdecl);
         }
         else {
-            glb_declared += (int)size; /* add total number of cells */
+            glb_declared += size; /* add total number of cells */
         } /* if */
     }
     while (matchtoken(',')); /* enddo */ /* more? */
@@ -2174,9 +2159,9 @@ static void declglb(char* firstname, int firsttag, int fpublic, int fstatic, int
  *  global references: declared   (altered)
  *                     funcstatus (referred to only)
  */
-static int declloc(int fstatic)
+static int declloc(const int fstatic)
 {
-    int ident, tag;
+    int ident;
     int idxtag[sDIMEN_MAX];
     char name[sNAMEMAX + 1];
     symbol* sym;
@@ -2186,16 +2171,14 @@ static int declloc(int fstatic)
     value lval = {0};
     int cur_lit = 0;
     int dim[sDIMEN_MAX];
-    int numdim;
-    int fconst;
     int staging_start = 0;
 
-    fconst = matchtoken(tCONST);
+    const int fconst = matchtoken(tCONST);
     do {
         ident = iVARIABLE;
         size = 1;
-        numdim = 0; /* no dimensions */
-        tag = pc_addtag(NULL);
+        int numdim = 0; /* no dimensions */
+        const int tag = pc_addtag(NULL);
         if (lex(&val, &str) != tSYMBOL) { /* read in (new) token */
             error(20, str);               /* invalid symbol name */
         }
@@ -2218,7 +2201,7 @@ static int declloc(int fstatic)
          * NOTE - don't bother with the error if there's no valid function!
          */
         if (((sym = findloc(name)) != NULL && sym->compound != nestlevel) || findglb(name) != NULL) {
-            if (curfunc != NULL && (curfunc->usage & uNATIVE)) {
+            if (curfunc != NULL && curfunc->usage & uNATIVE) {
                 error(219, name); /* variable shadows another symbol */
             }
         }
@@ -2234,7 +2217,7 @@ static int declloc(int fstatic)
                 error(105); /* overflow, exceeding capacity */
             }
 #endif
-            dim[numdim++] = (int)size;
+            dim[numdim++] = size;
         } /* while */
         if (ident == iARRAY || fstatic) {
             if (sc_alignnext) {
@@ -2247,7 +2230,7 @@ static int declloc(int fstatic)
                 return ident; /* error message already given */
             }
             if (numdim == 1) {
-                dim[0] = (int)size;
+                dim[0] = size;
             }
         } /* if */
         /* reserve memory (on the stack) for the variable */
@@ -2259,7 +2242,7 @@ static int declloc(int fstatic)
             sym = addvariable(name, (cur_lit + glb_declared) * sizeof(cell), ident, sSTATIC, tag, dim, numdim, idxtag);
         }
         else {
-            declared += (int)size; /* variables are put on stack, adjust "declared" */
+            declared += size; /* variables are put on stack, adjust "declared" */
             sym = addvariable(name, -declared * sizeof(cell), ident, sLOCAL, tag, dim, numdim, idxtag);
             if (ident == iVARIABLE) {
                 assert(!staging);
@@ -2268,7 +2251,7 @@ static int declloc(int fstatic)
                 staging_start = stgidx;
             } /* if */
             markexpr(sLDECL, name, -declared * sizeof(cell)); /* mark for better optimization */
-            modstk(-(int)size * sizeof(cell));
+            modstk(-size * sizeof(cell));
             assert(curfunc != NULL);
             assert((curfunc->usage & uNATIVE) == 0);
             if (curfunc->x.stacksize < declared + 1) {
@@ -2326,7 +2309,7 @@ static int declloc(int fstatic)
                 if (cur_lit < litidx) {
                     /* check whether the complete array is set to a single value; if
                      * it is, more compact code can be generated */
-                    cell first = litq[cur_lit];
+                    const cell first = litq[cur_lit];
                     int i;
                     for (i = cur_lit; i < litidx && litq[i] == first; i++)
                         /* nothing */;
@@ -2349,28 +2332,26 @@ static int declloc(int fstatic)
     return ident;
 }
 
-static cell calc_arraysize(int dim[], int numdim, int cur)
+static cell calc_arraysize(int dim[], const int numdim, const int cur)
 {
     /* the return value is in cells, not bytes */
     assert(cur >= 0 && cur <= numdim);
     if (cur == numdim) {
         return 0;
     }
-    return dim[cur] + (dim[cur] * calc_arraysize(dim, numdim, cur + 1));
+    return dim[cur] + dim[cur] * calc_arraysize(dim, numdim, cur + 1);
 }
 
-static void adjust_indirectiontables(int dim[], int numdim, int startlit, constvalue* lastdim, int* skipdim)
+static void adjust_indirectiontables(
+    int dim[], const int numdim, const int startlit, const constvalue* lastdim, int* skipdim)
 {
     static int base;
-    int cur;
     int i, d;
-    cell accum;
-    cell size;
 
     assert(startlit == -1 || startlit >= 0 && startlit <= litidx);
     base = startlit;
-    size = 1;
-    for (cur = 0; cur < numdim - 1; cur++) {
+    cell size = 1;
+    for (int cur = 0; cur < numdim - 1; cur++) {
         /* 2 or more dimensions left, fill in an indirection vector */
         if (dim[cur + 1] > 0) {
             for (i = 0; i < size; i++) {
@@ -2385,7 +2366,7 @@ static void adjust_indirectiontables(int dim[], int numdim, int startlit, constv
             assert(dim[cur + 1] == 0);
             assert(lastdim != NULL);
             assert(skipdim != NULL);
-            accum = 0;
+            cell accum = 0;
             for (i = 0; i < size; i++) {
                 /* skip the final dimension sizes for all earlier major dimensions */
                 for (d = 0, ld = lastdim->next; d < *skipdim; d++, ld = ld->next) {
@@ -2413,12 +2394,12 @@ static void adjust_indirectiontables(int dim[], int numdim, int startlit, constv
  *
  *  Global references: litidx (altered)
  */
-static void initials2(int ident, int tag, cell* size, int dim[], int numdim, constvalue* enumroot,
-    int eq_match_override, int curlit_override)
+static void initials2(const int ident, const int tag, cell* size, int dim[], const int numdim, constvalue* enumroot,
+    int eq_match_override, const int curlit_override)
 {
     int ctag;
     cell tablesize;
-    int curlit = (curlit_override == -1) ? litidx : curlit_override;
+    const int curlit = curlit_override == -1 ? litidx : curlit_override;
     int err = 0;
 
     if (eq_match_override == -1) {
@@ -2484,7 +2465,6 @@ static void initials2(int ident, int tag, cell* size, int dim[], int numdim, con
         else {
             int errorfound = FALSE;
             int counteddim[sDIMEN_MAX];
-            int idx;
             constvalue lastdim = {NULL, "", 0, 0}; /* sizes of the final dimension */
             int skipdim = 0;
 
@@ -2502,7 +2482,7 @@ static void initials2(int ident, int tag, cell* size, int dim[], int numdim, con
             memset(counteddim, 0, sizeof counteddim);
             initarray(ident, tag, dim, numdim, 0, curlit, counteddim, &lastdim, enumroot, &errorfound);
             /* check the specified array dimensions with the initializer counts */
-            for (idx = 0; idx < numdim - 1; idx++) {
+            for (int idx = 0; idx < numdim - 1; idx++) {
                 if (dim[idx] == 0) {
                     dim[idx] = counteddim[idx];
                 }
@@ -2519,11 +2499,10 @@ static void initials2(int ident, int tag, cell* size, int dim[], int numdim, con
                 /* also look whether, by any chance, all "counted" final dimensions are
                  * the same value; if so, we can store this
                  */
-                constvalue* ld = lastdim.next;
-                int match;
+                const constvalue* ld = lastdim.next;
                 assert(ld != NULL);
                 assert(strtol(ld->name, NULL, 16) == 0);
-                match = ld->value;
+                int match = ld->value;
                 while (ld->next) {
                     ld = ld->next;
                     if (match != ld->value) {
@@ -2548,15 +2527,15 @@ static void initials2(int ident, int tag, cell* size, int dim[], int numdim, con
     }
 }
 
-static void initials(int ident, int tag, cell* size, int dim[], int numdim, constvalue* enumroot)
+static void initials(const int ident, const int tag, cell* size, int dim[], const int numdim, constvalue* enumroot)
 {
     initials2(ident, tag, size, dim, numdim, enumroot, -1, -1);
 }
 
-static cell initarray(int ident, int tag, int dim[], int numdim, int cur, int startlit, int counteddim[],
-    constvalue* lastdim, constvalue* enumroot, int* errorfound)
+static cell initarray(const int ident, const int tag, int dim[], const int numdim, const int cur, const int startlit,
+    int counteddim[], constvalue* lastdim, constvalue* enumroot, int* errorfound)
 {
-    cell dsize, totalsize;
+    cell dsize;
     int idx, abortparse;
     char disable = FALSE;
 
@@ -2564,7 +2543,7 @@ static cell initarray(int ident, int tag, int dim[], int numdim, int cur, int st
     assert(startlit >= 0);
     assert(cur + 2 <= numdim); /* there must be 2 dimensions or more to do */
     assert(errorfound != NULL && *errorfound == FALSE);
-    totalsize = 0;
+    cell totalsize = 0;
     needtoken('{');
     for (idx = 0, abortparse = FALSE; !abortparse; idx++) {
         /* In case the major dimension is zero, we need to store the offset
@@ -2623,19 +2602,19 @@ static cell initarray(int ident, int tag, int dim[], int numdim, int cur, int st
 /*  initvector
  *  Initialize a single dimensional array
  */
-static cell initvector(int ident, int tag, cell size, int fillzero, constvalue* enumroot, int* errorfound)
+static cell initvector(
+    const int ident, const int tag, cell size, const int fillzero, const constvalue* enumroot, int* errorfound)
 {
     cell prev1 = 0, prev2 = 0;
     int ellips = FALSE;
-    int curlit = litidx;
-    int rtag, ctag;
+    const int curlit = litidx;
+    int ctag;
 
     assert(ident == iARRAY || ident == iREFARRAY);
     if (matchtoken('{')) {
-        constvalue* enumfield = (enumroot != NULL) ? enumroot->next : NULL;
+        const constvalue* enumfield = enumroot != NULL ? enumroot->next : NULL;
         do {
-            int fieldlit = litidx;
-            int matchbrace, i;
+            const int fieldlit = litidx;
             if (matchtoken('}')) { /* to allow for trailing ',' after the initialization */
                 lexpush();
                 break;
@@ -2644,7 +2623,7 @@ static cell initvector(int ident, int tag, cell size, int fillzero, constvalue* 
                 break;
             }
             /* for enumeration fields, allow another level of braces ("{...}") */
-            matchbrace = 0; /* preset */
+            int matchbrace = 0; /* preset */
             ellips = 0;
             if (enumfield != NULL) {
                 matchbrace = matchtoken('{');
@@ -2669,10 +2648,10 @@ static cell initvector(int ident, int tag, cell size, int fillzero, constvalue* 
             if (enumroot != NULL && enumfield == NULL) {
                 error(227); /* more initiallers than enum fields */
             }
-            rtag = tag; /* preset, may be overridden by enum field tag */
+            int rtag = tag; /* preset, may be overridden by enum field tag */
             if (enumfield != NULL) {
                 cell step;
-                symbol* symfield = findconst(enumfield->name);
+                const symbol* symfield = findconst(enumfield->name);
                 assert(symfield != NULL);
                 assert(fieldlit < litidx);
                 if (litidx - fieldlit > symfield->dim.array.length) {
@@ -2685,7 +2664,7 @@ static cell initvector(int ident, int tag, cell size, int fillzero, constvalue* 
                     step = 0;
                     prev1 = 0;
                 } /* if */
-                for (i = litidx - fieldlit; i < symfield->dim.array.length; i++) {
+                for (int i = litidx - fieldlit; i < symfield->dim.array.length; i++) {
                     prev1 += step;
                     litadd(prev1);
                 } /* for */
@@ -2707,29 +2686,29 @@ static cell initvector(int ident, int tag, cell size, int fillzero, constvalue* 
     } /* if */
     /* fill up the literal queue with a series */
     if (ellips) {
-        cell step = ((litidx - curlit) == 1) ? (cell)0 : prev1 - prev2;
-        if (size == 0 || (litidx - curlit) == 0) {
+        const cell step = litidx - curlit == 1 ? (cell)0 : prev1 - prev2;
+        if (size == 0 || litidx - curlit == 0) {
             error(41); /* invalid ellipsis, array size unknown */
         }
-        else if ((litidx - curlit) == (int)size) {
+        else if (litidx - curlit == size) {
             error(18); /* initialisation data exceeds declared size */
         }
-        while ((litidx - curlit) < (int)size) {
+        while (litidx - curlit < size) {
             prev1 += step;
             litadd(prev1);
         } /* while */
     } /* if */
     if (fillzero && size > 0) {
-        while ((litidx - curlit) < (int)size) {
+        while (litidx - curlit < size) {
             litadd(0);
         }
     } /* if */
     if (size == 0) {
         size = litidx - curlit; /* number of elements defined */
     }
-    else if (litidx - curlit > (int)size) { /* e.g. "myvar[3]={1,2,3,4};" */
-        error(18);                          /* initialisation data exceeds declared size */
-        litidx = (int)size + curlit;        /* avoid overflow in memory moves */
+    else if (litidx - curlit > size) { /* e.g. "myvar[3]={1,2,3,4};" */
+        error(18);                     /* initialisation data exceeds declared size */
+        litidx = size + curlit;        /* avoid overflow in memory moves */
     } /* if */
     return size;
 }
@@ -2738,7 +2717,7 @@ static cell initvector(int ident, int tag, cell size, int fillzero, constvalue* 
  *
  *  Evaluate one initializer.
  */
-static cell init(int ident, int* tag, int* errorfound)
+static cell init(const int ident, int* tag, int* errorfound)
 {
     cell i = 0;
 
@@ -2803,34 +2782,32 @@ static cell needsub(int* tag, constvalue** enumroot)
 /*  decl_const  - declare a single constant
  *
  */
-static void decl_const(int vclass)
+static void decl_const(const int vclass)
 {
     char constname[sNAMEMAX + 1];
     cell val;
     char* str;
-    int tag, exprtag;
-    int symbolline;
-    symbol* sym;
+    int exprtag;
 
     insert_docstring_separator(); /* see comment in newfunc() */
-    tag = pc_addtag(NULL);
+    const int tag = pc_addtag(NULL);
     if (lex(&val, &str) != tSYMBOL) { /* read in (new) token */
         error(20, str);               /* invalid symbol name */
     }
-    symbolline = fline;     /* save line where symbol was found */
-    strcpy(constname, str); /* save symbol name */
+    const int symbolline = fline; /* save line where symbol was found */
+    strcpy(constname, str);       /* save symbol name */
     needtoken('=');
     constexpr(&val, &exprtag, NULL); /* get value */
     needtoken(tTERM);
     /* add_constant() checks for duplicate definitions */
     if (!matchtag(tag, exprtag, FALSE)) {
         /* temporarily reset the line number to where the symbol was defined */
-        int orgfline = fline;
+        const int orgfline = fline;
         fline = symbolline;
         error(213); /* tagname mismatch */
         fline = orgfline;
     } /* if */
-    sym = add_constant(constname, val, vclass, tag);
+    symbol* sym = add_constant(constname, val, vclass, tag);
     if (sym != NULL) {
         sc_attachdocumentation(sym); /* attach any documenation to the function */
     }
@@ -2839,12 +2816,12 @@ static void decl_const(int vclass)
 /*  decl_enum   - declare enumerated constants
  *
  */
-static void decl_enum(int vclass)
+static void decl_enum(const int vclass)
 {
     char enumname[sNAMEMAX + 1], constname[sNAMEMAX + 1];
     cell val, value, size;
     char* str;
-    int tok, tag, explicittag;
+    int tag, explicittag;
     cell increment, multiplier;
     constvalue* enumroot;
     symbol* enumsym;
@@ -2915,14 +2892,13 @@ static void decl_enum(int vclass)
     /* go through all constants */
     value = 0; /* default starting value */
     do {
-        int idxtag, fieldtag;
-        symbol* sym;
+        int fieldtag;
         if (matchtoken('}')) { /* quick exit if '}' follows ',' */
             lexpush();
             break;
         } /* if */
-        idxtag = pc_addtag(NULL); /* optional explicit item tag */
-        tok = lex(&val, &str);    /* read in (new) token */
+        const int idxtag = pc_addtag(NULL); /* optional explicit item tag */
+        const int tok = lex(&val, &str);    /* read in (new) token */
         if (tok != tSYMBOL) {
             error(20, str); /* invalid symbol name */
         }
@@ -2938,7 +2914,7 @@ static void decl_enum(int vclass)
         /* add_constant() checks whether a variable (global or local) or
          * a constant with the same name already exists
          */
-        sym = add_constant(constname, value, vclass, tag);
+        symbol* sym = add_constant(constname, value, vclass, tag);
         if (sym == NULL) {
             continue; /* error message already given */
         }
@@ -2981,8 +2957,7 @@ static int getstates(const char* funcname)
     cell val;
     char* str;
     constvalue* automaton;
-    constvalue* state;
-    int fsa, islabel;
+    int islabel;
     int* list;
     int count, listsize, state_id;
 
@@ -2996,7 +2971,7 @@ static int getstates(const char* funcname)
     count = 0;
     listsize = 0;
     list = NULL;
-    fsa = -1;
+    int fsa = -1;
 
     do {
         if (!(islabel = matchtoken(tLABEL)) && !needtoken(tSYMBOL)) {
@@ -3028,10 +3003,10 @@ static int getstates(const char* funcname)
             }
             fsa = automaton->index;
         } /* if */
-        state = state_add(statename, fsa);
+        const constvalue* state = state_add(statename, fsa);
         /* add this state to the state combination list (it will be attached to the
          * automaton later) */
-        state_buildlist(&list, &listsize, &count, (int)state->value);
+        state_buildlist(&list, &listsize, &count, state->value);
     }
     while (matchtoken(','));
     needtoken('>');
@@ -3053,7 +3028,7 @@ static int getstates(const char* funcname)
     return state_id;
 }
 
-static void attachstatelist(symbol* sym, int state_id)
+static void attachstatelist(symbol* sym, const int state_id)
 {
     assert(sym != NULL);
     if ((sym->usage & uDEFINE) != 0 && (sym->states == NULL || state_id == 0)) {
@@ -3105,7 +3080,7 @@ static void attachstatelist(symbol* sym, int state_id)
  *  Finds a function in the global symbol table or creates a new entry.
  *  It does some basic processing and error checking.
  */
-SC_FUNC symbol* fetchfunc(char* name, int tag)
+SC_FUNC symbol* fetchfunc(char* name, const int tag)
 {
     symbol* sym;
 
@@ -3114,9 +3089,10 @@ SC_FUNC symbol* fetchfunc(char* name, int tag)
             error(21, name); /* yes, but not as a function */
             return NULL;     /* make sure the old symbol is not damaged */
         }
-        else if ((sym->usage & uNATIVE) != 0) {
+        if ((sym->usage & uNATIVE) != 0) {
             error(21, name); /* yes, and it is a native */
-        } /* if */
+        }
+        /* if */
         assert(sym->vclass == sGLOBAL);
         if ((sym->usage & uPROTOTYPED) != 0 && sym->tag != tag) {
             error(25); /* mismatch from earlier prototype */
@@ -3162,12 +3138,11 @@ SC_FUNC symbol* fetchfunc(char* name, int tag)
  */
 static void define_args(void)
 {
-    symbol* sym;
 
     /* At this point, no local variables have been declared. All
      * local symbols are function arguments.
      */
-    sym = loctab.next;
+    const symbol* sym = loctab.next;
     while (sym != NULL) {
         assert(sym->ident != iLABEL);
         assert(sym->vclass == sLOCAL);
@@ -3178,14 +3153,13 @@ static void define_args(void)
 
 static int operatorname(char* name)
 {
-    int opertok;
     char* str;
     cell val;
 
     assert(name != NULL);
 
     /* check the operator */
-    opertok = lex(&val, &str);
+    const int opertok = lex(&val, &str);
     switch (opertok) {
         case '+':
         case '-':
@@ -3227,7 +3201,7 @@ static int operatorname(char* name)
     return opertok;
 }
 
-static int operatoradjust(int opertok, symbol* sym, char* opername, int resulttag)
+static int operatoradjust(const int opertok, symbol* sym, char* opername, const int resulttag)
 {
     int tags[2] = {0, 0};
     int count = 0;
@@ -3299,14 +3273,13 @@ static int operatoradjust(int opertok, symbol* sym, char* opername, int resultta
     assert(strlen(opername) > 0);
     operator_symname(tmpname, opername, tags[0], tags[1], count, resulttag);
     if ((oldsym = findglb(tmpname)) != NULL) {
-        int i;
         if ((oldsym->usage & uDEFINE) != 0) {
             char errname[2 * sNAMEMAX + 16];
             funcdisplayname(errname, tmpname);
             error(21, errname); /* symbol already defined */
         } /* if */
         sym->usage |= oldsym->usage; /* copy flags from the previous definition */
-        for (i = 0; i < oldsym->numrefers; i++) {
+        for (int i = 0; i < oldsym->numrefers; i++) {
             if (oldsym->refer[i] != NULL) {
                 refer_symbol(sym, oldsym->refer[i]);
             }
@@ -3326,7 +3299,7 @@ static int operatoradjust(int opertok, symbol* sym, char* opername, int resultta
     return TRUE;
 }
 
-static int check_operatortag(int opertok, int resulttag, char* opername)
+static int check_operatortag(const int opertok, const int resulttag, char* opername)
 {
     assert(opername != NULL && strlen(opername) > 0);
     switch (opertok) {
@@ -3360,13 +3333,13 @@ static char* tag2str(char* dest, int tag)
     return isdigit(dest[1]) ? &dest[1] : dest;
 }
 
-SC_FUNC char* operator_symname(char* symname, char* opername, int tag1, int tag2, int numtags, int resulttag)
+SC_FUNC char* operator_symname(
+    char* symname, char* opername, const int tag1, const int tag2, const int numtags, const int resulttag)
 {
     char tagstr1[10], tagstr2[10];
-    int opertok;
 
     assert(numtags >= 1 && numtags <= 2);
-    opertok = (opername[1] == '\0') ? opername[0] : 0;
+    const int opertok = opername[1] == '\0' ? opername[0] : 0;
     if (opertok == '=') {
         sprintf(symname, "%s%s%s", tag2str(tagstr1, resulttag), opername, tag2str(tagstr2, tag1));
     }
@@ -3406,10 +3379,9 @@ static int parse_funcname(char* fname, int* tag1, int* tag2, char* opname)
     return unary;
 }
 
-static constvalue* find_tag_byval(int tag)
+static constvalue* find_tag_byval(const int tag)
 {
-    constvalue* tagsym;
-    tagsym = find_constval_byval(&tagname_tab, tag & ~PUBLICTAG);
+    constvalue* tagsym = find_constval_byval(&tagname_tab, tag & ~PUBLICTAG);
     if (tagsym == NULL) {
         tagsym = find_constval_byval(&tagname_tab, tag | PUBLICTAG);
     }
@@ -3421,7 +3393,6 @@ SC_FUNC char* funcdisplayname(char* dest, char* funcname)
     int tags[2];
     char opname[10];
     constvalue* tagsym[2];
-    int unary;
 
     if (isalpha(*funcname) || *funcname == '_' || *funcname == PUBLIC_CHAR || *funcname == '\0') {
         if (dest != funcname) {
@@ -3430,7 +3401,7 @@ SC_FUNC char* funcdisplayname(char* dest, char* funcname)
         return dest;
     } /* if */
 
-    unary = parse_funcname(funcname, &tags[0], &tags[1], opname);
+    const int unary = parse_funcname(funcname, &tags[0], &tags[1], opname);
     tagsym[1] = find_tag_byval(tags[1]);
     assert(tagsym[1] != NULL);
     if (unary) {
@@ -3450,25 +3421,21 @@ SC_FUNC char* funcdisplayname(char* dest, char* funcname)
     return dest;
 }
 
-static void funcstub(int native)
+static void funcstub(const int native)
 {
-    int tok, tag;
     char* str;
-    cell val, size;
+    cell val;
     char symbolname[sNAMEMAX + 1];
     int idxtag[sDIMEN_MAX];
     int dim[sDIMEN_MAX];
-    int numdim;
-    symbol *sym, *sub;
-    int opertok;
 
-    opertok = 0;
+    int opertok = 0;
     lastst = 0;
     litidx = 0;                  /* clear the literal pool */
     assert(loctab.next == NULL); /* local symbol table should be empty */
 
-    tag = pc_addtag(NULL); /* get the tag of the return value */
-    numdim = 0;
+    const int tag = pc_addtag(NULL); /* get the tag of the return value */
+    int numdim = 0;
     while (matchtoken('[')) {
         /* the function returns an array, get this tag for the index and the array
          * dimensions
@@ -3477,7 +3444,7 @@ static void funcstub(int native)
             error(53); /* exceeding maximum number of dimensions */
             return;
         } /* if */
-        size = needsub(&idxtag[numdim], NULL); /* get size; size==0 for "var[]" */
+        cell size = needsub(&idxtag[numdim], NULL); /* get size; size==0 for "var[]" */
         if (size == 0) {
             error(9); /* invalid array size */
         }
@@ -3486,10 +3453,10 @@ static void funcstub(int native)
             error(105); /* overflow, exceeding capacity */
         }
 #endif
-        dim[numdim++] = (int)size;
+        dim[numdim++] = size;
     } /* while */
 
-    tok = lex(&val, &str);
+    int tok = lex(&val, &str);
     if (native) {
         if (tok == tPUBLIC || tok == tSTOCK || tok == tSTATIC || (tok == tSYMBOL && *str == PUBLIC_CHAR)) {
             error(42); /* invalid combination of class specifiers */
@@ -3517,12 +3484,12 @@ static void funcstub(int native)
     } /* if */
     needtoken('('); /* only functions may be native/forward */
 
-    sym = fetchfunc(symbolname, tag); /* get a pointer to the function entry */
+    symbol* sym = fetchfunc(symbolname, tag); /* get a pointer to the function entry */
     if (sym == NULL) {
         return;
     }
     if (native) {
-        sym->usage = (char)(uNATIVE | uRETVALUE | uDEFINE | (sym->usage & uPROTOTYPED));
+        sym->usage = (char)(uNATIVE | uRETVALUE | uDEFINE | sym->usage & uPROTOTYPED);
         sym->x.lib = curlibrary;
     } /* if */
 
@@ -3574,7 +3541,7 @@ static void funcstub(int native)
     /* attach the array to the function symbol */
     if (numdim > 0) {
         assert(sym != NULL);
-        sub = addvariable(symbolname, 0, iREFARRAY, sGLOBAL, tag, dim, numdim, idxtag);
+        symbol* sub = addvariable(symbolname, 0, iREFARRAY, sGLOBAL, tag, dim, numdim, idxtag);
         sub->parent = sym;
     } /* if */
 
@@ -3594,25 +3561,21 @@ static void funcstub(int native)
  *                     glb_declared (altered)
  *                     sc_alignnext (altered)
  */
-static int newfunc(char* firstname, int firsttag, int fpublic, int fstatic, int stock)
+static int newfunc(const char* firstname, const int firsttag, int fpublic, const int fstatic, const int stock)
 {
-    symbol* sym;
-    int argcnt, tok, tag, funcline;
-    int opertok, opererror;
+    int tag;
     char symbolname[sNAMEMAX + 1];
     char* str;
-    cell val, cidx, glbdecl;
-    short filenum;
-    int state_id;
+    cell val;
 
     assert(litidx == 0); /* literal queue should be empty */
     litidx = 0;          /* clear the literal pool (should already be empty) */
-    opertok = 0;
-    lastst = 0; /* no statement yet */
-    cidx = 0;   /* just to avoid compiler warnings */
-    glbdecl = 0;
-    assert(loctab.next == NULL); /* local symbol table should be empty */
-    filenum = fcurrent;          /* save file number at the start of the declaration */
+    int opertok = 0;
+    lastst = 0;    /* no statement yet */
+    cell cidx = 0; /* just to avoid compiler warnings */
+    cell glbdecl = 0;
+    assert(loctab.next == NULL);    /* local symbol table should be empty */
+    const short filenum = fcurrent; /* save file number at the start of the declaration */
 
     if (firstname != NULL) {
         assert(strlen(firstname) <= sNAMEMAX);
@@ -3620,8 +3583,8 @@ static int newfunc(char* firstname, int firsttag, int fpublic, int fstatic, int 
         tag = firsttag;
     }
     else {
-        tag = (firsttag >= 0) ? firsttag : pc_addtag(NULL);
-        tok = lex(&val, &str);
+        tag = firsttag >= 0 ? firsttag : pc_addtag(NULL);
+        const int tok = lex(&val, &str);
         assert(!fpublic);
         if (tok == tNATIVE || (tok == tPUBLIC && stock)) {
             error(42); /* invalid combination of class specifiers */
@@ -3647,14 +3610,14 @@ static int newfunc(char* firstname, int firsttag, int fpublic, int fstatic, int 
         return FALSE;
     }
     /* so it is a function, proceed */
-    funcline = fline; /* save line at which the function is defined */
+    const int funcline = fline; /* save line at which the function is defined */
     if (symbolname[0] == PUBLIC_CHAR) {
         fpublic = TRUE; /* implicitly public function */
         if (stock) {
             error(42); /* invalid combination of class specifiers */
         }
     } /* if */
-    sym = fetchfunc(symbolname, tag); /* get a pointer to the function entry */
+    symbol* sym = fetchfunc(symbolname, tag); /* get a pointer to the function entry */
     if (sym == NULL || (sym->usage & uNATIVE) != 0) {
         return TRUE; /* it was recognized as a function declaration, but not as a valid one */
     }
@@ -3671,22 +3634,22 @@ static int newfunc(char* firstname, int firsttag, int fpublic, int fstatic, int 
      * the call)
      */
     if ((sym->usage & (uPROTOTYPED | uREAD)) == uREAD && sym->tag != 0) {
-        int curstatus = sc_status;
+        const int curstatus = sc_status;
         sc_status = statWRITE; /* temporarily set status to WRITE, so the warning isn't blocked */
         // error(208);         //this is silly, it should be caught the first pass
         sc_status = curstatus;
         sc_reparse = TRUE; /* must add another pass to "initial scan" phase */
     } /* if */
     /* declare all arguments */
-    argcnt = declargs(sym);
-    opererror = !operatoradjust(opertok, sym, symbolname, tag);
+    const int argcnt = declargs(sym);
+    const int opererror = !operatoradjust(opertok, sym, symbolname, tag);
     if (strcmp(symbolname, uMAINFUNC) == 0 || strcmp(symbolname, uENTRYFUNC) == 0) {
         if (argcnt > 0) {
             error(5); /* "main()" and "entry()" functions may not have any arguments */
         }
         sym->usage |= uREAD; /* "main()" is the program's entry point: always used */
     } /* if */
-    state_id = getstates(symbolname);
+    const int state_id = getstates(symbolname);
     if (opertok != 0 && state_id > 0) {
         error(82); /* operators may not have states */
     }
@@ -3709,7 +3672,7 @@ static int newfunc(char* firstname, int firsttag, int fpublic, int fstatic, int 
         glbdecl = glb_declared;
     } /* if */
     if ((sym->flags & flgDEPRECATED) != 0 && (sym->usage & uSTOCK) == 0) {
-        char* ptr = (sym->documentation != NULL) ? sym->documentation : "";
+        char* ptr = sym->documentation != NULL ? sym->documentation : "";
         error(233, symbolname, ptr); /* deprecated (probably a public function) */
     } /* if */
     begcseg();
@@ -3725,7 +3688,7 @@ static int newfunc(char* firstname, int firsttag, int fpublic, int fstatic, int 
     }
     /* if the function has states, dump the label to the start of the function */
     if (state_id != 0) {
-        constvalue* ptr = sym->states->next;
+        const constvalue* ptr = sym->states->next;
         while (ptr != NULL) {
             assert(sc_status != statWRITE || strlen(ptr->name) > 0);
             if (ptr->index == state_id) {
@@ -3742,8 +3705,8 @@ static int newfunc(char* firstname, int firsttag, int fpublic, int fstatic, int 
         alignframe(sc_dataalign);
         sc_alignnext = FALSE;
     } /* if */
-    declared = 0;                       /* number of local cells */
-    rettype = (sym->usage & uRETVALUE); /* set "return type" variable */
+    declared = 0;                     /* number of local cells */
+    rettype = sym->usage & uRETVALUE; /* set "return type" variable */
     curfunc = sym;
     define_args(); /* add the symbolic info for the function arguments */
 #if !defined SC_LIGHT
@@ -3770,10 +3733,10 @@ static int newfunc(char* firstname, int firsttag, int fpublic, int fstatic, int 
          * has only a single statement in its body (no compound block) and that
          * statement declares a new variable
          */
-        modstk((int)declared * sizeof(cell)); /* remove all local variables */
+        modstk(declared * sizeof(cell)); /* remove all local variables */
         declared = 0;
     } /* if */
-    if ((lastst != tRETURN) && (lastst != tGOTO)) {
+    if (lastst != tRETURN && lastst != tGOTO) {
         ldconst(0, sPRI);
         ffret();
         if ((sym->usage & uRETVALUE) != 0) {
@@ -3803,9 +3766,9 @@ static int newfunc(char* firstname, int firsttag, int fpublic, int fstatic, int 
     return TRUE;
 }
 
-static int argcompare(arginfo* a1, arginfo* a2)
+static int argcompare(const arginfo* a1, const arginfo* a2)
 {
-    int result = 1, level, i;
+    int result = 1, level;
 
     if (result) {
         result = a1->ident == a2->ident; /* type/class */
@@ -3816,7 +3779,7 @@ static int argcompare(arginfo* a1, arginfo* a2)
     if (result) {
         result = a1->numtags == a2->numtags; /* tags (number and names) */
     }
-    for (i = 0; result && i < a1->numtags; i++) {
+    for (int i = 0; result && i < a1->numtags; i++) {
         result = a1->tags[i] == a2->tags[i];
     }
     if (result) {
@@ -3871,27 +3834,25 @@ static int declargs(symbol* sym)
 {
 #define MAXTAGS 16
     char* ptr;
-    int argcnt, oldargcnt, tok, tags[MAXTAGS], numtags;
+    int tok, tags[MAXTAGS];
     cell val;
-    arginfo arg, *arglist;
+    arginfo arg;
     char name[sNAMEMAX + 1];
-    int ident, fpublic, fconst;
-    int idx;
 
     /* if the function is already defined earlier, get the number of arguments
      * of the existing definition
      */
-    oldargcnt = 0;
+    int oldargcnt = 0;
     if ((sym->usage & uPROTOTYPED) != 0) {
         while (sym->dim.arglist[oldargcnt].ident != 0) {
             oldargcnt++;
         }
     }
-    argcnt = 0; /* zero aruments up to now */
-    ident = iVARIABLE;
-    numtags = 0;
-    fconst = FALSE;
-    fpublic = (sym->usage & uPUBLIC) != 0;
+    int argcnt = 0; /* zero aruments up to now */
+    int ident = iVARIABLE;
+    int numtags = 0;
+    int fconst = FALSE;
+    const int fpublic = (sym->usage & uPUBLIC) != 0;
     /* the '(' parantheses has already been parsed */
     if (!matchtoken(')')) {
         do { /* there are arguments; process them */
@@ -4032,8 +3993,8 @@ static int declargs(symbol* sym)
     } /* if */
     /* resolve any "sizeof" arguments (now that all arguments are known) */
     assert(sym->dim.arglist != NULL);
-    arglist = sym->dim.arglist;
-    for (idx = 0; idx < argcnt && arglist[idx].ident != 0; idx++) {
+    arginfo* arglist = sym->dim.arglist;
+    for (int idx = 0; idx < argcnt && arglist[idx].ident != 0; idx++) {
         if ((arglist[idx].hasdefault & uSIZEOF) != 0 || (arglist[idx].hasdefault & uTAGOF) != 0) {
             int altidx;
             /* Find the argument with the name mentioned after the "sizeof". Note
@@ -4084,9 +4045,9 @@ static int declargs(symbol* sym)
  *  "fpublic" indicates whether the function for this argument list is public.
  *  The arguments themselves are never public.
  */
-static void doarg(char* name, int ident, int offset, int tags[], int numtags, int fpublic, int fconst, arginfo* arg)
+static void doarg(char* name, int ident, const int offset, int tags[], const int numtags, const int fpublic,
+    const int fconst, arginfo* arg)
 {
-    symbol* argsym;
     constvalue* enumroot;
     cell size;
 
@@ -4110,7 +4071,7 @@ static void doarg(char* name, int ident, int offset, int tags[], int numtags, in
                 error(105); /* overflow, exceeding capacity */
             }
 #endif
-            arg->dim[arg->numdim] = (int)size;
+            arg->dim[arg->numdim] = size;
             arg->numdim += 1;
         }
         while (matchtoken('['));
@@ -4144,14 +4105,13 @@ static void doarg(char* name, int ident, int offset, int tags[], int numtags, in
                 /* allocate memory to hold the initial values */
                 arg->defvalue.array.data = (cell*)malloc(litidx * sizeof(cell));
                 if (arg->defvalue.array.data != NULL) {
-                    int i;
                     memcpy(arg->defvalue.array.data, litq, litidx * sizeof(cell));
                     arg->hasdefault = TRUE; /* argument has default value */
                     arg->defvalue.array.size = litidx;
                     arg->defvalue.array.addr = -1;
                     /* calulate size to reserve on the heap */
                     arg->defvalue.array.arraysize = 1;
-                    for (i = 0; i < arg->numdim; i++) {
+                    for (int i = 0; i < arg->numdim; i++) {
                         arg->defvalue.array.arraysize *= arg->dim[i];
                     }
                     if (arg->defvalue.array.arraysize < arg->defvalue.array.size) {
@@ -4164,19 +4124,17 @@ static void doarg(char* name, int ident, int offset, int tags[], int numtags, in
     }
     else {
         if (matchtoken('=')) {
-            unsigned char size_tag_token;
             assert(ident == iVARIABLE || ident == iREFERENCE);
             arg->hasdefault = TRUE; /* argument has a default value */
-            size_tag_token = (unsigned char)(matchtoken(tSIZEOF) ? uSIZEOF : 0);
+            unsigned char size_tag_token = (unsigned char)(matchtoken(tSIZEOF) ? uSIZEOF : 0);
             if (size_tag_token == 0) {
                 size_tag_token = (unsigned char)(matchtoken(tTAGOF) ? uTAGOF : 0);
             }
             if (size_tag_token != 0) {
-                int paranthese;
                 if (ident == iREFERENCE) {
                     error(66, name); /* argument may not be a reference */
                 }
-                paranthese = 0;
+                int paranthese = 0;
                 while (matchtoken('(')) {
                     paranthese++;
                 }
@@ -4220,7 +4178,7 @@ static void doarg(char* name, int ident, int offset, int tags[], int numtags, in
         error(103); /* insufficient memory */
     }
     memcpy(arg->tags, tags, numtags * sizeof tags[0]);
-    argsym = findloc(name);
+    symbol* argsym = findloc(name);
     if (argsym != NULL) {
         error(21, name); /* symbol already defined */
     }
@@ -4244,12 +4202,11 @@ static void doarg(char* name, int ident, int offset, int tags[], int numtags, in
     } /* if */
 }
 
-static int count_referrers(symbol* entry)
+static int count_referrers(const symbol* entry)
 {
-    int i, count;
 
-    count = 0;
-    for (i = 0; i < entry->numrefers; i++) {
+    int count = 0;
+    for (int i = 0; i < entry->numrefers; i++) {
         if (entry->refer[i] != NULL) {
             count++;
         }
@@ -4258,12 +4215,9 @@ static int count_referrers(symbol* entry)
 }
 
 #if !defined SC_LIGHT
-static int find_xmltag(char* source, char* xmltag, char* xmlparam, char* xmlvalue, char** outer_start,
+static int find_xmltag(char* source, const char* xmltag, const char* xmlparam, const char* xmlvalue, char** outer_start,
     int* outer_length, char** inner_start, int* inner_length)
 {
-    char *ptr, *inner_end;
-    int xmltag_len, xmlparam_len, xmlvalue_len;
-    int match;
 
     assert(source != NULL);
     assert(xmltag != NULL);
@@ -4275,14 +4229,14 @@ static int find_xmltag(char* source, char* xmltag, char* xmlparam, char* xmlvalu
     /* both NULL or both non-NULL */
     assert(xmlvalue != NULL && xmlparam != NULL || xmlvalue == NULL && xmlparam == NULL);
 
-    xmltag_len = strlen(xmltag);
-    xmlparam_len = (xmlparam != NULL) ? strlen(xmlparam) : 0;
-    xmlvalue_len = (xmlvalue != NULL) ? strlen(xmlvalue) : 0;
-    ptr = source;
+    const int xmltag_len = strlen(xmltag);
+    const int xmlparam_len = xmlparam != NULL ? strlen(xmlparam) : 0;
+    const int xmlvalue_len = xmlvalue != NULL ? strlen(xmlvalue) : 0;
+    char* ptr = source;
     /* find an opening '<' */
     while ((ptr = strchr(ptr, '<')) != NULL) {
         *outer_start = ptr; /* be optimistic... */
-        match = FALSE;      /* ...and pessimistic at the same time */
+        int match = FALSE;  /* ...and pessimistic at the same time */
         ptr++;              /* skip '<' */
         while (*ptr != '\0' && *ptr <= ' ') {
             ptr++; /* skip white space */
@@ -4335,7 +4289,7 @@ static int find_xmltag(char* source, char* xmltag, char* xmlparam, char* xmlvalu
             *inner_start = ptr;
             /* find the start of the closing tag (assume no nesting) */
             while ((ptr = strchr(ptr, '<')) != NULL) {
-                inner_end = ptr;
+                const char* inner_end = ptr;
                 ptr++; /* skip '<' */
                 while (*ptr != '\0' && *ptr <= ' ') {
                     ptr++; /* skip white space */
@@ -4356,9 +4310,9 @@ static int find_xmltag(char* source, char* xmltag, char* xmlparam, char* xmlvalu
                         }
                         /* set the lengths of the inner and outer segment */
                         assert(*inner_start != NULL);
-                        *inner_length = (int)(inner_end - *inner_start);
+                        *inner_length = inner_end - *inner_start;
                         assert(*outer_start != NULL);
-                        *outer_length = (int)(ptr - *outer_start);
+                        *outer_length = ptr - *outer_start;
                         break; /* break out of the loop */
                     } /* if */
                 } /* if */
@@ -4369,14 +4323,14 @@ static int find_xmltag(char* source, char* xmltag, char* xmlparam, char* xmlvalu
     return FALSE; /* not found */
 }
 
-static char* xmlencode(char* dest, char* source)
+static char* xmlencode(char* dest, const char* source)
 {
-    char temp[2 * sNAMEMAX + 20], *ptr;
+    char temp[2 * sNAMEMAX + 20];
 
     /* replace < by &lt; and such; normally, such a symbol occurs at most once in
      * a symbol name (e.g. "operator<")
      */
-    ptr = temp;
+    char* ptr = temp;
     while (*source != '\0') {
         switch (*source) {
             case '<':
@@ -4401,20 +4355,19 @@ static char* xmlencode(char* dest, char* source)
     return dest;
 }
 
-static void make_report(symbol* root, FILE* log, char* sourcefile)
+static void make_report(const symbol* root, FILE* log, char* sourcefile)
 {
     char symname[2 * sNAMEMAX + 20];
     int i, arg;
     symbol *sym, *ref;
     constvalue* tagsym;
     constvalue* enumroot;
-    char* ptr;
 
     /* the XML header */
     fprintf(log, "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n");
     fprintf(log, "<?xml-stylesheet href=\"pawndoc.xsl\" type=\"text/xsl\"?>\n");
     fprintf(log, "<doc source=\"%s\">\n", sourcefile);
-    ptr = strrchr(sourcefile, DIRSEP_CHAR);
+    char* ptr = strrchr(sourcefile, DIRSEP_CHAR);
     if (ptr != NULL) {
         ptr++;
     }
@@ -4647,7 +4600,7 @@ static void make_report(symbol* root, FILE* log, char* sourcefile)
         /* print parameter list, with tag & const information, plus descriptions */
         assert(sym->dim.arglist != NULL);
         for (arg = 0; sym->dim.arglist[arg].ident != 0; arg++) {
-            int dim, paraminfo;
+            int dim;
             char *outer_start, *inner_start;
             int outer_length = 0, inner_length = 0;
             if (sym->dim.arglist[arg].ident == iVARARGS) {
@@ -4659,8 +4612,8 @@ static void make_report(symbol* root, FILE* log, char* sourcefile)
             /* print the tag name(s) for each parameter */
             assert(sym->dim.arglist[arg].numtags > 0);
             assert(sym->dim.arglist[arg].tags != NULL);
-            paraminfo = (sym->dim.arglist[arg].numtags > 1 || sym->dim.arglist[arg].tags[0] != 0) ||
-                        sym->dim.arglist[arg].ident == iREFERENCE || sym->dim.arglist[arg].ident == iREFARRAY;
+            const int paraminfo = sym->dim.arglist[arg].numtags > 1 || sym->dim.arglist[arg].tags[0] != 0 ||
+                                  sym->dim.arglist[arg].ident == iREFERENCE || sym->dim.arglist[arg].ident == iREFARRAY;
             if (paraminfo) {
                 fprintf(log, "\t\t\t\t<paraminfo>");
             }
@@ -4707,10 +4660,9 @@ static void make_report(symbol* root, FILE* log, char* sourcefile)
             if (sym->documentation != NULL &&
                 find_xmltag(sym->documentation, "param", "name", sym->dim.arglist[arg].name, &outer_start,
                     &outer_length, &inner_start, &inner_length)) {
-                char* tail;
                 fprintf(log, "\t\t\t\t%.*s\n", inner_length, inner_start);
                 /* delete from documentation string */
-                tail = outer_start + outer_length;
+                const char* tail = outer_start + outer_length;
                 memmove(outer_start, tail, strlen(tail) + 1);
             } /* if */
             fprintf(log, "\t\t\t</param>\n");
@@ -4731,14 +4683,13 @@ static void make_report(symbol* root, FILE* log, char* sourcefile)
  * "citron", but neither function "banana" nor "citron" are used by anyone
  * else, then, by inference, function "apple" is not used either.
  */
-static void reduce_referrers(symbol* root)
+static void reduce_referrers(const symbol* root)
 {
     int i, restart;
-    symbol *sym, *ref;
 
     do {
         restart = 0;
-        for (sym = root->next; sym != NULL; sym = sym->next) {
+        for (symbol* sym = root->next; sym != NULL; sym = sym->next) {
             if (sym->parent != NULL) {
                 continue; /* hierarchical data type */
             }
@@ -4746,7 +4697,7 @@ static void reduce_referrers(symbol* root)
                 strcmp(sym->name, uMAINFUNC) != 0 && strcmp(sym->name, uENTRYFUNC) != 0 && count_referrers(sym) == 0) {
                 sym->usage &= ~(uREAD | uWRITTEN); /* erase usage bits if there is no referrer */
                 /* find all symbols that are referred by this symbol */
-                for (ref = root->next; ref != NULL; ref = ref->next) {
+                for (const symbol* ref = root->next; ref != NULL; ref = ref->next) {
                     if (ref->parent != NULL) {
                         continue; /* hierarchical data type */
                     }
@@ -4783,7 +4734,7 @@ static void reduce_referrers(symbol* root)
  *  The function returns whether there is an "entry" point for the file.
  *  This flag will only be 1 when browsing the global symbol table.
  */
-static int testsymbols(symbol* root, int level, int testlabs, int testconst)
+static int testsymbols(const symbol* root, const int level, const int testlabs, const int testconst)
 {
     char symname[2 * sNAMEMAX + 16];
     int entry = FALSE;
@@ -4861,15 +4812,14 @@ static int testsymbols(symbol* root, int level, int testlabs, int testconst)
     return entry;
 }
 
-static cell calc_array_datasize(symbol* sym, cell* offset)
+static cell calc_array_datasize(const symbol* sym, cell* offset)
 {
-    cell length;
 
     assert(sym != NULL);
     assert(sym->ident == iARRAY || sym->ident == iREFARRAY);
-    length = sym->dim.array.length;
+    cell length = sym->dim.array.length;
     if (sym->dim.array.level > 0) {
-        cell sublength = calc_array_datasize(finddepend(sym), offset);
+        const cell sublength = calc_array_datasize(finddepend(sym), offset);
         if (offset != NULL) {
             *offset = length * (*offset + sizeof(cell));
         }
@@ -4888,7 +4838,7 @@ static cell calc_array_datasize(symbol* sym, cell* offset)
     return length;
 }
 
-static void destructsymbols(symbol* root, int level)
+static void destructsymbols(const symbol* root, const int level)
 {
     cell offset = 0;
     int savepri = FALSE;
@@ -4945,7 +4895,8 @@ static void destructsymbols(symbol* root, int level)
     }
 }
 
-static constvalue* insert_constval(constvalue* prev, constvalue* next, const char* name, cell val, short index)
+static constvalue* insert_constval(
+    constvalue* prev, constvalue* next, const char* name, const cell val, const short index)
 {
     constvalue* cur;
 
@@ -4964,7 +4915,7 @@ static constvalue* insert_constval(constvalue* prev, constvalue* next, const cha
     return cur;
 }
 
-SC_FUNC constvalue* append_constval(constvalue* table, const char* name, cell val, short index)
+SC_FUNC constvalue* append_constval(constvalue* table, const char* name, const cell val, const short index)
 {
     constvalue *cur, *prev;
 
@@ -4974,7 +4925,7 @@ SC_FUNC constvalue* append_constval(constvalue* table, const char* name, cell va
     return insert_constval(prev, NULL, name, val, index);
 }
 
-SC_FUNC constvalue* find_constval(constvalue* table, char* name, short index)
+SC_FUNC constvalue* find_constval(const constvalue* table, const char* name, const short index)
 {
     constvalue* ptr = table->next;
 
@@ -4987,7 +4938,7 @@ SC_FUNC constvalue* find_constval(constvalue* table, char* name, short index)
     return NULL;
 }
 
-static constvalue* find_constval_byval(constvalue* table, cell val)
+static constvalue* find_constval_byval(const constvalue* table, const cell val)
 {
     constvalue* ptr = table->next;
 
@@ -5021,10 +4972,10 @@ static int delete_constval(constvalue *table,char *name)
 
 SC_FUNC void delete_consttable(constvalue* table)
 {
-    constvalue *cur = table->next, *next;
+    constvalue* cur = table->next;
 
     while (cur != NULL) {
-        next = cur->next;
+        constvalue* next = cur->next;
         free(cur);
         cur = next;
     } /* while */
@@ -5035,14 +4986,13 @@ SC_FUNC void delete_consttable(constvalue* table)
  *
  *  Adds a symbol to the #define symbol table. Returns NULL on failure.
  */
-SC_FUNC symbol* add_constant(char* name, cell val, int vclass, int tag)
+SC_FUNC symbol* add_constant(char* name, const cell val, const int vclass, const int tag)
 {
-    symbol* sym;
 
     /* Test whether a global or local symbol with the same name exists. Since
      * constants are stored in the symbols table, this also finds previously
      * defind constants. */
-    sym = findglb(name);
+    symbol* sym = findglb(name);
     if (!sym) {
         sym = findloc(name);
     }
@@ -5074,9 +5024,8 @@ SC_FUNC symbol* add_constant(char* name, cell val, int vclass, int tag)
  *  This routine is called whenever the parser needs to know what statement
  *  it encounters (i.e. whenever program syntax requires a statement).
  */
-static void statement(int* lastindent, int allow_decl)
+static void statement(int* lastindent, const int allow_decl)
 {
-    int tok;
     cell val;
     char* st;
 
@@ -5086,7 +5035,7 @@ static void statement(int* lastindent, int allow_decl)
     } /* if */
     errorset(sRESET, 0);
 
-    tok = lex(&val, &st);
+    int tok = lex(&val, &st);
     if (tok != '{') {
         insert_dbgline(fline);
         setline(TRUE);
@@ -5210,16 +5159,15 @@ static void statement(int* lastindent, int allow_decl)
     } /* switch */
 }
 
-static void compound(int stmt_sameline)
+static void compound(const int stmt_sameline)
 {
     int indent = -1;
-    cell save_decl = declared;
+    const cell save_decl = declared;
     int count_stmt = 0;
-    int block_start = fline; /* save line where the compound block started */
+    const int block_start = fline; /* save line where the compound block started */
 
     /* if there is more text on this line, we should adjust the statement indent */
     if (stmt_sameline) {
-        int i;
         const unsigned char* p = lptr;
         /* go back to the opening brace */
         while (*p != '{') {
@@ -5234,9 +5182,9 @@ static void compound(int stmt_sameline)
         }
         assert(*p != '\0'); /* a token should be found */
         stmtindent = 0;
-        for (i = 0; i < (int)(p - pline); i++) {
+        for (int i = 0; i < p - pline; i++) {
             if (pline[i] == '\t' && sc_tabsize > 0) {
-                stmtindent += (int)(sc_tabsize - (stmtindent + sc_tabsize) % sc_tabsize);
+                stmtindent += sc_tabsize - (stmtindent + sc_tabsize) % sc_tabsize;
             }
             else {
                 stmtindent++;
@@ -5249,20 +5197,18 @@ static void compound(int stmt_sameline)
         if (!freading) {
             error(30, block_start); /* compound block not closed at end of file */
             break;
-        }
-        else {
-            if (count_stmt > 0 && (lastst == tRETURN || lastst == tBREAK || lastst == tCONTINUE)) {
-                error(225); /* unreachable code */
-            }
-            statement(&indent, TRUE); /* do a statement */
-            count_stmt++;
         } /* if */
+        if (count_stmt > 0 && (lastst == tRETURN || lastst == tBREAK || lastst == tCONTINUE)) {
+            error(225); /* unreachable code */
+        }
+        statement(&indent, TRUE); /* do a statement */
+        count_stmt++;
     } /* while */
     if (lastst != tRETURN) {
         destructsymbols(&loctab, nestlevel);
     }
     if (lastst != tRETURN && lastst != tGOTO) {
-        modstk((int)(declared - save_decl) * sizeof(cell)); /* delete local variable space */
+        modstk((declared - save_decl) * sizeof(cell)); /* delete local variable space */
     }
     testsymbols(&loctab, nestlevel, FALSE, TRUE); /* look for unused block locals */
     declared = save_decl;
@@ -5276,10 +5222,10 @@ static void compound(int stmt_sameline)
  *
  *  Global references: stgidx   (referred to only)
  */
-static int doexpr(
-    int comma, int chkeffect, int allowarray, int mark_endexpr, int* tag, symbol** symptr, int chkfuncresult)
+static int doexpr(const int comma, const int chkeffect, const int allowarray, const int mark_endexpr, int* tag,
+    symbol** symptr, const int chkfuncresult)
 {
-    int index, ident;
+    int ident;
     int localstaging = FALSE;
     cell val;
 
@@ -5288,7 +5234,7 @@ static int doexpr(
         localstaging = TRUE;
         assert(stgidx == 0);
     } /* if */
-    index = stgidx;
+    const int index = stgidx;
     errorset(sEXPRMARK, 0);
     do {
         /* on second round through, mark the end of the previous expression */
@@ -5321,13 +5267,13 @@ static int doexpr(
  */
 SC_FUNC int constexpr(cell* val, int* tag, symbol** symptr)
 {
-    int ident, index;
+    int index;
     cell cidx;
 
     stgset(TRUE);          /* start stage-buffering */
     stgget(&index, &cidx); /* mark position in code generator */
     errorset(sEXPRMARK, 0);
-    ident = expression(val, tag, symptr, FALSE);
+    const int ident = expression(val, tag, symptr, FALSE);
     stgdel(index, cidx); /* scratch generated code */
     stgset(FALSE);       /* stop stage-buffering */
     if (ident != iCONSTEXPR) {
@@ -5343,7 +5289,7 @@ SC_FUNC int constexpr(cell* val, int* tag, symbol** symptr)
         }
     } /* if */
     errorset(sEXPRRELEASE, 0);
-    return (ident == iCONSTEXPR);
+    return ident == iCONSTEXPR;
 }
 
 /*  test
@@ -5356,7 +5302,7 @@ SC_FUNC int constexpr(cell* val, int* tag, symbol** symptr)
  *
  *  Global references: sc_intest (altered, but restored upon termination)
  */
-static void test(int label, int parens, int invert)
+static void test(const int label, const int parens, int invert)
 {
     int index, tok;
     cell cidx;
@@ -5393,7 +5339,7 @@ static void test(int label, int parens, int invert)
         needtoken(')');
     }
     if (ident == iARRAY || ident == iREFARRAY) {
-        char* ptr = (sym != NULL) ? sym->name : "-unknown-";
+        char* ptr = sym != NULL ? sym->name : "-unknown-";
         error(33, ptr); /* array must be indexed */
     } /* if */
     if (ident == iCONSTEXPR) {         /* constant expression */
@@ -5434,26 +5380,23 @@ static void test(int label, int parens, int invert)
 
 static int doif(void)
 {
-    int flab1, flab2;
-    int ifindent;
-    int lastst_true;
 
-    ifindent = stmtindent;        /* save the indent of the "if" instruction */
-    flab1 = getlabel();           /* get label number for false branch */
-    test(flab1, TRUE, FALSE);     /* get expression, branch to flab1 if false */
-    statement(NULL, FALSE);       /* if true, do a statement */
-    if (matchtoken(tELSE) == 0) { /* if...else ? */
-        setlabel(flab1);          /* no, simple if..., print false label */
+    const int ifindent = stmtindent; /* save the indent of the "if" instruction */
+    const int flab1 = getlabel();    /* get label number for false branch */
+    test(flab1, TRUE, FALSE);        /* get expression, branch to flab1 if false */
+    statement(NULL, FALSE);          /* if true, do a statement */
+    if (matchtoken(tELSE) == 0) {    /* if...else ? */
+        setlabel(flab1);             /* no, simple if..., print false label */
     }
     else {
-        lastst_true = lastst;
+        const int lastst_true = lastst;
         /* to avoid the "dangling else" error, we want a warning if the "else"
          * has a lower indent than the matching "if" */
         if (stmtindent < ifindent && sc_tabsize > 0) {
             error(217); /* loose indentation */
         }
-        flab2 = getlabel();
-        if ((lastst != tRETURN) && (lastst != tGOTO)) {
+        const int flab2 = getlabel();
+        if (lastst != tRETURN && lastst != tGOTO) {
             jumplabel(flab2);
         }
         setlabel(flab1);        /* print false label */
@@ -5494,11 +5437,11 @@ static void dowhile(void)
  */
 static void dodo(void)
 {
-    int wq[wqSIZE], top;
+    int wq[wqSIZE];
 
-    addwhile(wq);     /* see "dowhile" for more info */
-    top = getlabel(); /* make a label first */
-    setlabel(top);    /* loop label */
+    addwhile(wq);               /* see "dowhile" for more info */
+    const int top = getlabel(); /* make a label first */
+    setlabel(top);              /* loop label */
     statement(NULL, FALSE);
     needtoken(tWHILE);
     setlabel(wq[wqLOOP]); /* "continue" always jumps to WQLOOP. */
@@ -5512,16 +5455,13 @@ static void dodo(void)
 
 static void dofor(void)
 {
-    int wq[wqSIZE], skiplab;
-    cell save_decl;
-    int save_nestlevel, index;
-    int* ptr;
+    int wq[wqSIZE];
 
-    save_decl = declared;
-    save_nestlevel = nestlevel;
+    const cell save_decl = declared;
+    const int save_nestlevel = nestlevel;
 
     addwhile(wq);
-    skiplab = getlabel();
+    const int skiplab = getlabel();
     needtoken('(');
     if (matchtoken(';') == 0) {
         /* new variable declarations are allowed here */
@@ -5542,10 +5482,10 @@ static void dofor(void)
      * "for" loop. These are deleted in separately, so a "break" or a "continue"
      * must ignore these fields.
      */
-    ptr = readwhile();
+    int* ptr = readwhile();
     assert(ptr != NULL);
-    ptr[wqBRK] = (int)declared;
-    ptr[wqCONT] = (int)declared;
+    ptr[wqBRK] = declared;
+    ptr[wqCONT] = declared;
     jumplabel(skiplab);   /* skip expression 3 1st time */
     setlabel(wq[wqLOOP]); /* "continue" goes to this label: expr3 */
     setline(TRUE);
@@ -5556,7 +5496,7 @@ static void dofor(void)
     assert(!staging);
     stgset(TRUE); /* start staging */
     assert(stgidx == 0);
-    index = stgidx;
+    const int index = stgidx;
     stgmark(sSTARTREORDER);
     stgmark((char)(sEXPRSTART + 0)); /* mark start of 2nd expression in stage */
     setlabel(skiplab);               /* jump to this point after 1st expression */
@@ -5583,7 +5523,7 @@ static void dofor(void)
          * variable in "expr1".
          */
         destructsymbols(&loctab, nestlevel);
-        modstk((int)(declared - save_decl) * sizeof(cell));
+        modstk((declared - save_decl) * sizeof(cell));
         testsymbols(&loctab, nestlevel, FALSE, TRUE); /* look for unused block locals */
         declared = save_decl;
         delete_symbols(&loctab, nestlevel, FALSE, TRUE);
@@ -5605,8 +5545,7 @@ static void dofor(void)
  */
 static void doswitch(void)
 {
-    int lbl_table, lbl_exit, lbl_case;
-    int tok, swdefault, casecount;
+    int tok;
     cell val;
     char* str;
     constvalue caselist = {NULL, "", 0, 0}; /* case list starts empty */
@@ -5619,14 +5558,14 @@ static void doswitch(void)
     /* generate the code for the switch statement, the label is the address
      * of the case table (to be generated later).
      */
-    lbl_table = getlabel();
-    lbl_case = 0; /* just to avoid a compiler warning */
+    const int lbl_table = getlabel();
+    int lbl_case = 0; /* just to avoid a compiler warning */
     ffswitch(lbl_table);
 
     needtoken('{');
-    lbl_exit = getlabel(); /* get label number for jumping out of switch */
-    swdefault = FALSE;
-    casecount = 0;
+    const int lbl_exit = getlabel(); /* get label number for jumping out of switch */
+    int swdefault = FALSE;
+    int casecount = 0;
     do {
         tok = lex(&val, &str); /* read in (new) token */
         switch (tok) {
@@ -5755,13 +5694,13 @@ static void doswitch(void)
 
 static void doassert(void)
 {
-    int flab1, index;
+    int index;
     cell cidx;
 
     if ((sc_debug & sCHKBOUNDS) != 0) {
-        flab1 = getlabel();       /* get label number for "OK" branch */
-        test(flab1, FALSE, TRUE); /* get expression and branch to flab1 if true */
-        insert_dbgline(fline);    /* make sure we can find the correct line number */
+        const int flab1 = getlabel(); /* get label number for "OK" branch */
+        test(flab1, FALSE, TRUE);     /* get expression and branch to flab1 if true */
+        insert_dbgline(fline);        /* make sure we can find the correct line number */
         ffabort(xASSERTION);
         setlabel(flab1);
     }
@@ -5782,11 +5721,10 @@ static void dogoto(void)
 {
     char* st;
     cell val;
-    symbol* sym;
 
     if (lex(&val, &st) == tSYMBOL) {
-        sym = fetchlab(st);
-        jumplabel((int)sym->addr);
+        symbol* sym = fetchlab(st);
+        jumplabel(sym->addr);
         sym->usage |= uREAD; /* set "uREAD" bit */
                              // ??? if the label is defined (check sym->usage & uDEFINE), check
                              //     sym->compound (nesting level of the label) against nestlevel;
@@ -5802,14 +5740,13 @@ static void dolabel(void)
 {
     char* st;
     cell val;
-    symbol* sym;
 
     tokeninfo(&val, &st); /* retrieve label name again */
     if (find_constval(&tagname_tab, st, 0) != NULL) {
         error(221, st); /* label name shadows tagname */
     }
-    sym = fetchlab(st);
-    setlabel((int)sym->addr);
+    symbol* sym = fetchlab(st);
+    setlabel(sym->addr);
     /* since one can jump around variable declarations or out of compound
      * blocks, the stack must be manually adjusted
      */
@@ -5825,11 +5762,10 @@ static void dolabel(void)
  *  Note: The "_usage" bit is set to zero. The routines that call "fetchlab()"
  *        must set this bit accordingly.
  */
-static symbol* fetchlab(char* name)
+static symbol* fetchlab(const char* name)
 {
-    symbol* sym;
 
-    sym = findloc(name); /* labels are local in scope */
+    symbol* sym = findloc(name); /* labels are local in scope */
     if (sym) {
         if (sym->ident != iLABEL) {
             error(19, sym->name); /* not a label: ... */
@@ -5838,18 +5774,17 @@ static symbol* fetchlab(char* name)
     else {
         sym = addsym(name, getlabel(), iLABEL, sLOCAL, 0, 0);
         assert(sym != NULL); /* fatal error 103 must be given on error */
-        sym->x.declared = (int)declared;
+        sym->x.declared = declared;
         sym->compound = nestlevel;
     } /* if */
     return sym;
 }
 
-static int is_variadic(symbol* sym)
+static int is_variadic(const symbol* sym)
 {
-    arginfo* arg;
 
     assert(sym->ident == iFUNCTN);
-    for (arg = sym->dim.arglist; arg->ident; arg++) {
+    for (const arginfo* arg = sym->dim.arglist; arg->ident; arg++) {
         if (arg->ident == iVARARGS) {
             return TRUE;
         }
@@ -5863,16 +5798,16 @@ static int is_variadic(symbol* sym)
  */
 static void doreturn(void)
 {
-    int tag, ident;
+    int tag;
     int level;
-    symbol *sym, *sub;
+    symbol* sym;
 
     if (!matchtoken(tTERM)) {
         /* "return <value>" */
         if ((rettype & uRETNONE) != 0) {
             error(78); /* mix "return;" and "return value;" */
         }
-        ident = doexpr(TRUE, FALSE, TRUE, FALSE, &tag, &sym, TRUE);
+        int ident = doexpr(TRUE, FALSE, TRUE, FALSE, &tag, &sym, TRUE);
         needtoken(tTERM);
         if (ident == iARRAY && sym == NULL) {
             /* returning a literal string is not supported (it must be a variable) */
@@ -5880,10 +5815,10 @@ static void doreturn(void)
             ident = iCONSTEXPR; /* avoid handling an "array" case */
         } /* if */
         /* see if this function already has a sub type (an array attached) */
-        sub = finddepend(curfunc);
+        symbol* sub = finddepend(curfunc);
         assert(sub == NULL || sub->ident == iREFARRAY);
         if ((rettype & uRETVALUE) != 0) {
-            int retarray = (ident == iARRAY || ident == iREFARRAY);
+            const int retarray = ident == iARRAY || ident == iREFARRAY;
             /* there was an earlier "return" statement in this function */
             if ((sub == NULL && retarray) || (sub != NULL && !retarray)) {
                 error(79); /* mixing "return array;" and "return value;" */
@@ -5897,7 +5832,6 @@ static void doreturn(void)
         }
         if (ident == iARRAY || ident == iREFARRAY) {
             int dim[sDIMEN_MAX], numdim = 0;
-            cell arraysize;
             assert(sym != NULL);
             if (sub != NULL) {
                 assert(sub->ident == iREFARRAY);
@@ -5910,7 +5844,7 @@ static void doreturn(void)
                 }
                 else {
                     for (numdim = 0; numdim <= level; numdim++) {
-                        dim[numdim] = (int)sub->dim.array.length;
+                        dim[numdim] = sub->dim.array.length;
                         if (sym->dim.array.length != dim[numdim]) {
                             error(47); /* array sizes must match */
                         }
@@ -5935,7 +5869,7 @@ static void doreturn(void)
                 assert(sub != NULL);
                 level = sub->dim.array.level;
                 for (numdim = 0; numdim <= level; numdim++) {
-                    dim[numdim] = (int)sub->dim.array.length;
+                    dim[numdim] = sub->dim.array.length;
                     idxtag[numdim] = sub->x.idxtag;
                     if (numdim < level) {
                         sub = finddepend(sub);
@@ -5986,7 +5920,7 @@ static void doreturn(void)
             else {
                 address(sub, sALT); /* ALT = destination */
             }
-            arraysize = calc_arraysize(dim, numdim, 0);
+            const cell arraysize = calc_arraysize(dim, numdim, 0);
             memcopy(arraysize * sizeof(cell)); /* source already in PRI */
                                                /* moveto1(); is not necessary, callfunction() does a popreg() */
         } /* if */
@@ -6002,41 +5936,39 @@ static void doreturn(void)
         } /* if */
         rettype |= uRETNONE; /* function does not return anything */
     } /* if */
-    destructsymbols(&loctab, 0);          /* call destructor for *all* locals */
-    modstk((int)declared * sizeof(cell)); /* end of function, remove *all*
-                                           * local variables */
+    destructsymbols(&loctab, 0);     /* call destructor for *all* locals */
+    modstk(declared * sizeof(cell)); /* end of function, remove *all*
+                                      * local variables */
     ffret();
 }
 
 static void dobreak(void)
 {
-    int* ptr;
 
-    ptr = readwhile(); /* readwhile() gives an error if not in loop */
+    const int* ptr = readwhile(); /* readwhile() gives an error if not in loop */
     needtoken(tTERM);
     if (ptr == NULL) {
         return;
     }
     destructsymbols(&loctab, nestlevel);
-    modstk(((int)declared - ptr[wqBRK]) * sizeof(cell));
+    modstk((declared - ptr[wqBRK]) * sizeof(cell));
     jumplabel(ptr[wqEXIT]);
 }
 
 static void docont(void)
 {
-    int* ptr;
 
-    ptr = readwhile(); /* readwhile() gives an error if not in loop */
+    const int* ptr = readwhile(); /* readwhile() gives an error if not in loop */
     needtoken(tTERM);
     if (ptr == NULL) {
         return;
     }
     destructsymbols(&loctab, nestlevel);
-    modstk(((int)declared - ptr[wqCONT]) * sizeof(cell));
+    modstk((declared - ptr[wqCONT]) * sizeof(cell));
     jumplabel(ptr[wqLOOP]);
 }
 
-SC_FUNC void exporttag(int tag)
+SC_FUNC void exporttag(const int tag)
 {
     /* find the tag by value in the table, then set the top bit to mark it
      * "public"
@@ -6160,7 +6092,7 @@ static void dostate(void)
             if (sc_status == statWRITE && sym != NULL && sym->ident == iFUNCTN && sym->states != NULL) {
                 for (stlist = sym->states->next; stlist != NULL; stlist = stlist->next) {
                     assert(strlen(stlist->name) != 0);
-                    if (state_getfsa(stlist->index) == fsa && state_inlist(stlist->index, (int)state->value)) {
+                    if (state_getfsa(stlist->index) == fsa && state_inlist(stlist->index, state->value)) {
                         break; /* found! */
                     }
                 } /* for */
@@ -6234,16 +6166,15 @@ static void dostate(void)
 
 static void addwhile(int* ptr)
 {
-    int k;
 
-    ptr[wqBRK] = (int)declared;  /* stack pointer (for "break") */
-    ptr[wqCONT] = (int)declared; /* for "continue", possibly adjusted later */
+    ptr[wqBRK] = declared;  /* stack pointer (for "break") */
+    ptr[wqCONT] = declared; /* for "continue", possibly adjusted later */
     ptr[wqLOOP] = getlabel();
     ptr[wqEXIT] = getlabel();
-    if (wqptr >= (wq + wqTABSZ - wqSIZE)) {
+    if (wqptr >= wq + wqTABSZ - wqSIZE) {
         error(102, "loop table"); /* loop table overflow (too many active loops)*/
     }
-    k = 0;
+    int k = 0;
     while (k < wqSIZE) { /* copy "ptr" to while queue table */
         *wqptr = *ptr;
         wqptr += 1;
@@ -6264,18 +6195,16 @@ static int* readwhile(void)
     if (wqptr <= wq) {
         error(24); /* out of context */
         return NULL;
-    }
-    else {
-        return (wqptr - wqSIZE);
     } /* if */
+    return wqptr - wqSIZE;
 }
 
 #if !defined SC_LIGHT
 static long max_stacksize_recurse(
-    symbol** sourcesym, symbol* sym, symbol** rsourcesym, long basesize, int* pubfuncparams, int* recursion)
+    symbol** sourcesym, symbol* sym, symbol** rsourcesym, const long basesize, int* pubfuncparams, int* recursion)
 {
-    long size, maxsize;
-    int i, stkpos;
+    long size;
+    int stkpos;
 
     assert(sourcesym != NULL);
     assert(sym != NULL);
@@ -6283,12 +6212,12 @@ static long max_stacksize_recurse(
     assert((sym->usage & uNATIVE) == 0);
     assert(recursion != NULL);
 
-    maxsize = sym->x.stacksize;
-    for (i = 0; i < sym->numrefers; i++) {
+    long maxsize = sym->x.stacksize;
+    for (int i = 0; i < sym->numrefers; i++) {
         if (sym->refer[i] != NULL) {
             assert(sym->refer[i]->ident == iFUNCTN);
             assert((sym->refer[i]->usage & uNATIVE) == 0); /* a native function cannot refer to a user-function */
-            *(rsourcesym) = sym;
+            *rsourcesym = sym;
             *(rsourcesym + 1) = NULL;
             for (stkpos = 0; sourcesym[stkpos] != NULL; stkpos++) {
                 if (sym->refer[i] == sourcesym[stkpos]) { /* recursion detection */
@@ -6315,7 +6244,7 @@ break_recursion:
         /* Find out how many parameters a public function has, then see if this
          * is bigger than some maximum
          */
-        arginfo* arg = sym->dim.arglist;
+        const arginfo* arg = sym->dim.arglist;
         int count = 0;
         assert(arg != 0);
         while (arg->ident != 0) {
@@ -6331,7 +6260,7 @@ break_recursion:
     return maxsize + basesize;
 }
 
-static long max_stacksize(symbol* root, int* recursion)
+static long max_stacksize(const symbol* root, int* recursion)
 {
     /* Loop over all non-native functions. For each function, loop
      * over all of its referrers, accumulating the stack requirements.
@@ -6343,15 +6272,13 @@ static long max_stacksize(symbol* root, int* recursion)
      * may "eat" cells from the heap as well, through amx_Allot(). The
      * stack requirements are thus only an estimate.
      */
-    long size, maxsize;
-    int maxparams, numfunctions;
+    int maxparams;
     symbol* sym;
-    symbol **symstack, **rsymstack;
 
     assert(root != NULL);
     assert(recursion != NULL);
     /* count number of functions (for allocating the stack for recursion detection) */
-    numfunctions = 0;
+    int numfunctions = 0;
     for (sym = root->next; sym != NULL; sym = sym->next) {
         if (sym->ident == iFUNCTN) {
             assert(sym->compound == 0);
@@ -6361,15 +6288,15 @@ static long max_stacksize(symbol* root, int* recursion)
         } /* if */
     } /* if */
     /* allocate function symbol stack */
-    symstack = (symbol**)malloc((numfunctions + 1) * sizeof(symbol*));
-    rsymstack = (symbol**)malloc((numfunctions + 1) * sizeof(symbol*));
+    symbol** symstack = malloc((numfunctions + 1) * sizeof(symbol*));
+    symbol** rsymstack = malloc((numfunctions + 1) * sizeof(symbol*));
     if (symstack == NULL || rsymstack == NULL) {
         error(103); /* insufficient memory (fatal error) */
     }
     memset(symstack, 0, (numfunctions + 1) * sizeof(symbol*));
     memset(rsymstack, 0, (numfunctions + 1) * sizeof(symbol*));
 
-    maxsize = 0;
+    long maxsize = 0;
     maxparams = 0;
     *recursion = 0; /* assume no recursion */
     for (sym = root->next; sym != NULL; sym = sym->next) {
@@ -6382,16 +6309,15 @@ static long max_stacksize(symbol* root, int* recursion)
         symstack[0] = sym;
         assert(symstack[1] == NULL);
         recursion_detected = 0;
-        size = max_stacksize_recurse(symstack, sym, rsymstack, 0L, &maxparams, &recursion_detected);
+        const long size = max_stacksize_recurse(symstack, sym, rsymstack, 0L, &maxparams, &recursion_detected);
         if (recursion_detected) {
             if (rsymstack[1] == NULL) {
                 pc_printf("recursion detected: function %s directly calls itself\n", sym->name);
             }
             else {
-                int i;
                 pc_printf("recursion detected: function %s indirectly calls itself:\n", sym->name);
                 pc_printf("%s ", sym->name);
-                for (i = 1; rsymstack[i] != NULL; i++) {
+                for (int i = 1; rsymstack[i] != NULL; i++) {
                     pc_printf("<- %s ", rsymstack[i]->name);
                 }
                 pc_printf("<- %s\n", sym->name);
@@ -6404,8 +6330,8 @@ static long max_stacksize(symbol* root, int* recursion)
         }
     } /* for */
 
-    free((void*)symstack);
-    free((void*)rsymstack);
+    free(symstack);
+    free(rsymstack);
     maxsize++;                        /* +1 because a zero cell is always pushed on top
                                        * of the stack to catch stack overwrites */
     return maxsize + (maxparams + 1); /* +1 because # of parameters is always pushed on entry */

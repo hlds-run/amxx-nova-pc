@@ -11,10 +11,9 @@
 #include "osdefs.h"
 #include <string.h>
 
-memfile_t* memfile_creat(const char* name, size_t init)
+memfile_t* memfile_creat(const char* name, const size_t init)
 {
     memfile_t mf;
-    memfile_t* pmf;
 
     mf.size = init;
     mf.base = (char*)malloc(init);
@@ -27,7 +26,7 @@ memfile_t* memfile_creat(const char* name, size_t init)
     mf.offs = 0;
     mf._static = 0;
 
-    pmf = (memfile_t*)malloc(sizeof(memfile_t));
+    memfile_t* pmf = malloc(sizeof(memfile_t));
     memcpy(pmf, &mf, sizeof(memfile_t));
 
 #if defined _MSC_VER
@@ -48,12 +47,12 @@ void memfile_destroy(memfile_t* mf)
     }
 }
 
-void memfile_seek(memfile_t* mf, long seek)
+void memfile_seek(memfile_t* mf, const long seek)
 {
     mf->offs = seek;
 }
 
-long memfile_tell(memfile_t* mf)
+long memfile_tell(const memfile_t* mf)
 {
     return mf->offs;
 }
@@ -78,12 +77,12 @@ size_t memfile_read(memfile_t* mf, void* buffer, size_t maxsize)
     return maxsize;
 }
 
-int memfile_write(memfile_t* mf, void* buffer, size_t size)
+int memfile_write(memfile_t* mf, const void* buffer, const size_t size)
 {
     if (mf->offs + size > mf->size) {
-        size_t newsize = (mf->size + size) * 2;
+        const size_t newsize = (mf->size + size) * 2;
         if (mf->_static) {
-            char* oldbase = mf->base;
+            const char* oldbase = mf->base;
             mf->base = (char*)malloc(newsize);
             if (!mf->base) {
                 return 0;

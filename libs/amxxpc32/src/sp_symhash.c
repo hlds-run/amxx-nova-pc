@@ -26,21 +26,20 @@ SC_FUNC uint32_t NameHash(const char* str)
 #if !defined(get16bits)
     #define get16bits(d) ((((uint32_t)(((const uint8_t*)(d))[1])) << 8) + (uint32_t)(((const uint8_t*)(d))[0]))
 #endif
-    uint32_t hash = len, tmp;
-    int rem;
+    uint32_t hash = len;
 
     if (len <= 0 || data == NULL) {
         return 0;
     }
 
-    rem = len & 3;
+    const int rem = len & 3;
     len >>= 2;
 
     /* Main loop */
     for (; len > 0; len--) {
         hash += get16bits(data);
-        tmp = (get16bits(data + 2) << 11) ^ hash;
-        hash = (hash << 16) ^ tmp;
+        const uint32_t tmp = get16bits(data + 2) << 11 ^ hash;
+        hash = hash << 16 ^ tmp;
         data += 2 * sizeof(uint16_t);
         hash += hash >> 11;
     }
@@ -79,7 +78,7 @@ SC_FUNC uint32_t NameHash(const char* str)
 
 SC_FUNC HashTable* NewHashTable()
 {
-    HashTable* ht = (HashTable*)malloc(sizeof(HashTable));
+    HashTable* ht = malloc(sizeof(HashTable));
     if (!ht) {
         return ht;
     }
@@ -96,11 +95,10 @@ SC_FUNC HashTable* NewHashTable()
 
 SC_FUNC void DestroyHashTable(HashTable* ht)
 {
-    uint32_t i;
     if (!ht) {
         return;
     }
-    for (i = 0; i < ht->nbuckets; i++) {
+    for (uint32_t i = 0; i < ht->nbuckets; i++) {
         HashEntry* he = ht->buckets[i];
         while (he != NULL) {
             HashEntry* next = he->next;
@@ -112,20 +110,20 @@ SC_FUNC void DestroyHashTable(HashTable* ht)
     free(ht);
 }
 
-SC_FUNC symbol* FindTaggedInHashTable(HashTable* ht, const char* name, int fnumber, int* cmptag)
+SC_FUNC symbol* FindTaggedInHashTable(const HashTable* ht, const char* name, const int fnumber, int* cmptag)
 {
     int count = 0;
     symbol* firstmatch = NULL;
-    uint32_t hash = NameHash(name);
-    uint32_t bucket = hash & ht->bucketmask;
-    HashEntry* he = ht->buckets[bucket];
+    const uint32_t hash = NameHash(name);
+    const uint32_t bucket = hash & ht->bucketmask;
+    const HashEntry* he = ht->buckets[bucket];
 
     assert(cmptag != NULL);
 
     while (he != NULL) {
         symbol* sym = he->sym;
         if ((sym->parent == NULL || sym->ident == iCONSTEXPR) && (sym->fnumber < 0 || sym->fnumber == fnumber) &&
-            (strcmp(sym->name, name) == 0)) {
+            strcmp(sym->name, name) == 0) {
             /* return closest match or first match; count number of matches */
             if (firstmatch == NULL) {
                 firstmatch = sym;
@@ -147,16 +145,16 @@ SC_FUNC symbol* FindTaggedInHashTable(HashTable* ht, const char* name, int fnumb
     return firstmatch;
 }
 
-SC_FUNC symbol* FindInHashTable(HashTable* ht, const char* name, int fnumber)
+SC_FUNC symbol* FindInHashTable(const HashTable* ht, const char* name, const int fnumber)
 {
-    uint32_t hash = NameHash(name);
-    uint32_t bucket = hash & ht->bucketmask;
-    HashEntry* he = ht->buckets[bucket];
+    const uint32_t hash = NameHash(name);
+    const uint32_t bucket = hash & ht->bucketmask;
+    const HashEntry* he = ht->buckets[bucket];
 
     while (he != NULL) {
         symbol* sym = he->sym;
         if ((sym->parent == NULL || sym->ident == iCONSTEXPR) && (sym->fnumber < 0 || sym->fnumber == fnumber) &&
-            (strcmp(sym->name, name) == 0)) {
+            strcmp(sym->name, name) == 0) {
             return sym;
         }
         he = he->next;
@@ -167,19 +165,18 @@ SC_FUNC symbol* FindInHashTable(HashTable* ht, const char* name, int fnumber)
 
 static void ResizeHashTable(HashTable* ht)
 {
-    uint32_t i;
-    uint32_t xnbuckets = ht->nbuckets * 2;
-    uint32_t xbucketmask = xnbuckets - 1;
-    HashEntry** xbuckets = (HashEntry**)calloc(xnbuckets, sizeof(HashEntry*));
+    const uint32_t xnbuckets = ht->nbuckets * 2;
+    const uint32_t xbucketmask = xnbuckets - 1;
+    HashEntry** xbuckets = calloc(xnbuckets, sizeof(HashEntry*));
     if (!xbuckets) {
         return;
     }
 
-    for (i = 0; i < ht->nbuckets; i++) {
+    for (uint32_t i = 0; i < ht->nbuckets; i++) {
         HashEntry* he = ht->buckets[i];
         while (he != NULL) {
             HashEntry* next = he->next;
-            uint32_t bucket = he->sym->hash & xbucketmask;
+            const uint32_t bucket = he->sym->hash & xbucketmask;
             he->next = xbuckets[bucket];
             xbuckets[bucket] = he;
             he = next;
@@ -193,16 +190,15 @@ static void ResizeHashTable(HashTable* ht)
 
 SC_FUNC void AddToHashTable(HashTable* ht, symbol* sym)
 {
-    uint32_t bucket = sym->hash & ht->bucketmask;
-    HashEntry **hep, *he;
+    const uint32_t bucket = sym->hash & ht->bucketmask;
 
-    hep = &ht->buckets[bucket];
+    HashEntry** hep = &ht->buckets[bucket];
     while (*hep) {
         assert((*hep)->sym != sym);
         hep = &(*hep)->next;
     }
 
-    he = (HashEntry*)malloc(sizeof(HashEntry));
+    HashEntry* he = malloc(sizeof(HashEntry));
     if (!he) {
         error(163);
     }
@@ -216,9 +212,9 @@ SC_FUNC void AddToHashTable(HashTable* ht, symbol* sym)
     }
 }
 
-SC_FUNC void RemoveFromHashTable(HashTable* ht, symbol* sym)
+SC_FUNC void RemoveFromHashTable(HashTable* ht, const symbol* sym)
 {
-    uint32_t bucket = sym->hash & ht->bucketmask;
+    const uint32_t bucket = sym->hash & ht->bucketmask;
     HashEntry** hep = &ht->buckets[bucket];
     HashEntry* he = *hep;
 

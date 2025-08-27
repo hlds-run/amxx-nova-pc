@@ -14,7 +14,7 @@ BinaryWriter::BinaryWriter(FILE* fp)
     m_Fp = fp;
 }
 
-bool BinaryWriter::WriteAddr(void* buffer, size_t size)
+bool BinaryWriter::WriteAddr(const void* buffer, const size_t size) const
 {
     if (fwrite(buffer, size, 1, m_Fp) != 1) {
         return false;
@@ -65,7 +65,7 @@ void BinaryWriter::WriteInt8(int8_t num)
     }
 }
 
-void BinaryWriter::WriteChars(const char buffer[], size_t chars)
+void BinaryWriter::WriteChars(const char buffer[], const size_t chars) const
 {
     if (!chars) {
         return;
@@ -81,7 +81,7 @@ BinaryReader::BinaryReader(FILE* fp)
     m_Fp = fp;
 }
 
-bool BinaryReader::ReadAddr(void* buffer, size_t size)
+bool BinaryReader::ReadAddr(void* buffer, const size_t size) const
 {
     if (fread(buffer, size, 1, m_Fp) != 1) {
         return false;
@@ -156,7 +156,7 @@ int8_t BinaryReader::ReadInt8()
     return num;
 }
 
-char* BinaryReader::ReadChars(char buffer[], size_t chars)
+char* BinaryReader::ReadChars(char buffer[], const size_t chars) const
 {
     if (!chars) {
         return buffer;

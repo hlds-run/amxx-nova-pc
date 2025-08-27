@@ -2,7 +2,7 @@
 # Project Definition
 #-------------------------------------------------------------------------------
 
-project("AMXX Nova Pawn Compiler")
+project("${CMAKE_PROJECT_NAME}" LANGUAGES "CXX")
 
 #-------------------------------------------------------------------------------
 # Target Definition
@@ -85,6 +85,7 @@ set_target_properties("${TARGET_NAME}"
 target_compile_definitions("${TARGET_NAME}"
   PRIVATE
     AMX_ANSIONLY
+    HAVE_STDINT_H
 
     $<$<PLATFORM_ID:Windows>:
       _MBCS
@@ -93,7 +94,6 @@ target_compile_definitions("${TARGET_NAME}"
 
     $<$<NOT:$<PLATFORM_ID:Windows>>:
       LINUX
-      HAVE_STDINT_H
     >
 )
 

@@ -23,7 +23,7 @@
 
 #include "sc.h"
 
-int main(int argc, char* argv[])
+int main(const int argc, char* argv[])
 {
     return pc_compile(argc, argv);
 }

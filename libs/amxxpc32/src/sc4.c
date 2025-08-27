@@ -34,13 +34,10 @@
  * Today, the compiler simply generates a HALT instruction at address 0. So
  * a subroutine can savely return to 0, and then encounter a HALT.
  */
-SC_FUNC void writeleader(symbol* root)
+SC_FUNC void writeleader(const symbol* root)
 {
-    int lbl_nostate, lbl_table;
-    int statecount;
     symbol* sym;
-    constvalue *fsa, *state, *stlist;
-    int fsa_id, listid;
+    constvalue* fsa;
     char lbl_default[sNAMEMAX + 1];
 
     assert(code_idx == 0);
@@ -62,7 +59,7 @@ SC_FUNC void writeleader(symbol* root)
 
     /* generate an error function that is called for an undefined state */
     stgwrite("\n;exit point for functions called from the wrong state\n");
-    lbl_nostate = getlabel();
+    const int lbl_nostate = getlabel();
     setlabel(lbl_nostate);
     stgwrite("\thalt ");
     outval(AMX_ERR_INVSTATE, TRUE);
@@ -92,9 +89,9 @@ SC_FUNC void writeleader(symbol* root)
     begcseg();
     for (sym = root->next; sym != NULL; sym = sym->next) {
         if (sym->ident == iFUNCTN && (sym->usage & uREAD) != 0 && sym->states != NULL) {
-            stlist = sym->states->next;
+            constvalue* stlist = sym->states->next;
             assert(stlist != NULL); /* there should be at least one state item */
-            listid = stlist->index;
+            int listid = stlist->index;
             assert(listid == -1 || listid > 0);
             if (listid == -1 && stlist->next != NULL) {
                 /* first index is the "fallback", take the next one (if available) */
@@ -120,13 +117,13 @@ SC_FUNC void writeleader(symbol* root)
             sym->addr = code_idx; /* fix the function address now */
             /* get automaton id for this function */
             assert(listid > 0);
-            fsa_id = state_getfsa(listid);
+            const int fsa_id = state_getfsa(listid);
             assert(fsa_id >= 0); /* automaton 0 exists */
             fsa = automaton_findid(fsa_id);
             /* count the number of states actually used; at the sane time, check
              * whether there is a default state function
              */
-            statecount = 0;
+            int statecount = 0;
             strcpy(lbl_default, itoh(lbl_nostate));
             for (stlist = sym->states->next; stlist != NULL; stlist = stlist->next) {
                 if (stlist->index == -1) {
@@ -144,16 +141,16 @@ SC_FUNC void writeleader(symbol* root)
             stgwrite(sym->name);
             stgwrite("\n");
             code_idx += opcodes(1) + opargs(1); /* calculate code length */
-            lbl_table = getlabel();
+            const int lbl_table = getlabel();
             ffswitch(lbl_table);
             /* generate the jump table */
             setlabel(lbl_table);
             ffcase(statecount, lbl_default, TRUE);
-            for (state = sc_state_tab.next; state != NULL; state = state->next) {
+            for (constvalue* state = sc_state_tab.next; state != NULL; state = state->next) {
                 if (state->index == fsa_id) {
                     /* find the label for this list id */
                     for (stlist = sym->states->next; stlist != NULL; stlist = stlist->next) {
-                        if (stlist->index != -1 && state_inlist(stlist->index, (int)state->value)) {
+                        if (stlist->index != -1 && state_inlist(stlist->index, state->value)) {
                             ffcase(state->value, stlist->name, FALSE);
                             break;
                         } /* if */
@@ -183,9 +180,9 @@ SC_FUNC void writetrailer(void)
     assert(sc_dataalign != 0);
 
     /* pad code to align data segment */
-    if ((code_idx % sc_dataalign) != 0) {
+    if (code_idx % sc_dataalign != 0) {
         begcseg();
-        while ((code_idx % sc_dataalign) != 0) {
+        while (code_idx % sc_dataalign != 0) {
             nooperation();
         }
     } /* if */
@@ -193,17 +190,17 @@ SC_FUNC void writetrailer(void)
     /* pad data segment to align the stack and the heap */
     assert(litidx == 0); /* literal queue should have been emptied */
     assert(sc_dataalign % sizeof(cell) == 0);
-    if (((glb_declared * sizeof(cell)) % sc_dataalign) != 0) {
+    if (glb_declared * sizeof(cell) % sc_dataalign != 0) {
         begdseg();
         defstorage();
-        while (((glb_declared * sizeof(cell)) % sc_dataalign) != 0) {
+        while (glb_declared * sizeof(cell) % sc_dataalign != 0) {
             stgwrite("0 ");
             glb_declared++;
         } /* while */
     } /* if */
 
     stgwrite("\nSTKSIZE "); /* write stack size (align stack top) */
-    outval(sc_stksize - (sc_stksize % sc_dataalign), TRUE);
+    outval(sc_stksize - sc_stksize % sc_dataalign, TRUE);
 }
 
 /*
@@ -241,7 +238,7 @@ SC_FUNC void begdseg(void)
     } /* if */
 }
 
-SC_FUNC void setline(int chkbounds)
+SC_FUNC void setline(const int chkbounds)
 {
     if ((sc_debug & sSYMBOLIC) != 0 || (chkbounds && (sc_debug & sCHKBOUNDS) != 0)) {
         /* generate a "break" (start statement) opcode rather than a "line" opcode
@@ -264,7 +261,7 @@ SC_FUNC void setfiledirect(char* name)
     } /* if */
 }
 
-SC_FUNC void setlinedirect(int line)
+SC_FUNC void setlinedirect(const int line)
 {
     if (sc_status == statFIRST && sc_listing) {
         char string[40];
@@ -277,11 +274,11 @@ SC_FUNC void setlinedirect(int line)
  *
  *  Post a code label (specified as a number), on a new line.
  */
-SC_FUNC void setlabel(int number)
+SC_FUNC void setlabel(const int number)
 {
     assert(number >= 0);
     stgwrite("l.");
-    stgwrite((char*)itoh(number));
+    stgwrite(itoh(number));
     /* To assist verification of the assembled code, put the address of the
      * label as a comment. However, labels that occur inside an expression
      * may move (through optimization or through re-ordering). So write the
@@ -298,7 +295,7 @@ SC_FUNC void setlabel(int number)
  * statement. This allows several simple optimizations by the peephole
  * optimizer.
  */
-SC_FUNC void markexpr(optmark type, const char* name, cell offset)
+SC_FUNC void markexpr(const optmark type, const char* name, const cell offset)
 {
     switch (type) {
         case sEXPR:
@@ -352,13 +349,13 @@ SC_FUNC void endfunc(void)
  *  be a power of 2, and this alignment must be done right after the frame
  *  is set up (before the first variable is declared)
  */
-SC_FUNC void alignframe(int numbytes)
+SC_FUNC void alignframe(const int numbytes)
 {
 #if !defined NDEBUG
     /* "numbytes" should be a power of 2 for this code to work */
-    int i, count = 0;
-    for (i = 0; i < sizeof numbytes * 8; i++) {
-        if (numbytes & (1 << i)) {
+    int count = 0;
+    for (int i = 0; i < sizeof numbytes * 8; i++) {
+        if (numbytes & 1 << i) {
             count++;
         }
     }
@@ -384,11 +381,10 @@ SC_FUNC void load_i()
  *
  *  Generate code to get the value of a symbol into "primary".
  */
-SC_FUNC void rvalue(value* lval)
+SC_FUNC void rvalue(const value* lval)
 {
-    symbol* sym;
 
-    sym = lval->sym;
+    symbol* sym = lval->sym;
     if (lval->ident == iARRAYCELL) {
         /* indirect fetch, address already in PRI */
         load_i();
@@ -431,7 +427,7 @@ SC_FUNC void rvalue(value* lval)
 /* Get the address of a symbol into the primary or alternate register (used
  * for arrays, and for passing arguments by reference).
  */
-SC_FUNC void address(symbol* sym, regid reg)
+SC_FUNC void address(symbol* sym, const regid reg)
 {
     assert(sym != NULL);
     assert(reg == sPRI || reg == sALT);
@@ -476,7 +472,7 @@ SC_FUNC void address(symbol* sym, regid reg)
     code_idx += opcodes(1) + opargs(1);
 }
 
-static void addr_reg(int val, regid reg)
+static void addr_reg(const int val, const regid reg)
 {
     if (reg == sPRI) {
         stgwrite("\taddr.pri ");
@@ -493,7 +489,7 @@ static void addr_reg(int val, regid reg)
 //   base + 1*sizeof(cell) == function return address
 //   base + 2*sizeof(cell) == number of arguments
 //   base + 3*sizeof(cell) == first argument of the function
-static void load_argcount(regid reg)
+static void load_argcount(const regid reg)
 {
     if (reg == sPRI) {
         stgwrite("\tload.s.pri ");
@@ -531,11 +527,10 @@ SC_FUNC void load_hidden_arg()
  *  Saves the contents of "primary" into a memory cell, either directly
  *  or indirectly (at the address given in the alternate register).
  */
-SC_FUNC void store(value* lval)
+SC_FUNC void store(const value* lval)
 {
-    symbol* sym;
 
-    sym = lval->sym;
+    symbol* sym = lval->sym;
     if (lval->ident == iARRAYCELL) {
         /* store at address in ALT */
         stgwrite("\tstor.i\n");
@@ -572,7 +567,7 @@ SC_FUNC void store(value* lval)
     } /* if */
 }
 
-SC_FUNC void storereg(cell address, regid reg)
+SC_FUNC void storereg(const cell address, const regid reg)
 {
     assert(reg == sPRI || reg == sALT);
     if (reg == sPRI) {
@@ -588,7 +583,7 @@ SC_FUNC void storereg(cell address, regid reg)
 /* source must in PRI, destination address in ALT. The "size"
  * parameter is in bytes, not cells.
  */
-SC_FUNC void memcopy(cell size)
+SC_FUNC void memcopy(const cell size)
 {
     stgwrite("\tmovs ");
     outval(size, TRUE);
@@ -599,7 +594,7 @@ SC_FUNC void memcopy(cell size)
 /* Address of the source must already have been loaded in PRI
  * "size" is the size in bytes (not cells).
  */
-SC_FUNC void copyarray(symbol* sym, cell size)
+SC_FUNC void copyarray(symbol* sym, const cell size)
 {
     assert(sym != NULL);
     /* the symbol can be a local array, a global array, or an array
@@ -626,7 +621,7 @@ SC_FUNC void copyarray(symbol* sym, cell size)
     memcopy(size);
 }
 
-SC_FUNC void fillarray(symbol* sym, cell size, cell value)
+SC_FUNC void fillarray(symbol* sym, const cell size, const cell value)
 {
     ldconst(value, sPRI); /* load value in PRI */
 
@@ -661,7 +656,7 @@ SC_FUNC void fillarray(symbol* sym, cell size, cell value)
 /* Instruction to get an immediate value into the primary or the alternate
  * register
  */
-SC_FUNC void ldconst(cell val, regid reg)
+SC_FUNC void ldconst(const cell val, const regid reg)
 {
     assert(reg == sPRI || reg == sALT);
     switch (reg) {
@@ -705,7 +700,7 @@ SC_FUNC void move_alt(void)
 
 /* Push primary or the alternate register onto the stack
  */
-SC_FUNC void pushreg(regid reg)
+SC_FUNC void pushreg(const regid reg)
 {
     assert(reg == sPRI || reg == sALT);
     switch (reg) {
@@ -722,7 +717,7 @@ SC_FUNC void pushreg(regid reg)
 /*
  *  Push a constant value onto the stack
  */
-SC_FUNC void pushval(cell val)
+SC_FUNC void pushval(const cell val)
 {
     stgwrite("\tpush.c ");
     outval(val, TRUE);
@@ -731,7 +726,7 @@ SC_FUNC void pushval(cell val)
 
 /* Pop stack into the primary or the alternate register
  */
-SC_FUNC void popreg(regid reg)
+SC_FUNC void popreg(const regid reg)
 {
     assert(reg == sPRI || reg == sALT);
     switch (reg) {
@@ -763,14 +758,14 @@ SC_FUNC void swap1(void)
  * The case table is sorted on the comparison value. This allows more advanced
  * abstract machines to sift the case table with a binary search.
  */
-SC_FUNC void ffswitch(int label)
+SC_FUNC void ffswitch(const int label)
 {
     stgwrite("\tswitch ");
     outval(label, TRUE); /* the label is the address of the case table */
     code_idx += opcodes(1) + opargs(1);
 }
 
-SC_FUNC void ffcase(cell value, char* labelname, int newtable)
+SC_FUNC void ffcase(const cell value, const char* labelname, const int newtable)
 {
     if (newtable) {
         stgwrite("\tcasetbl\n");
@@ -787,7 +782,7 @@ SC_FUNC void ffcase(cell value, char* labelname, int newtable)
 /*
  *  Call specified function
  */
-SC_FUNC void ffcall(symbol* sym, const char* label, int numargs)
+SC_FUNC void ffcall(symbol* sym, const char* label, const int numargs)
 {
     char symname[2 * sNAMEMAX + 16];
 
@@ -842,14 +837,14 @@ SC_FUNC void ffret(void)
     code_idx += opcodes(1);
 }
 
-SC_FUNC void ffabort(int reason)
+SC_FUNC void ffabort(const int reason)
 {
     stgwrite("\thalt ");
     outval(reason, TRUE);
     code_idx += opcodes(1) + opargs(1);
 }
 
-SC_FUNC void ffbounds(cell size)
+SC_FUNC void ffbounds(const cell size)
 {
     if ((sc_debug & sCHKBOUNDS) != 0) {
         stgwrite("\tbounds ");
@@ -861,7 +856,7 @@ SC_FUNC void ffbounds(cell size)
 /*
  *  Jump to local label number (the number is converted to a name)
  */
-SC_FUNC void jumplabel(int number)
+SC_FUNC void jumplabel(const int number)
 {
     stgwrite("\tjump ");
     outval(number, TRUE);
@@ -880,7 +875,7 @@ SC_FUNC void defstorage(void)
  *  Inclrement/decrement stack pointer. Note that this routine does
  *  nothing if the delta is zero.
  */
-SC_FUNC void modstk(int delta)
+SC_FUNC void modstk(const int delta)
 {
     if (delta) {
         stgwrite("\tstack ");
@@ -890,7 +885,7 @@ SC_FUNC void modstk(int delta)
 }
 
 /* set the stack to a hard offset from the frame */
-SC_FUNC void setstk(cell value)
+SC_FUNC void setstk(const cell value)
 {
     stgwrite("\tlctrl 5\n"); /* get FRM in PRI */
     assert(value <= 0);      /* STK should always become <= FRM */
@@ -907,7 +902,7 @@ SC_FUNC void setstk(cell value)
     code_idx += opcodes(2) + opargs(2);
 }
 
-SC_FUNC void modheap(int delta)
+SC_FUNC void modheap(const int delta)
 {
     if (delta) {
         stgwrite("\theap ");
@@ -925,7 +920,7 @@ SC_FUNC void setheap_pri(void)
     code_idx += opcodes(3) + opargs(1);
 }
 
-SC_FUNC void setheap(cell value)
+SC_FUNC void setheap(const cell value)
 {
     stgwrite("\tconst.pri "); /* load default value in PRI */
     outval(value, TRUE);
@@ -1016,7 +1011,7 @@ SC_FUNC void charalign(void)
 /*
  *  Add a constant to the primary register.
  */
-SC_FUNC void addconst(cell value)
+SC_FUNC void addconst(const cell value)
 {
     if (value != 0) {
         stgwrite("\tadd.c ");
@@ -1265,11 +1260,10 @@ SC_FUNC void nooperation(void)
 
 /*  increment symbol
  */
-SC_FUNC void inc(value* lval)
+SC_FUNC void inc(const value* lval)
 {
-    symbol* sym;
 
-    sym = lval->sym;
+    const symbol* sym = lval->sym;
     if (lval->ident == iARRAYCELL) {
         /* indirect increment, address already in PRI */
         stgwrite("\tinc.i\n");
@@ -1332,11 +1326,10 @@ SC_FUNC void inc(value* lval)
  *
  *  in case of an integer pointer, the symbol must be incremented by 2.
  */
-SC_FUNC void dec(value* lval)
+SC_FUNC void dec(const value* lval)
 {
-    symbol* sym;
 
-    sym = lval->sym;
+    const symbol* sym = lval->sym;
     if (lval->ident == iARRAYCELL) {
         /* indirect decrement, address already in PRI */
         stgwrite("\tdec.i\n");
@@ -1398,7 +1391,7 @@ SC_FUNC void dec(value* lval)
 /*
  *  Jumps to "label" if PRI != 0
  */
-SC_FUNC void jmp_ne0(int number)
+SC_FUNC void jmp_ne0(const int number)
 {
     stgwrite("\tjnz ");
     outval(number, TRUE);
@@ -1408,7 +1401,7 @@ SC_FUNC void jmp_ne0(int number)
 /*
  *  Jumps to "label" if PRI == 0
  */
-SC_FUNC void jmp_eq0(int number)
+SC_FUNC void jmp_eq0(const int number)
 {
     stgwrite("\tjzer ");
     outval(number, TRUE);
@@ -1416,7 +1409,7 @@ SC_FUNC void jmp_eq0(int number)
 }
 
 /* write a value in hexadecimal; optionally adds a newline */
-SC_FUNC void outval(cell val, int newline)
+SC_FUNC void outval(const cell val, const int newline)
 {
     stgwrite(itoh(val));
     if (newline) {

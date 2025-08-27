@@ -83,9 +83,8 @@ SC_FUNC int error(int number, ...)
     static short lastfile;
     char *msg, *pre, *filename;
     va_list argptr;
-    int is_warning;
 
-    is_warning = (number >= 200 && !sc_warnings_are_errors);
+    const int is_warning = number >= 200 && !sc_warnings_are_errors;
 
     /* errflag is reset on each semicolon.
      * In a two-pass compiler, an error should not be reported twice. Therefore
@@ -98,8 +97,8 @@ SC_FUNC int error(int number, ...)
 
     /* also check for disabled warnings */
     if (number >= 200) {
-        int index = (number - 200) / 8;
-        int mask = 1 << ((number - 200) % 8);
+        const int index = (number - 200) / 8;
+        const int mask = 1 << ((number - 200) % 8);
         if ((warndisable.mask[index] & mask) != 0) {
             return 0;
         }
@@ -147,8 +146,8 @@ SC_FUNC int error(int number, ...)
 
     va_start(argptr, number);
     if (strlen(errfname) == 0) {
-        int start = (errstart == errline) ? -1 : errstart;
-        if (pc_error((int)number, msg, filename, start, errline, argptr)) {
+        const int start = errstart == errline ? -1 : errstart;
+        if (pc_error(number, msg, filename, start, errline, argptr)) {
             if (outf != NULL) {
                 pc_closeasm(outf, TRUE);
                 outf = NULL;
@@ -202,7 +201,7 @@ SC_FUNC int error(int number, ...)
     return 0;
 }
 
-SC_FUNC void errorset(int code, int line)
+SC_FUNC void errorset(const int code, const int line)
 {
     switch (code) {
         case sRESET:
@@ -239,10 +238,8 @@ SC_FUNC void errorset(int code, int line)
  *  o  1 for enable
  *  o  2 for toggle
  */
-int pc_enablewarning(int number, int enable)
+int pc_enablewarning(int number, const int enable)
 {
-    int index;
-    unsigned char mask;
 
     if (number < 200) {
         return FALSE; /* errors and fatal errors cannot be disabled */
@@ -252,8 +249,8 @@ int pc_enablewarning(int number, int enable)
         return FALSE;
     }
 
-    index = number / 8;
-    mask = (unsigned char)(1 << (number % 8));
+    const int index = number / 8;
+    const unsigned char mask = (unsigned char)(1 << (number % 8));
     switch (enable) {
         case 0:
             warndisable.mask[index] |= mask;
@@ -274,7 +271,7 @@ int pc_enablewarning(int number, int enable)
  */
 SC_FUNC void pushwarnings(void)
 {
-    warnstack* p = (warnstack*)malloc(sizeof(warnstack));
+    warnstack* p = malloc(sizeof(warnstack));
     if (p != NULL) {
         memcpy(p->mask, warndisable.mask, sizeof(warndisable.mask));
         p->next = warndisable.next;

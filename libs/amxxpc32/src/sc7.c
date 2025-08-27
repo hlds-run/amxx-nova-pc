@@ -57,8 +57,8 @@
     #pragma warning(pop)
 #endif
 
-static void stgstring(char* start, char* end);
-static void stgopt(char* start, char* end);
+static void stgstring(char* start, const char* end);
+static void stgopt(char* start, const char* end);
 
 #define sSTG_GROW 512
 #define sSTG_MAX 20480
@@ -70,10 +70,10 @@ static int stgmax = 0; /* current size of the staging buffer */
     if ((int)(index) >= stgmax)                                                                                        \
     grow_stgbuffer((index) + 1)
 
-static void grow_stgbuffer(int requiredsize)
+static void grow_stgbuffer(const int requiredsize)
 {
     char* p;
-    int clear = stgbuf == NULL; /* if previously none, empty buffer explicitly */
+    const int clear = stgbuf == NULL; /* if previously none, empty buffer explicitly */
 
     assert(stgmax < requiredsize);
     /* if the staging buffer (holding intermediate code for one line) grows
@@ -125,7 +125,7 @@ SC_FUNC void stgbuffer_cleanup(void)
  *                     stgbuf  (altered)
  *                     staging (referred to only)
  */
-SC_FUNC void stgmark(char mark)
+SC_FUNC void stgmark(const char mark)
 {
     if (staging) {
         CHECK_STGBUFFER(stgidx);
@@ -160,7 +160,6 @@ static int filewrite(char* str)
  */
 SC_FUNC void stgwrite(const char* st)
 {
-    int len;
 
     CHECK_STGBUFFER(0);
     if (staging) {
@@ -177,7 +176,7 @@ SC_FUNC void stgwrite(const char* st)
     else {
         CHECK_STGBUFFER(strlen(stgbuf) + strlen(st) + 1);
         strcat(stgbuf, st);
-        len = strlen(stgbuf);
+        const int len = strlen(stgbuf);
         if (len > 0 && stgbuf[len - 1] == '\n') {
             filewrite(stgbuf);
             stgbuf[0] = '\0';
@@ -195,7 +194,7 @@ SC_FUNC void stgwrite(const char* st)
  *                     stgbuf  (referred to only)
  *                     staging (referred to only)
  */
-SC_FUNC void stgout(int index)
+SC_FUNC void stgout(const int index)
 {
     if (!staging) {
         return;
@@ -230,23 +229,20 @@ typedef struct {
  *     '[...|...]  invalid, first string doesn't start with '|'
  *     '[|...|]    invalid
  */
-static void stgstring(char* start, char* end)
+static void stgstring(char* start, const char* end)
 {
-    char* ptr;
-    int nest, argc, arg;
-    argstack* stack;
 
     while (start < end) {
         if (*start == sSTARTREORDER) {
             start += 1; /* skip token */
             /* allocate a argstack with sMAXARGS items */
-            stack = (argstack*)malloc(sMAXARGS * sizeof(argstack));
+            argstack* stack = malloc(sMAXARGS * sizeof(argstack));
             if (stack == NULL) {
                 error(103); /* insufficient memory */
             }
-            nest = 1; /* nesting counter */
-            argc = 0; /* argument counter */
-            arg = -1; /* argument index; no valid argument yet */
+            int nest = 1; /* nesting counter */
+            int argc = 0; /* argument counter */
+            int arg = -1; /* argument index; no valid argument yet */
             do {
                 switch (*start) {
                     case sSTARTREORDER:
@@ -287,7 +283,7 @@ static void stgstring(char* start, char* end)
             free(stack);
         }
         else {
-            ptr = start;
+            char* ptr = start;
             while (ptr < end && *ptr != sSTARTREORDER) {
                 ptr += strlen(ptr) + 1;
             }
@@ -304,7 +300,7 @@ static void stgstring(char* start, char* end)
  *  Global references: stgidx (altered)
  *                     staging (reffered to only)
  */
-SC_FUNC void stgdel(int index, cell code_index)
+SC_FUNC void stgdel(const int index, const cell code_index)
 {
     if (staging) {
         stgidx = index;
@@ -331,7 +327,7 @@ SC_FUNC int stgget(int* index, cell* code_index)
  *                     stgidx   (altered)
  *                     stgbuf   (contents altered)
  */
-SC_FUNC void stgset(int onoff)
+SC_FUNC void stgset(const int onoff)
 {
     staging = onoff;
     if (staging) {
@@ -459,13 +455,12 @@ static int matchsequence(const char* start, const char* end, const char* pattern
         pattern++;
     } /* while */
 
-    *match_length = (int)(start - start_org);
+    *match_length = start - start_org;
     return TRUE;
 }
 
 static char* replacesequence(const char* pattern, char symbols[MAX_OPT_VARS][MAX_ALIAS + 1], int* repl_length)
 {
-    const char* lptr;
     int var;
     char* buffer;
 
@@ -476,7 +471,7 @@ static char* replacesequence(const char* pattern, char symbols[MAX_OPT_VARS][MAX
      */
     assert(repl_length != NULL);
     *repl_length = 0;
-    lptr = pattern;
+    const char* lptr = pattern;
     while (*lptr) {
         switch (*lptr) {
             case '%':
@@ -505,7 +500,7 @@ static char* replacesequence(const char* pattern, char symbols[MAX_OPT_VARS][MAX
     char* ptr = buffer;
     *ptr++ = '\t'; /* the "replace" patterns do not have tabs */
     while (*pattern) {
-        assert((int)(ptr - buffer) < *repl_length);
+        assert(ptr - buffer < *repl_length);
         switch (*pattern) {
             case '%':
                 /* write out the symbol */
@@ -531,13 +526,14 @@ static char* replacesequence(const char* pattern, char symbols[MAX_OPT_VARS][MAX
         pattern++;
     } /* while */
 
-    assert((int)(ptr - buffer) == *repl_length);
+    assert(ptr - buffer == *repl_length);
     return buffer;
 }
 
-static void strreplace(char* dest, char* replace, int sub_length, int repl_length, int dest_length)
+static void strreplace(
+    char* dest, const char* replace, const int sub_length, const int repl_length, const int dest_length)
 {
-    int offset = sub_length - repl_length;
+    const int offset = sub_length - repl_length;
     if (offset > 0) { /* delete a section */
         memmove(dest, dest + offset, dest_length - offset);
         memset(dest + dest_length - offset, 0xcc, offset); /* not needed, but for cleanlyness */
@@ -557,10 +553,10 @@ static void strreplace(char* dest, char* replace, int sub_length, int repl_lengt
  *  The longest sequences should probably be checked first.
  */
 
-static void stgopt(char* start, char* end)
+static void stgopt(char* start, const char* end)
 {
     char symbols[MAX_OPT_VARS][MAX_ALIAS + 1];
-    int seq, match_length, repl_length;
+    int match_length, repl_length;
     int matches;
     char* debut = start;
 
@@ -571,7 +567,7 @@ static void stgopt(char* start, char* end)
             matches = 0;
             start = debut;
             while (start < end) {
-                seq = 0;
+                int seq = 0;
                 while (sequences[seq].find != NULL) {
                     assert(seq >= 0);
                     if (matchsequence(start, end, sequences[seq].find, symbols, &match_length)) {
@@ -586,7 +582,7 @@ static void stgopt(char* start, char* end)
                          */
                         assert(match_length >= repl_length);
                         if (match_length >= repl_length) {
-                            strreplace(start, replace, match_length, repl_length, (int)(end - start));
+                            strreplace(start, replace, match_length, repl_length, end - start);
                             end -= match_length - repl_length;
                             free(replace);
                             code_idx -= sequences[seq].savesize;

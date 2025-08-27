@@ -38,12 +38,12 @@
  */
 SC_FUNC char* duplicatestring(const char* sourcestring)
 {
-    char* result = (char*)malloc(strlen(sourcestring) + 1);
+    char* result = malloc(strlen(sourcestring) + 1);
     strcpy(result, sourcestring);
     return result;
 }
 
-static stringpair* insert_stringpair(stringpair* root, char* first, char* second, int matchlength)
+static stringpair* insert_stringpair(stringpair* root, const char* first, const char* second, const int matchlength)
 {
     stringpair *cur, *pred;
 
@@ -77,12 +77,11 @@ static stringpair* insert_stringpair(stringpair* root, char* first, char* second
 
 static void delete_stringpairtable(stringpair* root)
 {
-    stringpair *cur, *next;
 
     assert(root != NULL);
-    cur = root->next;
+    stringpair* cur = root->next;
     while (cur != NULL) {
-        next = cur->next;
+        stringpair* next = cur->next;
         assert(cur->first != NULL);
         assert(cur->second != NULL);
         free(cur->first);
@@ -93,7 +92,7 @@ static void delete_stringpairtable(stringpair* root)
     memset(root, 0, sizeof(stringpair));
 }
 
-static stringpair* find_stringpair(stringpair* cur, char* first, int matchlength)
+static stringpair* find_stringpair(stringpair* cur, const char* first, const int matchlength)
 {
     int result = 0;
 
@@ -114,10 +113,9 @@ static stringpair* find_stringpair(stringpair* cur, char* first, int matchlength
 
 static int delete_stringpair(stringpair* root, stringpair* item)
 {
-    stringpair* cur;
 
     assert(root != NULL);
-    cur = root;
+    stringpair* cur = root;
     while (cur->next != NULL) {
         if (cur->next == item) {
             cur->next = item->next; /* unlink from list */
@@ -134,7 +132,7 @@ static int delete_stringpair(stringpair* root, stringpair* item)
 }
 
 /* ----- string list functions ----------------------------------- */
-static stringlist* insert_string(stringlist* root, char* string)
+static stringlist* insert_string(stringlist* root, const char* string)
 {
     stringlist* cur;
 
@@ -155,12 +153,11 @@ static stringlist* insert_string(stringlist* root, char* string)
     return cur;
 }
 
-static char* get_string(stringlist* root, int index)
+static char* get_string(const stringlist* root, int index)
 {
-    stringlist* cur;
 
     assert(root != NULL);
-    cur = root->next;
+    const stringlist* cur = root->next;
     while (cur != NULL && index-- > 0) {
         cur = cur->next;
     }
@@ -173,13 +170,13 @@ static char* get_string(stringlist* root, int index)
 
 static int delete_string(stringlist* root, int index)
 {
-    stringlist *cur, *item;
+    stringlist* cur;
 
     assert(root != NULL);
     for (cur = root; cur->next != NULL && index > 0; cur = cur->next, index--)
         /* nothing */;
     if (cur->next != NULL) {
-        item = cur->next;
+        stringlist* item = cur->next;
         cur->next = item->next; /* unlink from list */
         assert(item->line != NULL);
         free(item->line);
@@ -191,12 +188,11 @@ static int delete_string(stringlist* root, int index)
 
 SC_FUNC void delete_stringtable(stringlist* root)
 {
-    stringlist *cur, *next;
 
     assert(root != NULL);
-    cur = root->next;
+    stringlist* cur = root->next;
     while (cur != NULL) {
-        next = cur->next;
+        stringlist* next = cur->next;
         assert(cur->line != NULL);
         free(cur->line);
         free(cur);
@@ -208,7 +204,7 @@ SC_FUNC void delete_stringtable(stringlist* root)
 /* ----- alias table --------------------------------------------- */
 static stringpair alias_tab = {NULL, NULL, NULL}; /* alias table */
 
-SC_FUNC stringpair* insert_alias(char* name, char* alias)
+SC_FUNC stringpair* insert_alias(const char* name, const char* alias)
 {
     stringpair* cur;
 
@@ -222,9 +218,9 @@ SC_FUNC stringpair* insert_alias(char* name, char* alias)
     return cur;
 }
 
-SC_FUNC int lookup_alias(char* target, char* name)
+SC_FUNC int lookup_alias(char* target, const char* name)
 {
-    stringpair* cur = find_stringpair(alias_tab.next, name, strlen(name));
+    const stringpair* cur = find_stringpair(alias_tab.next, name, strlen(name));
     if (cur != NULL) {
         assert(strlen(cur->second) <= sNAMEMAX);
         strcpy(target, cur->second);
@@ -240,12 +236,12 @@ SC_FUNC void delete_aliastable(void)
 /* ----- include paths list -------------------------------------- */
 static stringlist includepaths = {NULL, NULL}; /* directory list for include files */
 
-SC_FUNC stringlist* insert_path(char* path)
+SC_FUNC stringlist* insert_path(const char* path)
 {
     return insert_string(&includepaths, path);
 }
 
-SC_FUNC char* get_path(int index)
+SC_FUNC char* get_path(const int index)
 {
     return get_string(&includepaths, index);
 }
@@ -262,7 +258,7 @@ SC_FUNC void delete_pathtable(void)
 static stringpair substpair = {NULL, NULL, NULL}; /* list of substitution pairs */
 
 static stringpair* substindex['z' - PUBLIC_CHAR + 1]; /* quick index to first character */
-static void adjustindex(char c)
+static void adjustindex(const char c)
 {
     stringpair* cur;
     assert(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '_' || c == PUBLIC_CHAR);
@@ -273,7 +269,7 @@ static void adjustindex(char c)
     substindex[(int)c - PUBLIC_CHAR] = cur;
 }
 
-SC_FUNC stringpair* insert_subst(char* pattern, char* substitution, int prefixlen)
+SC_FUNC stringpair* insert_subst(const char* pattern, const char* substitution, const int prefixlen)
 {
     stringpair* cur;
 
@@ -306,20 +302,19 @@ SC_FUNC stringpair* insert_subst(char* pattern, char* substitution, int prefixle
     return cur;
 }
 
-SC_FUNC stringpair* find_subst(char* name, int length)
+SC_FUNC stringpair* find_subst(const char* name, const int length)
 {
-    stringpair* item;
     assert(name != NULL);
     assert(length > 0);
     assert(*name >= 'A' && *name <= 'Z' || *name >= 'a' && *name <= 'z' || *name == '_' || *name == PUBLIC_CHAR);
-    item = substindex[(int)*name - PUBLIC_CHAR];
+    stringpair* item = substindex[(int)*name - PUBLIC_CHAR];
     if (item != NULL) {
         item = find_stringpair(item, name, length);
     }
 
     if (item && (item->flags & flgDEPRECATED) != 0) {
         static char macro[128];
-        char *rem, *msg = (item->documentation != NULL) ? item->documentation : "";
+        char *rem, *msg = item->documentation != NULL ? item->documentation : "";
         strncpy(macro, item->first, sizeof(macro));
         macro[sizeof(macro) - 1] = '\0';
 
@@ -335,13 +330,12 @@ SC_FUNC stringpair* find_subst(char* name, int length)
     return item;
 }
 
-SC_FUNC int delete_subst(char* name, int length)
+SC_FUNC int delete_subst(const char* name, const int length)
 {
-    stringpair* item;
     assert(name != NULL);
     assert(length > 0);
     assert(*name >= 'A' && *name <= 'Z' || *name >= 'a' && *name <= 'z' || *name == '_' || *name == PUBLIC_CHAR);
-    item = substindex[(int)*name - PUBLIC_CHAR];
+    stringpair* item = substindex[(int)*name - PUBLIC_CHAR];
     if (item != NULL) {
         item = find_stringpair(item, name, length);
     }
@@ -355,9 +349,8 @@ SC_FUNC int delete_subst(char* name, int length)
 
 SC_FUNC void delete_substtable(void)
 {
-    int i;
     delete_stringpairtable(&substpair);
-    for (i = 0; i < sizeof substindex / sizeof substindex[0]; i++) {
+    for (int i = 0; i < sizeof substindex / sizeof substindex[0]; i++) {
         substindex[i] = NULL;
     }
 }
@@ -367,12 +360,12 @@ SC_FUNC void delete_substtable(void)
 /* ----- input file list (explicit files)------------------------- */
 static stringlist sourcefiles = {NULL, NULL};
 
-SC_FUNC stringlist* insert_sourcefile(char* string)
+SC_FUNC stringlist* insert_sourcefile(const char* string)
 {
     return insert_string(&sourcefiles, string);
 }
 
-SC_FUNC char* get_sourcefile(int index)
+SC_FUNC char* get_sourcefile(const int index)
 {
     return get_string(&sourcefiles, index);
 }
@@ -386,7 +379,7 @@ SC_FUNC void delete_sourcefiletable(void)
 /* ----- parsed file list (explicit + included files) ------------ */
 static stringlist inputfiles = {NULL, NULL};
 
-SC_FUNC stringlist* insert_inputfile(char* string)
+SC_FUNC stringlist* insert_inputfile(const char* string)
 {
     if (sc_status != statFIRST) {
         return insert_string(&inputfiles, string);
@@ -394,7 +387,7 @@ SC_FUNC stringlist* insert_inputfile(char* string)
     return NULL;
 }
 
-SC_FUNC char* get_inputfile(int index)
+SC_FUNC char* get_inputfile(const int index)
 {
     return get_string(&inputfiles, index);
 }
@@ -409,17 +402,17 @@ SC_FUNC void delete_inputfiletable(void)
 #if !defined SC_LIGHT
 static stringlist docstrings = {NULL, NULL};
 
-SC_FUNC stringlist* insert_docstring(char* string)
+SC_FUNC stringlist* insert_docstring(const char* string)
 {
     return insert_string(&docstrings, string);
 }
 
-SC_FUNC char* get_docstring(int index)
+SC_FUNC char* get_docstring(const int index)
 {
     return get_string(&docstrings, index);
 }
 
-SC_FUNC void delete_docstring(int index)
+SC_FUNC void delete_docstring(const int index)
 {
     delete_string(&docstrings, index);
 }
@@ -434,12 +427,12 @@ SC_FUNC void delete_docstringtable(void)
 /* ----- autolisting --------------------------------------------- */
 static stringlist autolist = {NULL, NULL};
 
-SC_FUNC stringlist* insert_autolist(char* string)
+SC_FUNC stringlist* insert_autolist(const char* string)
 {
     return insert_string(&autolist, string);
 }
 
-SC_FUNC char* get_autolist(int index)
+SC_FUNC char* get_autolist(const int index)
 {
     return get_string(&autolist, index);
 }
@@ -453,7 +446,7 @@ SC_FUNC void delete_autolisttable(void)
 /* ----- value pair list ----------------------------------------- */
 static valuepair heaplist = {NULL, 0, 0};
 
-SC_FUNC valuepair* push_heaplist(long first, long second)
+SC_FUNC valuepair* push_heaplist(const long first, const long second)
 {
     valuepair *cur, *last;
     if ((cur = malloc(sizeof(valuepair))) == NULL) {
@@ -489,9 +482,8 @@ SC_FUNC int popfront_heaplist(long* first, long* second)
 
 SC_FUNC void delete_heaplisttable(void)
 {
-    valuepair* cur;
     while (heaplist.next != NULL) {
-        cur = heaplist.next;
+        valuepair* cur = heaplist.next;
         heaplist.next = cur->next;
         free(cur);
     } /* while */
@@ -564,12 +556,11 @@ SC_FUNC stringlist* insert_dbgsymbol(symbol* sym)
         }
 #endif
         if (sym->ident == iARRAY || sym->ident == iREFARRAY) {
-            symbol* sub;
 #if !defined NDEBUG
             count = sym->dim.array.level;
 #endif
             strcat(string, " [ ");
-            for (sub = sym; sub != NULL; sub = finddepend(sub)) {
+            for (const symbol* sub = sym; sub != NULL; sub = finddepend(sub)) {
 #if !defined NDEBUG
                 assert(sub->dim.array.level == count--);
 #endif
@@ -583,7 +574,7 @@ SC_FUNC stringlist* insert_dbgsymbol(symbol* sym)
     return NULL;
 }
 
-SC_FUNC char* get_dbgstring(int index)
+SC_FUNC char* get_dbgstring(const int index)
 {
     return get_string(&dbgstrings, index);
 }

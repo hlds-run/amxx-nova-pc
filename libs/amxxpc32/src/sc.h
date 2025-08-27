@@ -467,30 +467,30 @@ int pc_printf(const char* message, ...) INVISIBLE;
 #endif
 
 /* error report function */
-int pc_error(int number, char* message, char* filename, int firstline, int lastline, va_list argptr);
+int pc_error(int number, const char* message, char* filename, int firstline, int lastline, va_list argptr);
 
 /* input from source file */
 void* pc_opensrc(char* filename); /* reading only */
-void* pc_createsrc(char* filename);
+void* pc_createsrc(const char* filename);
 void pc_closesrc(void* handle);                 /* never delete */
 void pc_resetsrc(void* handle, void* position); /* reset to a position marked earlier */
 char* pc_readsrc(void* handle, unsigned char* target, int maxchars);
 int pc_writesrc(void* handle, unsigned char* source);
-void* pc_getpossrc(void* handle); /* mark the current position */
-int pc_eofsrc(void* handle);
+void* pc_getpossrc(const void* handle); /* mark the current position */
+int pc_eofsrc(const void* handle);
 
 /* output to intermediate (.ASM) file */
-void* pc_openasm(char* filename); /* read/write */
+void* pc_openasm(const char* filename); /* read/write */
 void pc_closeasm(void* handle, int deletefile);
 void pc_resetasm(void* handle);
 int pc_writeasm(void* handle, char* str);
 char* pc_readasm(void* handle, char* target, int maxchars);
 
 /* output to binary (.AMX) file */
-void* pc_openbin(char* filename);
+void* pc_openbin(const char* filename);
 void pc_closebin(void* handle, int deletefile);
 void pc_resetbin(void* handle, long offset);
-int pc_writebin(void* handle, void* buffer, int size);
+int pc_writebin(void* handle, const void* buffer, int size);
 long pc_lengthbin(void* handle); /* return the length of the file */
 
 #if defined __cplusplus
@@ -511,18 +511,18 @@ long pc_lengthbin(void* handle); /* return the length of the file */
 #endif
 
 /* function prototypes in SC1.C */
-SC_FUNC void set_extension(char* filename, char* extension, int force);
+SC_FUNC void set_extension(char* filename, const char* extension, int force);
 SC_FUNC symbol* fetchfunc(char* name, int tag);
 SC_FUNC char* operator_symname(char* symname, char* opername, int tag1, int tag2, int numtags, int resulttag);
 SC_FUNC char* funcdisplayname(char* dest, char* funcname);
 SC_FUNC int constexpr(cell* val, int* tag, symbol** symptr);
 SC_FUNC constvalue* append_constval(constvalue* table, const char* name, cell val, short index);
-SC_FUNC constvalue* find_constval(constvalue* table, char* name, short index);
+SC_FUNC constvalue* find_constval(const constvalue* table, const char* name, short index);
 SC_FUNC void delete_consttable(constvalue* table);
 SC_FUNC symbol* add_constant(char* name, cell val, int vclass, int tag);
 SC_FUNC void exporttag(int tag);
 SC_FUNC void sc_attachdocumentation(symbol* sym);
-SC_FUNC int get_actual_compound(symbol* sym);
+SC_FUNC int get_actual_compound(const symbol* sym);
 #if !defined NO_DEFINE
 SC_FUNC void inst_file_name(char* filename, int strip_path);
 #endif
@@ -574,12 +574,12 @@ SC_FUNC int getlabel(void);
 SC_FUNC char* itoh(ucell val);
 
 /* function prototypes in SC3.C */
-SC_FUNC int check_userop(void (*oper)(void), int tag1, int tag2, int numparam, value* lval, int* resulttag);
+SC_FUNC int check_userop(void (*oper)(void), int tag1, int tag2, int numparam, const value* lval, int* resulttag);
 SC_FUNC int matchtag(int formaltag, int actualtag, int allowcoerce);
 SC_FUNC int expression(cell* val, int* tag, symbol** symptr, int chkfuncresult);
 
 /* function prototypes in SC4.C */
-SC_FUNC void writeleader(symbol* root);
+SC_FUNC void writeleader(const symbol* root);
 SC_FUNC void writetrailer(void);
 SC_FUNC void begcseg(void);
 SC_FUNC void begdseg(void);
@@ -591,9 +591,9 @@ SC_FUNC void markexpr(optmark type, const char* name, cell offset);
 SC_FUNC void startfunc(char* fname);
 SC_FUNC void endfunc(void);
 SC_FUNC void alignframe(int numbytes);
-SC_FUNC void rvalue(value* lval);
+SC_FUNC void rvalue(const value* lval);
 SC_FUNC void address(symbol* ptr, regid reg);
-SC_FUNC void store(value* lval);
+SC_FUNC void store(const value* lval);
 SC_FUNC void storereg(cell address, regid reg);
 SC_FUNC void memcopy(cell size);
 SC_FUNC void copyarray(symbol* sym, cell size);
@@ -605,7 +605,7 @@ SC_FUNC void pushval(cell val);
 SC_FUNC void popreg(regid reg);
 SC_FUNC void swap1(void);
 SC_FUNC void ffswitch(int label);
-SC_FUNC void ffcase(cell value, char* labelname, int newtable);
+SC_FUNC void ffcase(cell value, const char* labelname, int newtable);
 SC_FUNC void ffcall(symbol* sym, const char* label, int numargs);
 SC_FUNC void ffret(void);
 SC_FUNC void ffabort(int reason);
@@ -658,8 +658,8 @@ SC_FUNC void lneg(void);
 SC_FUNC void neg(void);
 SC_FUNC void invert(void);
 SC_FUNC void nooperation(void);
-SC_FUNC void inc(value* lval);
-SC_FUNC void dec(value* lval);
+SC_FUNC void inc(const value* lval);
+SC_FUNC void dec(const value* lval);
 SC_FUNC void jmp_ne0(int number);
 SC_FUNC void jmp_eq0(int number);
 SC_FUNC void outval(cell val, int newline);
@@ -687,29 +687,29 @@ SC_FUNC int phopt_cleanup(void);
 
 /* function prototypes in SCLIST.C */
 SC_FUNC char* duplicatestring(const char* sourcestring);
-SC_FUNC stringpair* insert_alias(char* name, char* alias);
+SC_FUNC stringpair* insert_alias(const char* name, const char* alias);
 SC_FUNC stringpair* find_alias(char* name);
-SC_FUNC int lookup_alias(char* target, char* name);
+SC_FUNC int lookup_alias(char* target, const char* name);
 SC_FUNC void delete_aliastable(void);
-SC_FUNC stringlist* insert_path(char* path);
+SC_FUNC stringlist* insert_path(const char* path);
 SC_FUNC char* get_path(int index);
 SC_FUNC void delete_pathtable(void);
-SC_FUNC stringpair* insert_subst(char* pattern, char* substitution, int prefixlen);
+SC_FUNC stringpair* insert_subst(const char* pattern, const char* substitution, int prefixlen);
 SC_FUNC int get_subst(int index, char** pattern, char** substitution);
-SC_FUNC stringpair* find_subst(char* name, int length);
-SC_FUNC int delete_subst(char* name, int length);
+SC_FUNC stringpair* find_subst(const char* name, int length);
+SC_FUNC int delete_subst(const char* name, int length);
 SC_FUNC void delete_substtable(void);
-SC_FUNC stringlist* insert_sourcefile(char* string);
+SC_FUNC stringlist* insert_sourcefile(const char* string);
 SC_FUNC char* get_sourcefile(int index);
 SC_FUNC void delete_sourcefiletable(void);
-SC_FUNC stringlist* insert_inputfile(char* string);
+SC_FUNC stringlist* insert_inputfile(const char* string);
 SC_FUNC char* get_inputfile(int index);
 SC_FUNC void delete_inputfiletable(void);
-SC_FUNC stringlist* insert_docstring(char* string);
+SC_FUNC stringlist* insert_docstring(const char* string);
 SC_FUNC char* get_docstring(int index);
 SC_FUNC void delete_docstring(int index);
 SC_FUNC void delete_docstringtable(void);
-SC_FUNC stringlist* insert_autolist(char* string);
+SC_FUNC stringlist* insert_autolist(const char* string);
 SC_FUNC char* get_autolist(int index);
 SC_FUNC void delete_autolisttable(void);
 SC_FUNC valuepair* push_heaplist(long first, long second);
@@ -726,12 +726,12 @@ SC_FUNC void delete_dbgstringtable(void);
 typedef unsigned char MEMFILE;
     #define tMEMFILE 1
 #endif
-MEMFILE* mfcreate(char* filename);
+MEMFILE* mfcreate(const char* filename);
 void mfclose(MEMFILE* mf);
-int mfdump(MEMFILE* mf);
-long mflength(MEMFILE* mf);
+int mfdump(const MEMFILE* mf);
+long mflength(const MEMFILE* mf);
 long mfseek(MEMFILE* mf, long offset, int whence);
-unsigned int mfwrite(MEMFILE* mf, unsigned char* buffer, unsigned int size);
+unsigned int mfwrite(MEMFILE* mf, const unsigned char* buffer, unsigned int size);
 unsigned int mfread(MEMFILE* mf, unsigned char* buffer, unsigned int size);
 char* mfgets(MEMFILE* mf, char* string, unsigned int size);
 int mfputs(MEMFILE* mf, char* string);
@@ -750,18 +750,18 @@ SC_FUNC constvalue* state_add(const char* name, int fsa_id);
 SC_FUNC constvalue* state_find(const char* name, int fsa_id);
 SC_FUNC constvalue* state_findid(int id);
 SC_FUNC void state_buildlist(int** list, int* listsize, int* count, int stateid);
-SC_FUNC int state_addlist(int* list, int count, int fsa_id);
+SC_FUNC int state_addlist(const int* list, int count, int fsa_id);
 SC_FUNC void state_deletetable(void);
 SC_FUNC int state_getfsa(int listid);
 SC_FUNC int state_count(int listid);
 SC_FUNC int state_inlist(int listid, int state);
 SC_FUNC int state_listitem(int listid, int index);
-SC_FUNC void state_conflict(symbol* root);
+SC_FUNC void state_conflict(const symbol* root);
 
 /* external variables (defined in scvars.c) */
 #if !defined SC_SKIP_VDECL
 typedef struct HashTable HashTable;
-SC_VDECL struct HashTable* sp_Globals;
+SC_VDECL HashTable* sp_Globals;
 SC_VDECL symbol loctab;             /* local symbol table */
 SC_VDECL symbol glbtab;             /* global symbol table */
 SC_VDECL cell* litq;                /* the literal queue */

@@ -60,7 +60,7 @@ extern "C" {
         return val
 #endif /* __GNUC__ */
 
-static br_locate_fallback_func fallback_func = (br_locate_fallback_func)NULL;
+static br_locate_fallback_func fallback_func = NULL;
 static void* fallback_data = NULL;
 
 #ifdef ENABLE_BINRELOC
@@ -340,8 +340,6 @@ const char* br_thread_local_store(char* str)
  */
 char* br_strcat(const char* str1, const char* str2)
 {
-    char* result;
-    size_t len1, len2;
 
     if (!str1) {
         str1 = "";
@@ -350,10 +348,10 @@ char* br_strcat(const char* str1, const char* str2)
         str2 = "";
     }
 
-    len1 = strlen(str1);
-    len2 = strlen(str2);
+    const size_t len1 = strlen(str1);
+    const size_t len2 = strlen(str2);
 
-    result = (char*)malloc(len1 + len2 + 1);
+    char* result = malloc(len1 + len2 + 1);
     memcpy(result, str1, len1);
     memcpy(result + len1, str2, len2);
     result[len1 + len2] = '\0';
@@ -362,14 +360,13 @@ char* br_strcat(const char* str1, const char* str2)
 }
 
 /* Emulates glibc's strndup() */
-static char* br_strndup(char* str, size_t size)
+static char* br_strndup(const char* str, size_t size)
 {
-    char* result = (char*)NULL;
-    size_t len;
+    char* result = NULL;
 
     br_return_val_if_fail(str != (char*)NULL, (char*)NULL);
 
-    len = strlen(str);
+    const size_t len = strlen(str);
     if (!len) {
         return strdup("");
     }
@@ -395,11 +392,10 @@ static char* br_strndup(char* str, size_t size)
  */
 char* br_extract_dir(const char* path)
 {
-    char *end, *result;
 
     br_return_val_if_fail(path != (char*)NULL, (char*)NULL);
 
-    end = strrchr(path, '/');
+    char* end = strrchr(path, '/');
     if (!end) {
         return strdup(".");
     }
@@ -407,14 +403,12 @@ char* br_extract_dir(const char* path)
     while (end > path && *end == '/') {
         end--;
     }
-    result = br_strndup((char*)path, end - path + 1);
+    char* result = br_strndup((char*)path, end - path + 1);
     if (!*result) {
         free(result);
         return strdup("/");
     }
-    else {
-        return result;
-    }
+    return result;
 }
 
 /**
@@ -432,19 +426,18 @@ char* br_extract_dir(const char* path)
  */
 char* br_extract_prefix(const char* path)
 {
-    char *end, *tmp, *result;
 
     br_return_val_if_fail(path != (char*)NULL, (char*)NULL);
 
     if (!*path) {
         return strdup("/");
     }
-    end = strrchr(path, '/');
+    char* end = strrchr(path, '/');
     if (!end) {
         return strdup(path);
     }
 
-    tmp = br_strndup((char*)path, end - path);
+    char* tmp = br_strndup((char*)path, end - path);
     if (!*tmp) {
         free(tmp);
         return strdup("/");
@@ -454,7 +447,7 @@ char* br_extract_prefix(const char* path)
         return tmp;
     }
 
-    result = br_strndup(tmp, end - tmp);
+    char* result = br_strndup(tmp, end - tmp);
     free(tmp);
 
     if (!*result) {
@@ -474,7 +467,7 @@ char* br_extract_prefix(const char* path)
  * case "/proc/self/maps" can't be opened. The function set should
  * return a string that is safe to free with free().
  */
-void br_set_locate_fallback_func(br_locate_fallback_func func, void* data)
+void br_set_locate_fallback_func(const br_locate_fallback_func func, void* data)
 {
     fallback_func = func;
     fallback_data = data;

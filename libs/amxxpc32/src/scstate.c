@@ -70,11 +70,10 @@ static statelist statelist_tab = {NULL, NULL, 0, 0, 0}; /* state combinations ta
 
 static constvalue* find_automaton(const char* name, int* last)
 {
-    constvalue* ptr;
 
     assert(last != NULL);
     *last = 0;
-    ptr = sc_automaton_tab.next;
+    constvalue* ptr = sc_automaton_tab.next;
     while (ptr != NULL) {
         if (strcmp(name, ptr->name) == 0) {
             return ptr;
@@ -96,7 +95,7 @@ SC_FUNC constvalue* automaton_add(const char* name)
     ptr = find_automaton(name, &last);
     if (ptr == NULL) {
         assert(last + 1 <= SHRT_MAX);
-        ptr = append_constval(&sc_automaton_tab, name, (cell)0, (short)(last + 1));
+        ptr = append_constval(&sc_automaton_tab, name, 0, (short)(last + 1));
         /* for every new automaton, create an anonymous (invalid) state */
         state_add("", last + 1);
     } /* if */
@@ -109,7 +108,7 @@ SC_FUNC constvalue* automaton_find(const char* name)
     return find_automaton(name, &last);
 }
 
-SC_FUNC constvalue* automaton_findid(int id)
+SC_FUNC constvalue* automaton_findid(const int id)
 {
     constvalue* ptr;
     for (ptr = sc_automaton_tab.next; ptr != NULL && ptr->index != id; ptr = ptr->next)
@@ -117,20 +116,19 @@ SC_FUNC constvalue* automaton_findid(int id)
     return ptr;
 }
 
-static constvalue* find_state(const char* name, int fsa, int* last)
+static constvalue* find_state(const char* name, const int fsa, int* last)
 {
-    constvalue* ptr;
 
     assert(last != NULL);
     *last = 0;
-    ptr = sc_state_tab.next;
+    constvalue* ptr = sc_state_tab.next;
     while (ptr != NULL) {
         if (ptr->index == fsa) {
             if (strcmp(name, ptr->name) == 0) {
                 return ptr;
             }
-            if ((int)ptr->value > *last) {
-                *last = (int)ptr->value;
+            if (ptr->value > *last) {
+                *last = ptr->value;
             }
         } /* if */
         ptr = ptr->next;
@@ -138,7 +136,7 @@ static constvalue* find_state(const char* name, int fsa, int* last)
     return NULL;
 }
 
-SC_FUNC constvalue* state_add(const char* name, int fsa)
+SC_FUNC constvalue* state_add(const char* name, const int fsa)
 {
     constvalue* ptr;
     int last;
@@ -147,18 +145,18 @@ SC_FUNC constvalue* state_add(const char* name, int fsa)
     ptr = find_state(name, fsa, &last);
     if (ptr == NULL) {
         assert(fsa <= SHRT_MAX);
-        ptr = append_constval(&sc_state_tab, name, (cell)(last + 1), (short)fsa);
+        ptr = append_constval(&sc_state_tab, name, last + 1, (short)fsa);
     } /* if */
     return ptr;
 }
 
-SC_FUNC constvalue* state_find(const char* name, int fsa_id)
+SC_FUNC constvalue* state_find(const char* name, const int fsa_id)
 {
     int last; /* dummy */
     return find_state(name, fsa_id, &last);
 }
 
-SC_FUNC constvalue* state_findid(int id)
+SC_FUNC constvalue* state_findid(const int id)
 {
     constvalue* ptr;
     for (ptr = sc_state_tab.next; ptr != NULL && ptr->value != id; ptr = ptr->next)
@@ -166,7 +164,7 @@ SC_FUNC constvalue* state_findid(int id)
     return ptr;
 }
 
-SC_FUNC void state_buildlist(int** list, int* listsize, int* count, int stateid)
+SC_FUNC void state_buildlist(int** list, int* listsize, int* count, const int stateid)
 {
     int idx;
 
@@ -198,15 +196,14 @@ SC_FUNC void state_buildlist(int** list, int* listsize, int* count, int stateid)
     *count += 1;
 }
 
-static statelist* state_findlist(int* list, int count, int fsa, int* last)
+static statelist* state_findlist(const int* list, const int count, const int fsa, int* last)
 {
-    statelist* ptr;
     int i;
 
     assert(count > 0);
     assert(last != NULL);
     *last = 0;
-    ptr = statelist_tab.next;
+    statelist* ptr = statelist_tab.next;
     while (ptr != NULL) {
         if (ptr->listid > *last) {
             *last = ptr->listid;
@@ -224,7 +221,7 @@ static statelist* state_findlist(int* list, int count, int fsa, int* last)
     return NULL;
 }
 
-static statelist* state_getlist_ptr(int listid)
+static statelist* state_getlist_ptr(const int listid)
 {
     statelist* ptr;
 
@@ -234,14 +231,13 @@ static statelist* state_getlist_ptr(int listid)
     return ptr;
 }
 
-SC_FUNC int state_addlist(int* list, int count, int fsa)
+SC_FUNC int state_addlist(const int* list, const int count, const int fsa)
 {
-    statelist* ptr;
     int last;
 
     assert(list != NULL);
     assert(count > 0);
-    ptr = state_findlist(list, count, fsa, &last);
+    statelist* ptr = state_findlist(list, count, fsa, &last);
     if (ptr == NULL) {
         if ((ptr = (statelist*)malloc(sizeof(statelist))) == NULL) {
             error(103); /* insufficient memory */
@@ -263,10 +259,9 @@ SC_FUNC int state_addlist(int* list, int count, int fsa)
 
 SC_FUNC void state_deletetable(void)
 {
-    statelist* ptr;
 
     while (statelist_tab.next != NULL) {
-        ptr = statelist_tab.next;
+        statelist* ptr = statelist_tab.next;
         /* unlink first */
         statelist_tab.next = ptr->next;
         /* then delete */
@@ -276,31 +271,29 @@ SC_FUNC void state_deletetable(void)
     } /* while */
 }
 
-SC_FUNC int state_getfsa(int listid)
+SC_FUNC int state_getfsa(const int listid)
 {
-    statelist* ptr = state_getlist_ptr(listid);
-    return (ptr != NULL) ? ptr->fsa : -1; /* fsa 0 exists */
+    const statelist* ptr = state_getlist_ptr(listid);
+    return ptr != NULL ? ptr->fsa : -1; /* fsa 0 exists */
 }
 
-SC_FUNC int state_count(int listid)
+SC_FUNC int state_count(const int listid)
 {
-    statelist* ptr = state_getlist_ptr(listid);
+    const statelist* ptr = state_getlist_ptr(listid);
     if (ptr == NULL) {
         return 0; /* unknown list, no states in it */
     }
     return ptr->numstates;
 }
 
-SC_FUNC int state_inlist(int listid, int state)
+SC_FUNC int state_inlist(const int listid, const int state)
 {
-    statelist* ptr;
-    int i;
 
-    ptr = state_getlist_ptr(listid);
+    const statelist* ptr = state_getlist_ptr(listid);
     if (ptr == NULL) {
         return FALSE; /* unknown list, state not in it */
     }
-    for (i = 0; i < ptr->numstates; i++) {
+    for (int i = 0; i < ptr->numstates; i++) {
         if (ptr->states[i] == state) {
             return TRUE;
         }
@@ -308,11 +301,10 @@ SC_FUNC int state_inlist(int listid, int state)
     return FALSE;
 }
 
-SC_FUNC int state_listitem(int listid, int index)
+SC_FUNC int state_listitem(const int listid, const int index)
 {
-    statelist* ptr;
 
-    ptr = state_getlist_ptr(listid);
+    const statelist* ptr = state_getlist_ptr(listid);
     assert(ptr != NULL);
     assert(index >= 0 && index < ptr->numstates);
     return ptr->states[index];
@@ -322,38 +314,34 @@ SC_FUNC int state_listitem(int listid, int index)
  * of a symbol exists in any other statelist id's of the same function; it also
  * verifies that all definitions of the symbol are in the same automaton.
  */
-SC_FUNC void state_conflict(symbol* root)
+SC_FUNC void state_conflict(const symbol* root)
 {
-    statelist *psrc, *ptgt;
-    constvalue *srcptr, *tgtptr;
-    int s, t;
-    symbol* sym;
 
     assert(root != NULL);
-    for (sym = root->next; sym != NULL; sym = sym->next) {
+    for (symbol* sym = root->next; sym != NULL; sym = sym->next) {
         if (sym->parent != NULL || sym->ident != iFUNCTN) {
             continue; /* hierarchical data type or no function */
         }
         if (sym->states == NULL) {
             continue; /* this function has no states */
         }
-        for (srcptr = sym->states->next; srcptr != NULL; srcptr = srcptr->next) {
+        for (const constvalue* srcptr = sym->states->next; srcptr != NULL; srcptr = srcptr->next) {
             if (srcptr->index == -1) {
                 continue; /* state list id -1 is a special case */
             }
-            psrc = state_getlist_ptr(srcptr->index);
+            const statelist* psrc = state_getlist_ptr(srcptr->index);
             assert(psrc != NULL);
-            for (tgtptr = srcptr->next; tgtptr != NULL; tgtptr = tgtptr->next) {
+            for (const constvalue* tgtptr = srcptr->next; tgtptr != NULL; tgtptr = tgtptr->next) {
                 if (tgtptr->index == -1) {
                     continue; /* state list id -1 is a special case */
                 }
-                ptgt = state_getlist_ptr(tgtptr->index);
+                const statelist* ptgt = state_getlist_ptr(tgtptr->index);
                 assert(ptgt != NULL);
                 if (psrc->fsa != ptgt->fsa && strcmp(sym->name, uENTRYFUNC) != 0) {
                     error(83, sym->name); /* this function is part of another machine */
                 }
-                for (s = 0; s < psrc->numstates; s++) {
-                    for (t = 0; t < ptgt->numstates; t++) {
+                for (int s = 0; s < psrc->numstates; s++) {
+                    for (int t = 0; t < ptgt->numstates; t++) {
                         if (psrc->states[s] == ptgt->states[t]) {
                             error(84, sym->name); /* state conflict */
                         }

@@ -47,7 +47,7 @@ typedef memfile_t MEMFILE;
 
 #include "sc.h"
 
-MEMFILE* mfcreate(char* filename)
+MEMFILE* mfcreate(const char* filename)
 {
     return memfile_creat(filename, 4096);
 }
@@ -57,33 +57,30 @@ void mfclose(MEMFILE* mf)
     memfile_destroy(mf);
 }
 
-int mfdump(MEMFILE* mf)
+int mfdump(const MEMFILE* mf)
 {
-    FILE* fp;
-    int okay;
 
     assert(mf != NULL);
     /* create the file */
-    fp = fopen(mf->name, "wb");
+    FILE* fp = fopen(mf->name, "wb");
     if (fp == NULL) {
         return 0;
     }
 
-    okay = 1;
-    okay = okay & (fwrite(mf->base, mf->usedoffs, 1, fp) == (size_t)mf->usedoffs);
+    int okay = 1;
+    okay = okay & fwrite(mf->base, mf->usedoffs, 1, fp) == (size_t)mf->usedoffs;
 
     fclose(fp);
     return okay;
 }
 
-long mflength(MEMFILE* mf)
+long mflength(const MEMFILE* mf)
 {
     return mf->usedoffs;
 }
 
-long mfseek(MEMFILE* mf, long offset, int whence)
+long mfseek(MEMFILE* mf, long offset, const int whence)
 {
-    long length;
 
     assert(mf != NULL);
     if (mf->usedoffs == 0) {
@@ -91,7 +88,7 @@ long mfseek(MEMFILE* mf, long offset, int whence)
     }
 
     /* find the size of the memory file */
-    length = mflength(mf);
+    const long length = mflength(mf);
 
     /* convert the offset to an absolute position */
     switch (whence) {
@@ -119,29 +116,26 @@ long mfseek(MEMFILE* mf, long offset, int whence)
     return offset;
 }
 
-unsigned int mfwrite(MEMFILE* mf, unsigned char* buffer, unsigned int size)
+unsigned int mfwrite(MEMFILE* mf, const unsigned char* buffer, const unsigned int size)
 {
-    return (memfile_write(mf, buffer, size) ? size : 0);
+    return memfile_write(mf, buffer, size) ? size : 0;
 }
 
-unsigned int mfread(MEMFILE* mf, unsigned char* buffer, unsigned int size)
+unsigned int mfread(MEMFILE* mf, unsigned char* buffer, const unsigned int size)
 {
     return memfile_read(mf, buffer, size);
 }
 
-char* mfgets(MEMFILE* mf, char* string, unsigned int size)
+char* mfgets(MEMFILE* mf, char* string, const unsigned int size)
 {
-    char* ptr;
-    unsigned int read;
-    long seek;
 
     assert(mf != NULL);
 
-    read = mfread(mf, (unsigned char*)string, size);
+    const unsigned int read = mfread(mf, (unsigned char*)string, size);
     if (read == 0) {
         return NULL;
     }
-    seek = 0L;
+    long seek = 0L;
 
     /* make sure that the string is zero-terminated */
     assert(read <= size);
@@ -154,7 +148,7 @@ char* mfgets(MEMFILE* mf, char* string, unsigned int size)
     } /* if */
 
     /* find the first '\n' */
-    ptr = strchr(string, '\n');
+    char* ptr = strchr(string, '\n');
     if (ptr != NULL) {
         *(ptr + 1) = '\0';
         seek = (long)(ptr - string) + 1 - (long)read;
@@ -171,11 +165,10 @@ char* mfgets(MEMFILE* mf, char* string, unsigned int size)
 
 int mfputs(MEMFILE* mf, char* string)
 {
-    unsigned int written, length;
 
     assert(mf != NULL);
 
-    length = strlen(string);
-    written = mfwrite(mf, (unsigned char*)string, length);
+    const unsigned int length = strlen(string);
+    const unsigned int written = mfwrite(mf, (unsigned char*)string, length);
     return written == length;
 }
