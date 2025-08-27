@@ -2719,7 +2719,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
         #else
     OPCODE op;
     cell offs;
-    int num;
+    int num = 0;
         #endif
         #if defined ASM32
     extern void const* amx_opcodelist[];

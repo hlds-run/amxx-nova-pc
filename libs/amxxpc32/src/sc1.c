@@ -2031,7 +2031,7 @@ static void declglb(
     int numdim;
     short filenum;
     symbol* sym;
-    constvalue* enumroot;
+    constvalue* enumroot = NULL;
 #if !defined NDEBUG
     cell glbdecl = 0;
 #endif
@@ -2165,7 +2165,7 @@ static int declloc(const int fstatic)
     int idxtag[sDIMEN_MAX];
     char name[sNAMEMAX + 1];
     symbol* sym;
-    constvalue* enumroot;
+    constvalue* enumroot = NULL;
     cell val, size;
     char* str;
     value lval = {0};
@@ -2892,7 +2892,7 @@ static void decl_enum(const int vclass)
     /* go through all constants */
     value = 0; /* default starting value */
     do {
-        int fieldtag;
+        int fieldtag = 0;
         if (matchtoken('}')) { /* quick exit if '}' follows ',' */
             lexpush();
             break;
@@ -2956,7 +2956,7 @@ static int getstates(const char* funcname)
     char fsaname[sNAMEMAX + 1], statename[sNAMEMAX + 1];
     cell val;
     char* str;
-    constvalue* automaton;
+    constvalue* automaton = NULL;
     int islabel;
     int* list;
     int count, listsize, state_id;
