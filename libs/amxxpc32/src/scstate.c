@@ -180,17 +180,20 @@ SC_FUNC void state_buildlist(int** list, int* listsize, int* count, const int st
          * a time.
          */
         *listsize += 4;
-        *list = (int*)realloc(*list, *listsize * sizeof(int));
-        if (*list == NULL) {
+        int* temp_list = realloc(*list, *listsize * sizeof(int));
+        if (temp_list == NULL) {
             error(103); /* insufficient memory */
+            return;     /* Abort execution, preserving the original *list */
         }
+        *list = temp_list;
     } /* if */
 
     /* find the insertion point (the list has to stay sorted) */
-    for (idx = 0; idx < *count && *list[idx] < stateid; idx++)
+    for (idx = 0; idx < *count && (*list)[idx] < stateid; idx++)
         /* nothing */;
+
     if (idx < *count) {
-        memmove(&(*list)[idx + 1], &(*list)[idx], (int)((*count - idx + 1) * sizeof(int)));
+        memmove(&(*list)[idx + 1], &(*list)[idx], (int)((*count - idx) * sizeof(int)));
     }
     (*list)[idx] = stateid;
     *count += 1;

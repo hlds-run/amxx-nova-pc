@@ -1715,9 +1715,15 @@ static int substpattern(unsigned char* line, const size_t buffersize, char* patt
                 len = e - s;
                 args[arg] = (unsigned char*)malloc(len + 1);
                 if (args[arg] == NULL) {
-                    error(103); /* insufficient memory */
+                    error(103);                    /* insufficient memory */
+                    for (int i = 0; i < 10; i++) { /* Free all allocated args before exiting */
+                        if (args[i] != NULL) {
+                            free(args[i]);
+                        }
+                    }
+                    return FALSE;
                 }
-                strncpy((char*)args[arg], (char*)s, len);
+                memcpy(args[arg], s, len); /* NOLINT */
                 args[arg][len] = '\0';
                 /* character behind the pattern was matched too */
                 if (*e == *p) {
@@ -1805,7 +1811,13 @@ static int substpattern(unsigned char* line, const size_t buffersize, char* patt
         } /* for */
         /* check length of the string after substitution */
         if (strlen((char*)line) + len - (s - line) > buffersize) {
+            for (int i = 0; i < 10; i++) { /* Free all allocated args before calling error */
+                if (args[i] != NULL) {
+                    free(args[i]);
+                }
+            }
             error(75); /* line too long */
+            return FALSE;
         }
         else {
             /* substitute pattern */

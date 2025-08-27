@@ -13,27 +13,33 @@
 
 memfile_t* memfile_creat(const char* name, const size_t init)
 {
-    memfile_t mf;
-
-    mf.size = init;
-    mf.base = (char*)malloc(init);
-    mf.usedoffs = 0;
-    mf.name = NULL;
-    if (!mf.base) {
+    memfile_t* pmf = malloc(sizeof(memfile_t));
+    if (!pmf) {
         return NULL;
     }
 
-    mf.offs = 0;
-    mf._static = 0;
+    pmf->size = init;
+    pmf->base = (char*)malloc(init);
+    if (!pmf->base) {
+        free(pmf);
+        return NULL;
+    }
 
-    memfile_t* pmf = malloc(sizeof(memfile_t));
-    memcpy(pmf, &mf, sizeof(memfile_t));
+    pmf->usedoffs = 0;
+    pmf->offs = 0;
+    pmf->_static = 0;
 
 #if defined _MSC_VER
     pmf->name = _strdup(name);
 #else
     pmf->name = strdup(name);
 #endif
+
+    if (!pmf->name) {
+        free(pmf->base);
+        free(pmf);
+        return NULL;
+    }
 
     return pmf;
 }
@@ -81,20 +87,21 @@ int memfile_write(memfile_t* mf, const void* buffer, const size_t size)
 {
     if (mf->offs + size > mf->size) {
         const size_t newsize = (mf->size + size) * 2;
+        char* newbase;
         if (mf->_static) {
-            const char* oldbase = mf->base;
-            mf->base = (char*)malloc(newsize);
-            if (!mf->base) {
+            newbase = (char*)malloc(newsize);
+            if (!newbase) {
                 return 0;
             }
-            memcpy(mf->base, oldbase, mf->size);
+            memcpy(newbase, mf->base, mf->size);
         }
         else {
-            mf->base = (char*)realloc(mf->base, newsize);
-            if (!mf->base) {
+            newbase = (char*)realloc(mf->base, newsize);
+            if (!newbase) {
                 return 0;
             }
         }
+        mf->base = newbase;
         mf->_static = 0;
         mf->size = newsize;
     }

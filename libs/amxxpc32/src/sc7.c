@@ -552,7 +552,6 @@ static void strreplace(
  *
  *  The longest sequences should probably be checked first.
  */
-
 static void stgopt(char* start, const char* end)
 {
     char symbols[MAX_OPT_VARS][MAX_ALIAS + 1];
@@ -577,8 +576,6 @@ static void stgopt(char* start, const char* end)
                          * re-ordering of expressions that can also happen in the staging
                          * buffer. In addition, it should not happen: the peephole optimizer
                          * must replace sequences with *shorter* sequences, not longer ones.
-                         * So, I simply forbid sequences that are longer than the ones they
-                         * are meant to replace.
                          */
                         assert(match_length >= repl_length);
                         if (match_length >= repl_length) {
@@ -591,6 +588,7 @@ static void stgopt(char* start, const char* end)
                         }
                         else {
                             /* actually, we should never get here (match_length<repl_length) */
+                            free(replace); /* Freeing up memory for replace */
                             assert(0);
                             seq++;
                         } /* if */
