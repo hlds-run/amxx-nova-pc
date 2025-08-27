@@ -2953,7 +2953,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
             case OP_LOAD_I:
                 /* verify address */
                 if (pri >= hea && pri < stk || (ucell)pri >= (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 pri = *(cell*)(data + (int)pri);
                 break;
@@ -2961,7 +2961,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                 GETPARAM(offs);
                 /* verify address */
                 if (pri >= hea && pri < stk || (ucell)pri >= (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 switch (offs) {
                     case 1:
@@ -3028,7 +3028,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
             case OP_STOR_I:
                 /* verify address */
                 if (alt >= hea && alt < stk || (ucell)alt >= (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 *(cell*)(data + (int)alt) = pri;
                 break;
@@ -3036,7 +3036,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                 GETPARAM(offs);
                 /* verify address */
                 if (alt >= hea && alt < stk || (ucell)alt >= (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 switch (offs) {
                     case 1:
@@ -3054,7 +3054,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                 offs = pri * sizeof(cell) + alt;
                 /* verify address */
                 if (offs >= hea && offs < stk || (ucell)offs >= (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 pri = *(cell*)(data + (int)offs);
                 break;
@@ -3063,7 +3063,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                 offs = (pri << (int)offs) + alt;
                 /* verify address */
                 if (offs >= hea && offs < stk || (ucell)offs >= (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 pri = *(cell*)(data + (int)offs);
                 break;
@@ -3203,7 +3203,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                 POP(offs);
                 /* verify the return address */
                 if ((ucell)offs >= codesize) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 cip = (cell*)(code + (int)offs);
                 break;
@@ -3212,7 +3212,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                 POP(offs);
                 /* verify the return address */
                 if ((ucell)offs >= codesize) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 cip = (cell*)(code + (int)offs);
                 stk += *(cell*)(data + (int)stk) + sizeof(cell); /* remove parameters from the stack */
@@ -3361,7 +3361,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                 break;
             case OP_SDIV:
                 if (alt == 0) {
-                    ABORT(amx, AMX_ERR_DIVIDE);
+                    ABORT(amx, AMX_ERR_DIVIDE)
                 }
                 /* divide must always round down; this is a bit
                  * involved to do in a machine-independent way.
@@ -3372,7 +3372,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                 break;
             case OP_SDIV_ALT:
                 if (pri == 0) {
-                    ABORT(amx, AMX_ERR_DIVIDE);
+                    ABORT(amx, AMX_ERR_DIVIDE)
                 }
                 /* divide must always round down; this is a bit
                  * involved to do in a machine-independent way.
@@ -3386,7 +3386,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                 break;
             case OP_UDIV:
                 if (alt == 0) {
-                    ABORT(amx, AMX_ERR_DIVIDE);
+                    ABORT(amx, AMX_ERR_DIVIDE)
                 }
                 offs = (ucell)pri % (ucell)alt; /* temporary storage */
                 pri = (ucell)pri / (ucell)alt;
@@ -3394,7 +3394,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                 break;
             case OP_UDIV_ALT:
                 if (pri == 0) {
-                    ABORT(amx, AMX_ERR_DIVIDE);
+                    ABORT(amx, AMX_ERR_DIVIDE)
                 }
                 offs = (ucell)alt % (ucell)pri; /* temporary storage */
                 pri = (ucell)alt / (ucell)pri;
@@ -3537,16 +3537,16 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                  * addresses
                  */
                 if (pri >= hea && pri < stk || (ucell)pri >= (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 if ((pri + offs) > hea && (pri + offs) < stk || (ucell)(pri + offs) > (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 if (alt >= hea && alt < stk || (ucell)alt >= (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 if ((alt + offs) > hea && (alt + offs) < stk || (ucell)(alt + offs) > (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 memcpy(data + (int)alt, data + (int)pri, (int)offs);
                 break;
@@ -3556,16 +3556,16 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                  * addresses
                  */
                 if (pri >= hea && pri < stk || (ucell)pri >= (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 if ((pri + offs) > hea && (pri + offs) < stk || (ucell)(pri + offs) > (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 if (alt >= hea && alt < stk || (ucell)alt >= (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 if ((alt + offs) > hea && (alt + offs) < stk || (ucell)(alt + offs) > (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 pri = memcmp(data + (int)alt, data + (int)pri, (int)offs);
                 break;
@@ -3573,10 +3573,10 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                 GETPARAM(offs);
                 /* verify top & bottom memory addresses (destination only) */
                 if (alt >= hea && alt < stk || (ucell)alt >= (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 if ((alt + offs) > hea && (alt + offs) < stk || (ucell)(alt + offs) > (ucell)amx->stp) {
-                    ABORT(amx, AMX_ERR_MEMACCESS);
+                    ABORT(amx, AMX_ERR_MEMACCESS)
                 }
                 for (i = (int)alt; (size_t)offs >= sizeof(cell); i += sizeof(cell), offs -= sizeof(cell)) {
                     *(cell*)(data + i) = pri;
@@ -3597,11 +3597,11 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                     amx->reset_hea = reset_hea;
                     return (int)offs;
                 } /* if */
-                ABORT(amx, (int)offs);
+                ABORT(amx, (int)offs)
             case OP_BOUNDS:
                 GETPARAM(offs);
                 if ((ucell)pri > (ucell)offs) {
-                    ABORT(amx, AMX_ERR_BOUNDS);
+                    ABORT(amx, AMX_ERR_BOUNDS)
                 }
                 break;
             case OP_SYSREQ_PRI:
@@ -3619,7 +3619,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                         amx->reset_hea = reset_hea;
                         return num;
                     } /* if */
-                    ABORT(amx, num);
+                    ABORT(amx, num)
                 } /* if */
                 break;
             case OP_SYSREQ_C:
@@ -3638,7 +3638,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                         amx->reset_hea = reset_hea;
                         return num;
                     } /* if */
-                    ABORT(amx, num);
+                    ABORT(amx, num)
                 } /* if */
                 break;
             case OP_SYSREQ_D:
@@ -3657,7 +3657,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                         amx->reset_hea = reset_hea;
                         return num;
                     } /* if */
-                    ABORT(amx, amx->error);
+                    ABORT(amx, amx->error)
                 } /* if */
                 break;
             case OP_LINE:
@@ -3722,7 +3722,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                             amx->reset_hea = reset_hea;
                             return num;
                         } /* if */
-                        ABORT(amx, num);
+                        ABORT(amx, num)
                     } /* if */
                 } /* if */
                 break;
@@ -3731,7 +3731,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
                  * case OP_CASETBL:       should not occur during execution
                  */
                 assert(0);
-                ABORT(amx, AMX_ERR_INVINSTR);
+                ABORT(amx, AMX_ERR_INVINSTR)
         } /* switch */
     } /* for */
         #endif

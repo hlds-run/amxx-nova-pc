@@ -1139,7 +1139,7 @@ static int hier13(value* lval)
             assert(result); /* pop off equally many items than were pushed */
         } /* if */
         jmp_eq0(flab1); /* go to second expression if primary register==0 */
-        PUSHSTK_I(sc_allowtags);
+        PUSHSTK_I(sc_allowtags)
         sc_allowtags = FALSE; /* do not allow tagnames here (colon is a special token) */
         if (sc_status == statWRITE) {
             modheap(heap1 * sizeof(cell));
@@ -1881,8 +1881,8 @@ static int primary(value* lval)
     symbol* sym;
 
     if (matchtoken('(')) { /* sub-expression - (expression,...) */
-        PUSHSTK_I(sc_intest);
-        PUSHSTK_I(sc_allowtags);
+        PUSHSTK_I(sc_intest)
+        PUSHSTK_I(sc_allowtags)
 
         sc_intest = FALSE;   /* no longer in "test" expression */
         sc_allowtags = TRUE; /* allow tagnames to be used in parenthesized expressions */

@@ -5374,7 +5374,7 @@ static void test(int label, int parens, int invert)
 #endif
     } /* if */
 
-    PUSHSTK_I(sc_intest);
+    PUSHSTK_I(sc_intest)
     sc_intest = TRUE;
     if (parens) {
         needtoken('(');
@@ -5635,7 +5635,7 @@ static void doswitch(void)
                     error(15); /* "default" case must be last in switch statement */
                 }
                 lbl_case = getlabel();
-                PUSHSTK_I(sc_allowtags);
+                PUSHSTK_I(sc_allowtags)
                 sc_allowtags = FALSE; /* do not allow tagnames here */
                 do {
                     casecount++;

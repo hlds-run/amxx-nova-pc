@@ -148,15 +148,15 @@ SC_FUNC int plungequalifiedfile(char* name)
     if (sc_showincludes && sc_status == statFIRST) {
         fprintf(stdout, "Note: including file: %s\n", name);
     }
-    PUSHSTK_P(inpf);
-    PUSHSTK_P(inpfname); /* pointer to current file name */
-    PUSHSTK_P(curlibrary);
-    PUSHSTK_I(iflevel);
+    PUSHSTK_P(inpf)
+    PUSHSTK_P(inpfname) /* pointer to current file name */
+    PUSHSTK_P(curlibrary)
+    PUSHSTK_I(iflevel)
     assert(!SKIPPING);
     assert(skiplevel == iflevel); /* these two are always the same when "parsing" */
-    PUSHSTK_I(icomment);
-    PUSHSTK_I(fcurrent);
-    PUSHSTK_I(fline);
+    PUSHSTK_I(icomment)
+    PUSHSTK_I(fcurrent)
+    PUSHSTK_I(fline)
     inpfname = duplicatestring(name); /* set name of include file */
     if (inpfname == NULL) {
         error(103); /* insufficient memory */
