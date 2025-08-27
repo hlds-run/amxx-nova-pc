@@ -334,11 +334,13 @@ int pc_writesrc(void* handle, unsigned char* source)
             }
         }
 
+        // Store src->pos offset relative to src->buffer before reallocating
+        const ptrdiff_t pos_offset = src->pos - src->buffer;
         char* newbuf = realloc(src->buffer, newmax);
         if (!newbuf) {
             abort();
         }
-        src->pos = newbuf + (src->pos - src->buffer);
+        src->pos = newbuf + pos_offset;
         src->end = newbuf + newmax;
         src->buffer = newbuf;
         src->maxlength = newmax;
