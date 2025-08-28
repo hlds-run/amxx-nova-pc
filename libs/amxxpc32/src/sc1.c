@@ -65,7 +65,6 @@ static unsigned total_drives; /* dummy variable */
 #include <time.h>
 
 #include "sc.h"
-#include "sp_symhash.h"
 
 #define VERSION_STR "3.0.3367-amxx"
 #define VERSION_INT 0x30A
@@ -496,11 +495,6 @@ extern "C"
         goto cleanup;
     }
 
-    sp_Globals = NewHashTable();
-    if (!sp_Globals) {
-        error(123);
-    }
-
     /* allocate memory for fixed tables */
     inpfname = (char*)malloc(_MAX_PATH);
     if (inpfname == NULL) {
@@ -847,7 +841,6 @@ cleanup:
     delete_symbols(&loctab, 0, TRUE, TRUE);      /* delete local variables if not yet
                                                   * done (i.e. on a fatal error) */
     delete_symbols(&glbtab, 0, TRUE, TRUE);
-    DestroyHashTable(sp_Globals);
     delete_consttable(&tagname_tab);
     delete_consttable(&libname_tab);
     delete_consttable(&sc_automaton_tab);
@@ -3265,7 +3258,7 @@ static int operatoradjust(const int opertok, symbol* sym, char* opername, const 
             }
     } /* switch */
 
-    if (tags[0] == 0 && ((opertok != '=' && tags[1] == 0) || (opertok == '=' && resulttag == 0))) {
+    if (tags[0] == 0 && (opertok != '=' && tags[1] == 0 || opertok == '=' && resulttag == 0)) {
         error(64); /* cannot change predefined operators */
     }
 
@@ -3286,10 +3279,8 @@ static int operatoradjust(const int opertok, symbol* sym, char* opername, const 
         }
         delete_symbol(&glbtab, oldsym);
     } /* if */
-    RemoveFromHashTable(sp_Globals, sym);
     strcpy(sym->name, tmpname);
-    sym->hash = NameHash(sym->name); /* calculate new hash */
-    AddToHashTable(sp_Globals, sym);
+    sym->hash = namehash(sym->name); /* calculate new hash */
 
     /* operators should return a value, except the '~' operator */
     if (opertok != '~') {

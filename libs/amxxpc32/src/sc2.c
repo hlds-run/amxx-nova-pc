@@ -29,7 +29,6 @@
 #if defined LINUX || defined __FreeBSD__ || defined __OpenBSD__ || defined __APPLE__
     #include <sclinux.h>
 #endif
-#include "sp_symhash.h"
 
 #if defined FORTIFY
     #include "fortify.h"
@@ -1818,55 +1817,53 @@ static int substpattern(unsigned char* line, const size_t buffersize, char* patt
             }
             error(75); /* line too long */
             return FALSE;
-        }
-        else {
-            /* substitute pattern */
-            strdel((char*)line, s - line);
-            for (e = (unsigned char*)substitution, s = line; *e != '\0'; e++) {
-                if (*e == '#' && *(e + 1) == '%' && isdigit(*(e + 2))) {
-                    stringize = 1;
-                    e++; /* skip '#' */
-                }
-                else {
-                    stringize = 0;
-                } /* if */
-                if (*e == '%' && isdigit(*(e + 1))) {
-                    arg = *(e + 1) - '0';
-                    assert(arg >= 0 && arg <= 9);
-                    if (args[arg] != NULL) {
-                        if (stringize) {
-                            strins((char*)s++, "\"", 1);
-                        }
-                        strins((char*)s, (char*)args[arg], strlen((char*)args[arg]));
-                        s += strlen((char*)args[arg]);
-                        if (stringize) {
-                            strins((char*)s++, "\"", 1);
-                        }
-                        e++; /* skip %, digit is skipped later */
+        } /* if */
+        /* substitute pattern */
+        strdel((char*)line, s - line);
+        for (e = (unsigned char*)substitution, s = line; *e != '\0'; e++) {
+            if (*e == '#' && *(e + 1) == '%' && isdigit(*(e + 2))) {
+                stringize = 1;
+                e++; /* skip '#' */
+            }
+            else {
+                stringize = 0;
+            } /* if */
+            if (*e == '%' && isdigit(*(e + 1))) {
+                arg = *(e + 1) - '0';
+                assert(arg >= 0 && arg <= 9);
+                if (args[arg] != NULL) {
+                    if (stringize) {
+                        strins((char*)s++, "\"", 1);
                     }
-                    else {
-                        strins((char*)s, (char*)e, 1);
-                        s++;
-                    } /* if */
-                }
-                else if (*e == '"') {
-                    p = e;
-                    if (is_startstring(e)) { /* skip strings */
-                        e = skipstring(e);
-                        strins((char*)s, (char*)p, e - p + 1);
-                        s += e - p + 1;
+                    strins((char*)s, (char*)args[arg], strlen((char*)args[arg]));
+                    s += strlen((char*)args[arg]);
+                    if (stringize) {
+                        strins((char*)s++, "\"", 1);
                     }
-                    else {
-                        strins((char*)s, (char*)e, 1);
-                        s++;
-                    }
+                    e++; /* skip %, digit is skipped later */
                 }
                 else {
                     strins((char*)s, (char*)e, 1);
                     s++;
                 } /* if */
-            } /* for */
-        } /* if */
+            }
+            else if (*e == '"') {
+                p = e;
+                if (is_startstring(e)) { /* skip strings */
+                    e = skipstring(e);
+                    strins((char*)s, (char*)p, e - p + 1);
+                    s += e - p + 1;
+                }
+                else {
+                    strins((char*)s, (char*)e, 1);
+                    s++;
+                }
+            }
+            else {
+                strins((char*)s, (char*)e, 1);
+                s++;
+            } /* if */
+        } /* for */
     } /* if */
 
     for (arg = 0; arg < 10; arg++) {
@@ -2766,7 +2763,6 @@ SC_FUNC int ishex(const char c)
 static symbol* add_symbol(symbol* root, const symbol* entry, const int sort)
 {
     symbol* newsym;
-    const int global = root == &glbtab;
 
     if (sort) {
         while (root->next != NULL && strcmp(entry->name, root->next->name) > 0) {
@@ -2781,9 +2777,6 @@ static symbol* add_symbol(symbol* root, const symbol* entry, const int sort)
     memcpy(newsym, entry, sizeof(symbol));
     newsym->next = root->next;
     root->next = newsym;
-    if (global) {
-        AddToHashTable(sp_Globals, newsym);
-    }
     return newsym;
 }
 
@@ -2830,7 +2823,6 @@ static void free_symbol(symbol* sym)
 
 SC_FUNC void delete_symbol(symbol* root, symbol* sym)
 {
-    const symbol* origRoot = root;
     /* find the symbol and its predecessor
      * (this function assumes that you will never delete a symbol that is not
      * in the table pointed at by "root")
@@ -2840,10 +2832,6 @@ SC_FUNC void delete_symbol(symbol* root, symbol* sym)
         root = root->next;
         assert(root != NULL);
     } /* while */
-
-    if (origRoot == &glbtab) {
-        RemoveFromHashTable(sp_Globals, sym);
-    }
 
     /* unlink it, then free it */
     root->next = sym->next;
@@ -2863,12 +2851,13 @@ SC_FUNC int get_actual_compound(const symbol* sym)
 
 SC_FUNC void delete_symbols(symbol* root, const int level, const int delete_labels, const int delete_functions)
 {
+    symbol* base = root;
     symbol *sym, *parent_sym, *child_sym;
-    int mustdelete = 0;
+    int mustdelete;
 
     /* erase only the symbols with a deeper nesting level than the
-     * specified nesting level */
-    symbol* base = root;
+     * specified nesting level
+     */
     while (base->next != NULL) {
         sym = base->next;
         if (get_actual_compound(sym) < level) {
@@ -2877,7 +2866,7 @@ SC_FUNC void delete_symbols(symbol* root, const int level, const int delete_labe
         if ((sym->usage & uVISITED) != 0) {
             base = sym; /* skip the symbol */
             continue;
-        }
+        } /* if */
         switch (sym->ident) {
             case iLABEL:
                 mustdelete = delete_labels;
@@ -2911,7 +2900,9 @@ SC_FUNC void delete_symbols(symbol* root, const int level, const int delete_labe
                 mustdelete = delete_functions || (sym->usage & uPREDEF) == 0;
                 break;
             case iFUNCTN:
-                /* optionally preserve globals (variables & functions), but NOT native functions */
+                /* optionally preserve globals (variables & functions), but
+                 * NOT native functions
+                 */
                 mustdelete = delete_functions || (sym->usage & uNATIVE) != 0;
                 assert(sym->parent == NULL);
                 break;
@@ -2921,6 +2912,7 @@ SC_FUNC void delete_symbols(symbol* root, const int level, const int delete_labe
             case iVARARGS:
             default:
                 assert(0);
+                mustdelete = FALSE; /* dummy assignment, to avoid warnings by lint-like checkers */
                 break;
         } /* switch */
         if (mustdelete) {
@@ -2931,9 +2923,6 @@ SC_FUNC void delete_symbols(symbol* root, const int level, const int delete_labe
                 count++;
             } /* while */
             if (count == 0) {
-                if (root == &glbtab) {
-                    RemoveFromHashTable(sp_Globals, sym);
-                }
                 base->next = sym->next;
                 free_symbol(sym);
             }
@@ -2969,7 +2958,7 @@ SC_FUNC void delete_symbols(symbol* root, const int level, const int delete_labe
             sym->usage |= uVISITED;
             base = sym; /* skip the symbol */
         } /* if */
-    } /* if */
+    } /* while */
 
     /* go through the symbols again to erase any "visited" marks */
     for (sym = root->next; sym != NULL; sym = sym->next) {
@@ -2977,18 +2966,45 @@ SC_FUNC void delete_symbols(symbol* root, const int level, const int delete_labe
     }
 }
 
+/* The purpose of the hash is to reduce the frequency of a "name"
+ * comparison (which is costly). There is little interest in avoiding
+ * clusters in similar names, which is why this function is plain simple.
+ */
+SC_FUNC uint32_t namehash(const char* name)
+{
+    const unsigned char* ptr = (const unsigned char*)name;
+    const uint32_t len = strlen(name);
+    if (len == 0) {
+        return 0L;
+    }
+    assert(len < 256);
+    return (len << 24Lu) + (ptr[0] << 16Lu) + (ptr[len - 1] << 8Lu) + ptr[len >> 1Lu];
+}
+
 static symbol* find_symbol(const symbol* root, const char* name, const int fnumber, const int includechildren)
 {
-    symbol* ptr = root->next;
-    const unsigned long hash = NameHash(name);
-    while (ptr != NULL) {
-        if (hash == ptr->hash && strcmp(name, ptr->name) == 0 && (ptr->parent == NULL || includechildren) &&
-            (fnumber < 0 || ptr->fnumber < 0 || ptr->fnumber == fnumber)) {
-            return ptr;
+    symbol* ptr;
+    const unsigned long hash = namehash(name);
+
+    if (fnumber >= 0) {
+        /* First pass: look for a static symbol in the current file */
+        for (ptr = root->next; ptr != NULL; ptr = ptr->next) {
+            if (hash == ptr->hash && strcmp(name, ptr->name) == 0 && (ptr->parent == NULL || includechildren) &&
+                ptr->fnumber == fnumber) {
+                return ptr; /* Found a static match, return immediately */
+            }
         }
-        ptr = ptr->next;
-    } /* while */
-    return NULL;
+    }
+
+    /* Second pass: look for a public symbol (or any symbol if fnumber < 0) */
+    for (ptr = root->next; ptr != NULL; ptr = ptr->next) {
+        if (hash == ptr->hash && strcmp(name, ptr->name) == 0 && (ptr->parent == NULL || includechildren) &&
+            (fnumber < 0 || ptr->fnumber < 0)) {
+            return ptr; /* Found a public match */
+        }
+    }
+
+    return NULL; /* No match found */
 }
 
 static symbol* find_symbol_child(const symbol* root, const symbol* sym)
@@ -3093,16 +3109,14 @@ SC_FUNC symbol* findloc(const char* name)
 
 SC_FUNC symbol* findconst(const char* name)
 {
-
     symbol* sym = find_symbol(&loctab, name, -1, TRUE); /* try local symbols first */
     if (sym == NULL || sym->ident != iCONSTEXPR) {      /* not found, or not a constant */
-        sym = FindInHashTable(sp_Globals, name, fcurrent);
+        sym = find_symbol(&glbtab, name, fcurrent, TRUE);
     }
     if (sym == NULL || sym->ident != iCONSTEXPR) {
         return NULL;
     }
-    assert(sym->parent == NULL || (sym->usage & uENUMFIELD) != 0);
-    /* ^^^ constants have no hierarchy, but enumeration fields may have a parent */
+    assert(sym->parent == NULL || (sym->usage & uENUMFIELD) != 0); /* constants have no hierarchy */
     return sym;
 }
 
@@ -3140,7 +3154,7 @@ SC_FUNC symbol* addsym(
 
     /* first fill in the entry */
     strcpy(entry.name, name);
-    entry.hash = NameHash(name);
+    entry.hash = namehash(name);
     entry.addr = addr;
     entry.codeaddr = code_idx;
     entry.vclass = (char)vclass;

@@ -264,6 +264,17 @@ static cell noop(FILE* fbin, char* params, cell opcode)
 #if defined __BORLANDC__ || defined __WATCOMC__
     #pragma argsused
 #endif
+static cell set_currentfile(FILE* fbin, char* params, cell opcode)
+{
+    (void)fbin;
+    (void)opcode;
+    fcurrent = (short)getparam(params, NULL);
+    return 0;
+}
+
+#if defined __BORLANDC__ || defined __WATCOMC__
+    #pragma argsused
+#endif
 static cell parm0(FILE* fbin, char* params, cell opcode)
 {
     if (fbin != NULL) {
@@ -413,10 +424,10 @@ static OPCODE opcodelist[] = {
     {0, "case", sIN_CSEG, do_case},
     {130, "casetbl", sIN_CSEG, parm0}, /* version 1 */
     {118, "cmps", sIN_CSEG, parm1},
-    {0, "code", 0, noop},
+    {0, "code", sIN_CSEG, set_currentfile},
     {12, "const.alt", sIN_CSEG, parm1},
     {11, "const.pri", sIN_CSEG, parm1},
-    {0, "data", 0, noop},
+    {0, "data", sIN_CSEG, set_currentfile},
     {114, "dec", sIN_CSEG, parm1},
     {113, "dec.alt", sIN_CSEG, parm0},
     {116, "dec.i", sIN_CSEG, parm0},
@@ -595,8 +606,6 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
     symbol *sym, **nativelist;
     constvalue* constptr;
     cell mainaddr;
-
-    fcurrent = -1;
 
     /* if compression failed, restart the assembly with compaction switched off */
     if (setjmp(compact_err) != 0) {

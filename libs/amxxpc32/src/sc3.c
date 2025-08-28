@@ -1934,7 +1934,7 @@ static int primary(value* lval)
             } /* if */
         }
         else {
-            if (!sc_allowproccall) {
+            if (!sc_allowproccall || sc_status != statFIRST) {
                 return error(17, st); /* undefined symbol */
             }
             /* an unknown symbol, but used in a way compatible with the "procedure
