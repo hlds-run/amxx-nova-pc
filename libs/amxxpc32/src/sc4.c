@@ -29,6 +29,8 @@
 #endif
 #include "sc.h"
 
+static int fcurseg; /* the file number (fcurrent) for the active segment */
+
 /* When a subroutine returns to address 0, the AMX must halt. In earlier
  * releases, the RET and RETN opcodes checked for the special case 0 address.
  * Today, the compiler simply generates a HALT instruction at address 0. So
@@ -208,18 +210,22 @@ SC_FUNC void writetrailer(void)
  *
  *  In fact, the code and data segment specifiers are purely informational;
  *  the "DUMP" instruction itself already specifies that the following values
- *  should go to the data segment. All otherinstructions go to the code
+ *  should go to the data segment. All other instructions go to the code
  *  segment.
  *
  *  Global references: curseg
+ *                     fcurrent
  */
 SC_FUNC void begcseg(void)
 {
-    if (curseg != sIN_CSEG) {
+    if (sc_status != statSKIP && (curseg != sIN_CSEG || fcurrent != fcurseg)) {
         stgwrite("\n");
-        stgwrite("CODE\t; ");
+        stgwrite("CODE ");
+        outval(fcurrent, FALSE);
+        stgwrite("\t; ");
         outval(code_idx, TRUE);
         curseg = sIN_CSEG;
+        fcurseg = fcurrent;
     } /* endif */
 }
 
@@ -230,11 +236,14 @@ SC_FUNC void begcseg(void)
  */
 SC_FUNC void begdseg(void)
 {
-    if (curseg != sIN_DSEG) {
+    if (sc_status != statSKIP && (curseg != sIN_DSEG || fcurrent != fcurseg)) {
         stgwrite("\n");
-        stgwrite("DATA\t; ");
+        stgwrite("DATA ");
+        outval(fcurrent, FALSE);
+        stgwrite("\t; ");
         outval(glb_declared - litidx, TRUE);
         curseg = sIN_DSEG;
+        fcurseg = fcurrent;
     } /* if */
 }
 

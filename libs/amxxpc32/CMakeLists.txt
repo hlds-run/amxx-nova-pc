@@ -36,7 +36,6 @@ target_sources("${TARGET_NAME}"
     "src/scmemfil.c"
     "src/scstate.c"
     "src/scvars.c"
-    "src/sp_symhash.c"
 )
 
 #-------------------------------------------------------------------------------
