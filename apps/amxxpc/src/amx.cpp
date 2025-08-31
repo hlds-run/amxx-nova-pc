@@ -35,11 +35,11 @@
 #endif
 
 #include "osdefs.h"
-#include <assert.h>
-#include <limits.h>
-#include <stdarg.h>
-#include <stddef.h> /* for wchar_t */
-#include <string.h>
+#include <cassert>
+#include <climits>
+#include <cstdarg>
+#include <cstddef> /* for wchar_t */
+#include <cstring>
 #if defined LINUX || defined __FreeBSD__ || defined __OpenBSD__ || defined __APPLE__
     #include "sclinux.h"
     #if !defined AMX_NODYNALOAD

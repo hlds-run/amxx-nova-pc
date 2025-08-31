@@ -34,7 +34,7 @@
     #if defined EMSCRIPTEN
         #include <endian.h>
     #else
-        #include <stdlib.h>
+        #include <cstdlib>
     #endif
     #if defined __APPLE__
         #include <sys/types.h>

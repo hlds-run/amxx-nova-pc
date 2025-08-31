@@ -7,8 +7,7 @@
 // Additional exceptions apply. For full license details, see LICENSE.txt or visit:
 //     https://alliedmods.net/amxmodx-license
 
-#include <stdio.h>
-#if defined(__linux__) | defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__)
     #include <unistd.h>
 #else
     #include <fcntl.h>
@@ -19,7 +18,20 @@
 #include "amxxpc.h"
 #include "binary.h"
 #include "zlib.h"
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
+
+#ifdef BUILD_STATIC_AMXXPC
+    #include <sc.h>
+extern "C" void Compile32(int argc, char** argv);
+#else
+    #if defined(EMSCRIPTEN)
+extern "C" void Compile32(int argc, char** argv);
+extern "C" int pc_printf(const char* message, ...);
+    #else
+static PRINTF pc_printf = nullptr;
+    #endif
+#endif
 
 #ifdef _MSC_VER
     // MSVC8 - replace POSIX functions with ISO C++ conformant ones as they are deprecated
@@ -33,21 +45,15 @@ bool CompressPl(abl* pl);
 void Pl2Bh(const abl* pl, BinPlugin* bh);
 void WriteBh(const BinaryWriter* bw, const BinPlugin* bh);
 
-#if defined(EMSCRIPTEN)
-extern "C" void Compile32(int argc, char** argv);
-extern "C" int pc_printf(const char* message, ...);
-#else
-static PRINTF pc_printf = nullptr;
-#endif
-
 int main(const int argc, char** argv)
 {
     abl pl32;
 
-#if defined(EMSCRIPTEN)
+#ifndef BUILD_STATIC_AMXXPC
+    #if defined(EMSCRIPTEN)
     COMPILER sc32 = (COMPILER)Compile32;
-#else
-    #if defined(__linux__)
+    #else
+        #if defined(__linux__)
     HINSTANCE lib = NULL;
     if (FileExists("./amxxpc32.so")) {
         lib = dlmount("./amxxpc32.so");
@@ -55,32 +61,35 @@ int main(const int argc, char** argv)
     else {
         lib = dlmount("amxxpc32.so");
     }
-    #elif defined(__APPLE__)
+        #elif defined(__APPLE__)
     HINSTANCE lib = dlmount("amxxpc32.dylib");
-    #else
+        #else
     const HINSTANCE lib = dlmount("amxxpc32.dll");
-    #endif
+        #endif
     if (!lib) {
-    #if defined(__linux__) || defined(__APPLE__)
+        #if defined(__linux__) || defined(__APPLE__)
         printf("compiler failed to instantiate: %s\n", dlerror());
-    #else
+        #else
         printf("compiler failed to instantiate: %d\n", GetLastError());
-    #endif
+        #endif
         exit(EXIT_FAILURE);
     }
 
     const auto sc32 = (COMPILER)dlsym(lib, "Compile32");
     pc_printf = (PRINTF)dlsym(lib, "pc_printf");
-#endif // EMSCRIPTEN
+    #endif // EMSCRIPTEN
 
     if (!sc32 || !pc_printf) {
-#if defined(__linux__) || defined(__APPLE__)
+    #if defined(__linux__) || defined(__APPLE__)
         printf("compiler failed to link: %p.\n", sc32);
-#else
+    #else
         printf("compiler failed to link: %d.\n", GetLastError());
-#endif
+    #endif
         exit(EXIT_FAILURE);
     }
+#else
+    const auto sc32 = (COMPILER)Compile32;
+#endif
 
     pc_printf("AMX Mod X Compiler %s\n\n", AMXX_VERSION);
     pc_printf("Copyright (c) 1997-2006 ITB CompuPhase\n");
@@ -175,7 +184,7 @@ int main(const int argc, char** argv)
         fclose(fp);
         unlink(file);
         pc_printf("Error, failed to write binary\n");
-#if !defined EMSCRIPTEN
+#if !defined(BUILD_STATIC_AMXXPC) && !defined(EMSCRIPTEN)
         dlclose(lib);
 #endif
         exit(EXIT_FAILURE);
@@ -190,7 +199,7 @@ int main(const int argc, char** argv)
     and "Compile and upload" buttons in AMXX-Studio doesn't work.
     */
     pc_printf("Done.\n");
-#if !defined EMSCRIPTEN
+#if !defined(BUILD_STATIC_AMXXPC) && !defined(EMSCRIPTEN)
     dlclose(lib);
 #endif
 
