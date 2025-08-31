@@ -25,6 +25,8 @@
 #ifndef AMXDBG_H_INCLUDED
 #define AMXDBG_H_INCLUDED
 
+#include <cstdio>
+
 #ifndef AMX_H_INCLUDED
     #include "amx.h"
 #endif

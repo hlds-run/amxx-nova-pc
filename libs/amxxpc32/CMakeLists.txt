@@ -11,7 +11,7 @@ project("AMXX Nova Pawn Compiler Lib" LANGUAGES "C")
 set(TARGET_NAME "amxxpc32")
 set(TARGET_ALIAS "PCLib::${TARGET_NAME}")
 
-add_library("${TARGET_NAME}" SHARED)
+add_library("${TARGET_NAME}")
 add_library("${TARGET_ALIAS}" ALIAS "${TARGET_NAME}")
 
 #-------------------------------------------------------------------------------
@@ -65,9 +65,12 @@ set_target_properties("${TARGET_NAME}"
 target_compile_definitions("${TARGET_NAME}"
   PRIVATE
     NO_MAIN
-    PAWNC_DLL
     HAVE_STDINT_H
     PAWN_CELL_SIZE=32
+
+    $<$<BOOL:${BUILD_SHARED_LIBS}>:
+      PAWNC_DLL
+    >
 
     $<$<PLATFORM_ID:Windows>:
       _MBCS
@@ -78,18 +81,5 @@ target_compile_definitions("${TARGET_NAME}"
     $<$<NOT:$<PLATFORM_ID:Windows>>:
       LINUX
       ENABLE_BINRELOC
-    >
-)
-
-#-------------------------------------------------------------------------------
-# Link Libraries
-#-------------------------------------------------------------------------------
-
-target_link_libraries("${TARGET_NAME}"
-  PRIVATE
-    $<$<NOT:$<PLATFORM_ID:Windows>>:
-      "c"
-      "m"
-      "Threads::Threads"
     >
 )
