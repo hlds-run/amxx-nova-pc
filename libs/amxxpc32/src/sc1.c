@@ -145,8 +145,55 @@ static char* sc_documentation = NULL; /* main documentation */
 static HWND hwndFinish = 0;
 #endif
 
-#if !defined NO_MAIN
+typedef struct s_cli_define {
+    char* name;
+    char* value;
+    struct s_cli_define* next;
+} cli_define;
 
+static cli_define* cli_defines_list = NULL;
+
+static void add_cli_define(const char* name, const char* value)
+{
+    cli_define* def = malloc(sizeof(cli_define));
+    if (def == NULL) {
+        error(103); /* insufficient memory */
+    }
+    def->name = strdup(name);
+    if (def->name == NULL) {
+        error(103);
+    }
+    def->value = strdup(value);
+    if (def->value == NULL) {
+        error(103);
+    }
+    def->next = cli_defines_list;
+    cli_defines_list = def;
+}
+
+static void delete_cli_defines(void)
+{
+    cli_define* def = cli_defines_list;
+    while (def != NULL) {
+        cli_define* next = def->next;
+        free(def->name);
+        free(def->value);
+        free(def);
+        def = next;
+    }
+    cli_defines_list = NULL;
+}
+
+static void inst_cli_defines(void)
+{
+    const cli_define* def = cli_defines_list;
+    while (def != NULL) {
+        insert_subst(def->name, def->value, (int)strlen(def->name));
+        def = def->next;
+    }
+}
+
+#if !defined NO_MAIN
     #if defined __TURBOC__ && !defined __32BIT__
 extern unsigned int _stklen = 0x2000;
     #endif
@@ -631,6 +678,7 @@ extern "C"
         inst_datetime_defines();
         inst_binary_name(binfname);
         inst_file_name(inpfname, TRUE);
+        inst_cli_defines();
 #endif
         resetglobals();
         sc_ctrlchar = sc_ctrlchar_org;
@@ -703,6 +751,7 @@ extern "C"
     inst_datetime_defines();
     inst_binary_name(binfname);
     inst_file_name(inpfname, TRUE);
+    inst_cli_defines();
 #endif
     resetglobals();
     sc_ctrlchar = sc_ctrlchar_org;
@@ -853,6 +902,7 @@ cleanup:
     delete_dbgstringtable();
 #if !defined NO_DEFINE
     delete_substtable();
+    delete_cli_defines();
 #endif
 #if !defined SC_LIGHT
     delete_docstringtable();
@@ -1301,15 +1351,36 @@ static void parseoptions(
 #endif
         }
         else if ((ptr = strchr(argv[arg], '=')) != NULL) {
+            char* endptr;
             i = ptr - argv[arg];
             if (i > sNAMEMAX) {
                 i = sNAMEMAX;
                 error(200, argv[arg], sNAMEMAX); /* symbol too long, truncated to sNAMEMAX chars */
-            } /* if */
+            }
             strncpy(str, argv[arg], i);
             str[i] = '\0'; /* str holds symbol name */
-            i = atoi(ptr + 1);
-            add_constant(str, i, sGLOBAL, 0);
+            const char* value_str = ptr + 1;
+            if (*value_str == '\0') {
+                /* No value provided (e.g., "DEBUG="), define as 1 by convention */
+                add_constant(str, 1, sGLOBAL, 0);
+            }
+            else {
+                const long value_num = strtol(value_str, &endptr, 10);
+                if (*endptr == '\0' && endptr != value_str) {
+                    /* It's a valid integer */
+                    add_constant(str, (cell)value_num, sGLOBAL, 0);
+                }
+                else {
+                    /* Not a number, treat as a string substitution */
+                    if (strlen(value_str) > sNAMEMAX) {
+                        error(200, value_str, sNAMEMAX); /* symbol too long, truncated to sNAMEMAX chars */
+                    }
+                    else {
+                        /* Store for later substitution */
+                        add_cli_define(str, value_str);
+                    }
+                }
+            }
         }
         else {
             strncpy(str, argv[arg], sizeof(str) - 5); /* -5 because default extension is 4 characters */
@@ -2530,7 +2601,6 @@ static cell initarray(const int ident, const int tag, int dim[], const int numdi
 {
     cell dsize;
     int idx, abortparse;
-    char disable = FALSE;
 
     assert(cur >= 0 && cur < numdim);
     assert(startlit >= 0);
@@ -2569,7 +2639,7 @@ static cell initarray(const int ident, const int tag, int dim[], const int numdi
         if (*errorfound || !matchtoken(',')) {
             abortparse = TRUE;
         }
-        disable = sLiteralQueueDisabled;
+        char disable = sLiteralQueueDisabled;
         sLiteralQueueDisabled = TRUE;
         if (matchtoken('}')) {
             abortparse = TRUE;
