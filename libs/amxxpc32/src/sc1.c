@@ -74,7 +74,7 @@ int pc_anytag;
 static void resetglobals(void);
 static void initglobals(void);
 static void setopt(int argc, char** argv, char* oname, char* ename, char* pname, char* rname, char* codepage);
-static void setconfig(char* root);
+static void setconfig(const char* root);
 static void setcaption(void);
 static void about(void);
 static void setconstants(void);
@@ -139,6 +139,8 @@ static int sc_parsenum = 0;    /* number of the extra parses */
 static int wq[wqTABSZ];        /* "while queue", internal stack for nested loops */
 static int* wqptr;             /* pointer to next entry */
 #if !defined SC_LIGHT
+static char sc_rootpath[_MAX_PATH];   /* base path of the installation */
+static char sc_binpath[_MAX_PATH];    /* path for the binaries, often sc_rootpath + /bin */
 static char* sc_documentation = NULL; /* main documentation */
 #endif
 #if defined __WIN32__ || defined _WIN32 || defined _Windows
@@ -555,6 +557,7 @@ extern "C"
         error(103); /* insufficient memory */
     }
 
+    setconfig(argv[0]); /* the path to the include and codepage files, plus the root path */
     setopt(argc, argv, outfname, errfname, incfname, reportname, codepage);
     /* set output names that depend on the input name */
     if (sc_listing) {
@@ -563,7 +566,7 @@ extern "C"
     else {
         set_extension(outfname, ".asm", TRUE);
     }
-    strcpy(binfname, outfname);
+    snprintf(binfname, _MAX_PATH, "%s", outfname);
     set_extension(binfname, ".amx", TRUE);
     if (strlen(errfname) != 0) {
         remove(errfname); /* delete file on startup */
@@ -571,7 +574,7 @@ extern "C"
     else if (verbosity > 0) {
         setcaption();
     }
-    setconfig(argv[0]); /* the path to the include and codepage files */
+
     sc_ctrlchar_org = sc_ctrlchar;
     lcl_packstr = sc_packstr;
     lcl_needsemicolon = sc_needsemicolon;
@@ -1106,26 +1109,62 @@ SC_FUNC void set_extension(char* filename, const char* extension, const int forc
     }
 }
 
-static const char* option_value(const char* optptr)
+static const char* option_value_ptr(const char* optptr)
 {
-    return *(optptr + 1) == '=' || *(optptr + 1) == ':' ? optptr + 2 : optptr + 1;
+    if (!optptr || !optptr[0]) {
+        return "";
+    }
+
+    return optptr[1] == '=' || optptr[1] == ':' ? optptr + 2 : optptr + 1;
+}
+
+static char* option_value_copy(const char* optptr, char* buffer, const size_t buffer_size)
+{
+    if (!buffer || buffer_size == 0) {
+        return NULL;
+    }
+
+    const char* value = option_value_ptr(optptr);
+    const size_t len = strlen(value);
+
+    if (len >= 2 && value[0] == '"' && value[len - 1] == '"') {
+        /* quoted string: copy without quotes */
+        const size_t content_len = len - 2;
+        if (content_len >= buffer_size) {
+            memcpy(buffer, value + 1, buffer_size - 1);
+            buffer[buffer_size - 1] = '\0';
+        }
+        else {
+            memcpy(buffer, value + 1, content_len);
+            buffer[content_len] = '\0';
+        }
+    }
+    else {
+        /* copy as-is */
+        strncpy(buffer, value, buffer_size - 1);
+        buffer[buffer_size - 1] = '\0';
+    }
+
+    return buffer;
 }
 
 static int toggle_option(const char* optptr, int option)
 {
-    switch (*option_value(optptr)) {
-        case '\0':
+    switch (*option_value_ptr(optptr)) {
+        case '\0': /* empty string -> invert the current state */
             option = !option;
             break;
-        case '-':
+        case '-': /* explicit disable */
             option = FALSE;
             break;
-        case '+':
+        case '+': /* explicit enable */
             option = TRUE;
             break;
         default:
-            about();
-    } /* switch */
+            about(); /* invalid option format */
+            break;
+    }
+
     return option;
 }
 
@@ -1155,7 +1194,7 @@ static void parseoptions(
             ptr = &argv[arg][1];
             switch (*ptr) {
                 case 'A':
-                    i = atoi(option_value(ptr));
+                    i = atoi(option_value_ptr(ptr));
                     if (i % sizeof(cell) == 0) {
                         sc_dataalign = i;
                     }
@@ -1177,20 +1216,19 @@ static void parseoptions(
 #endif
                     break;
                 case 'c':
-                    strncpy(codepage, option_value(ptr), MAXCODEPAGE); /* set name of codepage */
-                    codepage[MAXCODEPAGE] = '\0';
+                    option_value_copy(ptr, codepage, MAXCODEPAGE); /* set name of codepage */
                     break;
 #if defined dos_setdrive
                 case 'D': /* set active directory */
-                    ptr = option_value(ptr);
-                    if (ptr[1] == ':') {
-                        dos_setdrive(toupper(*ptr) - 'A' + 1); /* set active drive */
+                    option_value_copy(ptr, str, sizeof str);
+                    if (str[1] == ':') {
+                        dos_setdrive(toupper(str[0]) - 'A' + 1); /* set active drive */
                     }
-                    chdir(ptr);
+                    chdir(str);
                     break;
 #endif
                 case 'd':
-                    switch (*option_value(ptr)) {
+                    switch (*option_value_ptr(ptr)) {
                         case '0':
                             sc_debug = 0;
                             break;
@@ -1209,15 +1247,14 @@ static void parseoptions(
                     } /* switch */
                     break;
                 case 'e':
-                    strncpy(ename, option_value(ptr), _MAX_PATH); /* set name of error file */
-                    ename[_MAX_PATH - 1] = '\0';
+                    option_value_copy(ptr, ename, _MAX_PATH); /* set name of error file */
                     break;
                 case 'E':
                     sc_warnings_are_errors = 1;
                     break;
 #if defined __WIN32__ || defined _WIN32 || defined _Windows
                 case 'H':
-                    hwndFinish = (HWND)atoi(option_value(ptr));
+                    hwndFinish = (HWND)atoi(option_value_ptr(ptr));
                     if (!IsWindow(hwndFinish)) {
                         hwndFinish = (HWND)0;
                     }
@@ -1227,8 +1264,7 @@ static void parseoptions(
                     sc_showincludes = 1;
                     break;
                 case 'i':
-                    strncpy(str, option_value(ptr), sizeof str); /* set name of include directory */
-                    str[sizeof(str) - 1] = '\0';
+                    option_value_copy(ptr, str, sizeof str); /* set name of include directory */
                     i = strlen(str);
                     if (i > 0) {
                         if (str[i - 1] != DIRSEP_CHAR) {
@@ -1245,17 +1281,14 @@ static void parseoptions(
                     sc_listing = TRUE; /* skip second pass & code generation */
                     break;
                 case 'o':
-                    strncpy(oname, option_value(ptr), _MAX_PATH); /* set name of (binary) output file */
-                    oname[_MAX_PATH - 1] = '\0';
+                    option_value_copy(ptr, oname, _MAX_PATH); /* set name of (binary) output file */
                     break;
                 case 'p':
-                    strncpy(pname, option_value(ptr), _MAX_PATH); /* set name of implicit include file */
-                    pname[_MAX_PATH - 1] = '\0';
+                    option_value_copy(ptr, pname, _MAX_PATH); /* set name of implicit include file */
                     break;
 #if !defined SC_LIGHT
                 case 'r':
-                    strncpy(rname, option_value(ptr), _MAX_PATH); /* set name of report file */
-                    rname[_MAX_PATH - 1] = '\0';
+                    option_value_copy(ptr, rname, _MAX_PATH); /* set name of report file */
                     sc_makereport = TRUE;
                     if (strlen(rname) > 0) {
                         set_extension(rname, ".xml", FALSE);
@@ -1270,13 +1303,13 @@ static void parseoptions(
                             ptr = name;
                         }
                         assert(strlen(ptr) < _MAX_PATH);
-                        strcpy(rname, ptr);
+                        snprintf(rname, _MAX_PATH, "%s", ptr);
                         set_extension(rname, ".xml", TRUE);
                     } /* if */
                     break;
 #endif
                 case 'S':
-                    i = atoi(option_value(ptr));
+                    i = atoi(option_value_ptr(ptr));
                     if (i > 64) {
                         sc_stksize = i; /* stack size has minimum size */
                     }
@@ -1293,11 +1326,14 @@ static void parseoptions(
                         }
                     }
 
-                    skipinput = atoi(option_value(ptr));
+                    skipinput = atoi(option_value_ptr(ptr));
                     break;
                 }
+                case 'T':
+                    /* this option was already handled on an initial scan, see setopt() */
+                    break;
                 case 't':
-                    i = atoi(option_value(ptr));
+                    i = atoi(option_value_ptr(ptr));
                     if (i > 0) {
                         sc_tabsize = i;
                     }
@@ -1306,10 +1342,10 @@ static void parseoptions(
                     }
                     break;
                 case 'v':
-                    verbosity = isdigit(*option_value(ptr)) ? atoi(option_value(ptr)) : 2;
+                    verbosity = isdigit(*option_value_ptr(ptr)) ? atoi(option_value_ptr(ptr)) : 2;
                     break;
                 case 'w':
-                    i = (int)strtol(option_value(ptr), (char**)&ptr, 10);
+                    i = (int)strtol(option_value_ptr(ptr), (char**)&ptr, 10);
                     if (*ptr == '-') {
                         pc_enablewarning(i, 0);
                     }
@@ -1321,7 +1357,7 @@ static void parseoptions(
                     }
                     break;
                 case 'X':
-                    i = atoi(option_value(ptr));
+                    i = atoi(option_value_ptr(ptr));
                     if (i > 64) {
                         sc_amxlimit = i; /* abstract machine size has minimum size */
                     }
@@ -1398,7 +1434,7 @@ static void parseoptions(
                     ptr = str;
                 }
                 assert(strlen(ptr) < _MAX_PATH);
-                strcpy(oname, ptr);
+                snprintf(oname, _MAX_PATH, "%s", ptr);
             } /* if */
             set_extension(oname, ".asm", TRUE);
 #if !defined SC_LIGHT
@@ -1410,7 +1446,7 @@ static void parseoptions(
                     ptr = str;
                 }
                 assert(strlen(ptr) < _MAX_PATH);
-                strcpy(rname, ptr);
+                snprintf(rname, _MAX_PATH, "%s", ptr);
                 set_extension(rname, ".xml", TRUE);
             } /* if */
 #endif
@@ -1421,10 +1457,10 @@ static void parseoptions(
 #if !defined SC_LIGHT
 static void parserespf(char* filename, char* oname, char* ename, char* pname, char* rname, char* codepage)
 {
-    #define MAX_OPTIONS 100
+    #define MAX_OPTIONS 200
     FILE* fp;
-    char *string, **argv;
-    int argc;
+    char *string, *ptr;
+    char** argv;
 
     if ((fp = fopen(filename, "r")) == NULL) {
         error(100, filename); /* error reading input file */
@@ -1434,7 +1470,7 @@ static void parserespf(char* filename, char* oname, char* ename, char* pname, ch
     const long size = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
     assert(size < INT_MAX);
-    if ((string = (char*)malloc((int)size + 1)) == NULL) {
+    if ((string = (char*)malloc(((int)size + 1) * sizeof(char))) == NULL) {
         error(103); /* insufficient memory */
     }
     /* fill with zeros; in MS-DOS, fread() may collapse CR/LF pairs to
@@ -1443,19 +1479,56 @@ static void parserespf(char* filename, char* oname, char* ename, char* pname, ch
     memset(string, 0, (int)size + 1);
     fread(string, 1, (int)size, fp);
     fclose(fp);
-    /* allocate table for option pointers */
-    if ((argv = (char**)malloc(MAX_OPTIONS * sizeof(char*))) == NULL) {
+    /* remove comments in the response file */
+    while ((ptr = strchr(string, '#')) != NULL) {
+        *ptr = ' '; /* pad with spaces up to \n */
+        while (*++ptr != '\n' && *ptr != '\r' && *ptr != '\0') {
+            *ptr = ' ';
+        }
+    } /* while */
+    /* allocate an initial table for option pointers */
+    int maxoptions = 2;
+    if ((argv = (char**)malloc(maxoptions * sizeof(char*))) == NULL) {
         error(103); /* insufficient memory */
     }
     /* fill the options table */
-    char* ptr = strtok(string, " \t\r\n");
-    for (argc = 1; argc < MAX_OPTIONS && ptr != NULL; argc++) {
-        /* note: the routine skips argv[0], for compatibility with main() */
-        argv[argc] = ptr;
-        ptr = strtok(NULL, " \t\r\n");
-    } /* for */
-    if (ptr != NULL) {
-        error(102, "option table"); /* table overflow */
+    int argc = 1; /* note: the routine skips argv[0], for compatibility with main() */
+    ptr = string;
+    while (*ptr) {
+        while (*ptr && isspace((unsigned char)*ptr)) {
+            ptr++;
+        }
+        if (*ptr == '\0') {
+            break;
+        }
+        if (argc >= maxoptions) {
+            maxoptions *= 2;
+            if ((argv = (char**)realloc(argv, maxoptions * sizeof(char*))) == NULL) {
+                error(103); /* insufficient memory */
+            }
+        }
+        argv[argc++] = ptr;
+        /* Find the end of the token */
+        while (*ptr && !isspace((unsigned char)*ptr)) {
+            if (*ptr == '"') {
+                /* We entered a quoted section. The token extends to the closing quote. */
+                ptr++; /* move past opening quote */
+                while (*ptr && *ptr != '"') {
+                    ptr++;
+                }
+                if (*ptr == '"') {
+                    ptr++; // move past closing quote */
+                }
+                /* The token is now complete, e.g., -i"foo bar" */
+                /* The loop should terminate to mark the end of the token. */
+                break;
+            }
+            ptr++;
+        }
+        if (*ptr) {
+            *ptr = '\0';
+            ptr++;
+        }
     }
     /* parse the option table */
     parseoptions(argc, argv, oname, ename, pname, rname, codepage);
@@ -1473,29 +1546,64 @@ static void setopt(const int argc, char** argv, char* oname, char* ename, char* 
     *pname = '\0';
     *rname = '\0';
     *codepage = '\0';
-    strcpy(pname, sDEF_PREFIX);
-
-#if 0 /* needed to test with BoundsChecker for DOS (it does not pass                                                   \
-       * through arguments) */
-    insert_sourcefile("test.p");
-    strcpy(oname,"test.asm");
-#endif
+    snprintf(pname, _MAX_PATH, "%s", sDEF_PREFIX);
 
 #if !defined SC_LIGHT
     /* first parse a "config" file with default options */
-    if (argv[0] != NULL) {
+    if (sc_rootpath[0] != '\0') {
         char cfgfile[_MAX_PATH];
-        char* ext;
-        strcpy(cfgfile, argv[0]);
-        if ((ext = strrchr(cfgfile, DIRSEP_CHAR)) != NULL) {
-            *(ext + 1) = '\0'; /* strip the program filename */
-            strcat(cfgfile, "pawn.cfg");
+        const char* ptr;
+        int isoption;
+        /* copy the default config file name, but keep a pointer to the location
+         * of the base name
+         */
+        assert(strlen(sc_rootpath) + 8 < sizeof cfgfile); /* +7 for "/target/" */
+        int chars_written =
+            snprintf(cfgfile, sizearray(cfgfile), "%s%ctarget%c", sc_rootpath, DIRSEP_CHAR, DIRSEP_CHAR);
+        if (chars_written < 0 || (unsigned)chars_written >= sizearray(cfgfile)) {
+            error(103); /* insufficient memory */
         }
-        else {
-            strcpy(cfgfile, "pawn.cfg");
-        } /* if */
+        char* base = strchr(cfgfile, '\0');
+        assert(base != NULL);
+        snprintf(base, _MAX_PATH - (base - cfgfile), "default.cfg");
+        /* run through the argument list to see whether a -T option is present */
+        int found = 0;
+        for (int i = 1; i < argc; i++) {
+    #if DIRSEP_CHAR == '/'
+            isoption = argv[i][0] == '-';
+    #else
+            isoption = argv[i][0] == '/' || argv[i][0] == '-';
+    #endif
+            if (isoption && argv[i][1] == 'T') {
+                found = 1;
+                ptr = option_value_ptr(&argv[i][1]);
+                if (strchr(ptr, DIRSEP_CHAR) != NULL) {
+                    snprintf(cfgfile, _MAX_PATH, "%s", ptr); /* assume full path */
+                }
+                else {
+                    snprintf(base, _MAX_PATH - (base - cfgfile), "%s", ptr); /* no path */
+                }
+                ptr = strrchr(cfgfile, '.');
+                if (ptr == NULL || strchr(ptr, DIRSEP_CHAR) != NULL) {
+                    strncat(cfgfile, ".cfg", _MAX_PATH - strlen(cfgfile) - 1);
+                }
+            } /* if */
+        } /* for */
         if (access(cfgfile, 4) == 0) {
             parserespf(cfgfile, oname, ename, pname, rname, codepage);
+        }
+        else if (found) {
+            error(100, cfgfile); /* config. file was explicitly specified, but cannot be read */
+        }
+        else if (sc_binpath[0] != '\0') {
+            /* for compatibility, try the old name */
+            chars_written = snprintf(cfgfile, sizearray(cfgfile), "%s%cpawn.cfg", sc_binpath, DIRSEP_CHAR);
+            if (chars_written < 0 || (unsigned)chars_written >= sizearray(cfgfile)) {
+                error(103); /* insufficient memory */
+            }
+            if (access(cfgfile, 4) == 0) {
+                parserespf(cfgfile, oname, ename, pname, rname, codepage);
+            }
         }
     } /* if */
 #endif
@@ -1508,77 +1616,87 @@ static void setopt(const int argc, char** argv, char* oname, char* ename, char* 
 #if defined __BORLANDC__ || defined __WATCOMC__
     #pragma argsused
 #endif
-static void setconfig(char* root)
+static void setconfig(const char* root)
 {
-#if defined macintosh
-    insert_path(":include:");
-#else
-    char path[_MAX_PATH];
-    char *ptr, *base;
-    int len;
+    char path[_MAX_PATH] = "";
+    char* ptr;
 
-    /* add the default "include" directory */
-    #if defined __WIN32__ || defined _WIN32
+#if defined macintosh
+    /* on OS X, use argv[0] */
+    getcwd(path, sizeof path);
+#elif defined __WIN32__ || defined _WIN32
     GetModuleFileName(NULL, path, _MAX_PATH);
-    #elif defined ENABLE_BINRELOC && (defined LINUX || defined __FreeBSD__ || defined __OpenBSD__ || defined __APPLE__)
-    /* see www.autopackage.org for the BinReloc module */
-    ptr = (char*)SELFPATH;
-    if (!ptr) {
-        ptr = root;
-    }
+#elif defined __LINUX__ || defined __FreeBSD__ || defined __OpenBSD__
+    /* see www.autopackage.org (now Listaller) for the BinReloc module */
+    br_init(NULL);
+    ptr = br_find_exe("/opt/Pawn/bin/pawncc");
     strncpy(path, ptr, sizeof path);
-    #else
+    free(ptr);
+#else
     if (root != NULL) {
         strncpy(path, root, sizeof path); /* path + filename (hopefully) */
     }
-    #endif
-    #if defined __MSDOS__
+    else {
+        if (getcwd(path, sizeof path) == NULL) {
+            *path = '\0';
+        }
+        /* add a final \ or / to the path (which is stripped of later) */
+        ptr = strchr(path, '\0');
+        assert(ptr != NULL);
+        assert((ptr - path) < sizeof path - 2);
+        *ptr = DIRSEP_CHAR;
+        *(ptr + 1) = '\0';
+    } /* if */
+#endif
+#if defined __MSDOS__
     /* strip the options (appended to the path + filename) */
     if ((ptr = strpbrk(path, " \t/")) != NULL) {
         *ptr = '\0';
     }
-    #endif
-    /* terminate just behind last \ or : */
+#endif
+#if defined macintosh
+    /* add a final ':' to the path */
+    ptr = strchr(path, '\0');
+    assert(ptr != NULL);
+    assert((ptr - path) < sizeof path - 1);
+    *ptr = DIRSEP_CHAR;
+    *(ptr + 1) = '\0';
+#else
+    /* "path" contains path + filename, terminate just behind last \, / or : */
     if ((ptr = strrchr(path, DIRSEP_CHAR)) != NULL || (ptr = strchr(path, ':')) != NULL) {
         /* If there is no "\" or ":", the string probably does not contain the
          * path; so we just don't add it to the list in that case
          */
         *(ptr + 1) = '\0';
-        base = ptr;
-        strcat(path, "include");
+    } /* if */
+#endif
+
+    if (strlen(path) > 0) {
+        size_t len;
+#if !defined SC_LIGHT
+        assert(sizeof sc_binpath == sizeof path);
+        snprintf(sc_binpath, sizeof(sc_binpath), "%s", path);
+#endif
+        strncat(path, "include", sizeof(path) - strlen(path) - 1);
         len = strlen(path);
         path[len] = DIRSEP_CHAR;
         path[len + 1] = '\0';
-        /* see if it exists */
-        if (access(path, 0) != 0 && *base == DIRSEP_CHAR) {
-            /* There is no "include" directory below the directory where the compiler
-             * is found. This typically means that the compiler is in a "bin" sub-directory
-             * and the "include" is below the *parent*. So find the parent...
-             */
-            *base = '\0';
-            if ((ptr = strrchr(path, DIRSEP_CHAR)) != NULL) {
-                *(ptr + 1) = '\0';
-                strcat(path, "include");
-                len = strlen(path);
-                path[len] = DIRSEP_CHAR;
-                path[len + 1] = '\0';
-            }
-            else {
-                *base = DIRSEP_CHAR;
-            } /* if */
-        } /* if */
         insert_path(path);
-    /* same for the codepage root */
-    #if !defined NO_CODEPAGE
-        if (ptr) {
+/* same for the codepage root */
+#if !defined PAWN_NO_CODEPAGE
+        if (ptr != NULL) {
             *ptr = '\0';
+            if (!cp_path(path, "codepage")) {
+                error(109, path); /* codepage path */
+            }
         }
-        if (!cp_path(path, "codepage")) {
-            error(109, path); /* codepage path */
-        }
-    #endif
+#endif
+/* also copy the root path (for the XML documentation and target host files) */
+#if !defined SC_LIGHT
+        *ptr = '\0';
+        strncpy(sc_rootpath, path, sizeof sc_rootpath);
+#endif
     } /* if */
-#endif /* macintosh */
 }
 
 static void setcaption(void)
@@ -2639,7 +2757,7 @@ static cell initarray(const int ident, const int tag, int dim[], const int numdi
         if (*errorfound || !matchtoken(',')) {
             abortparse = TRUE;
         }
-        char disable = sLiteralQueueDisabled;
+        const char disable = sLiteralQueueDisabled;
         sLiteralQueueDisabled = TRUE;
         if (matchtoken('}')) {
             abortparse = TRUE;
@@ -3985,7 +4103,7 @@ static int declargs(symbol* sym)
                     }
                     if ((sym->usage & uPROTOTYPED) == 0) {
                         /* redimension the argument list, add the entry */
-                        arginfo* temp_arglist = (arginfo*)realloc(sym->dim.arglist, (argcnt + 2) * sizeof(arginfo));
+                        arginfo* temp_arglist = realloc(sym->dim.arglist, (argcnt + 2) * sizeof(arginfo));
                         if (temp_arglist == NULL) {
                             error(103);    /* insufficient memory */
                             return argcnt; /* return current argument count to avoid further issues */
@@ -4023,7 +4141,7 @@ static int declargs(symbol* sym)
                     }
                     if ((sym->usage & uPROTOTYPED) == 0) {
                         /* redimension the argument list, add the entry iVARARGS */
-                        arginfo* temp_arglist = (arginfo*)realloc(sym->dim.arglist, (argcnt + 2) * sizeof(arginfo));
+                        arginfo* temp_arglist = realloc(sym->dim.arglist, (argcnt + 2) * sizeof(arginfo));
                         if (temp_arglist == NULL) {
                             error(103);    /* insufficient memory */
                             return argcnt; /* return current argument count to avoid further issues */
