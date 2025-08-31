@@ -593,16 +593,15 @@ static void plnge2(void (*oper)(void), int (*hier)(value* lval), value* lval1, v
         }
         if (lval2->ident == iCONSTEXPR) { /* constant on right side */
             if (commutative(oper)) {      /* test for commutative operators */
-                value lvaltmp = {0};
-                stgdel(index, cidx); /* scratch pushreg() and constant fetch (then
-                                      * fetch the constant again */
+                stgdel(index, cidx);      /* scratch pushreg() and constant fetch (then
+                                           * fetch the constant again */
                 ldconst(lval2->constval << dbltest(oper, lval1, lval2), sALT);
                 /* now, the primary register has the left operand and the secondary
                  * register the right operand; swap the "lval" variables so that lval1
                  * is associated with the secondary register and lval2 with the
                  * primary register, as is the "normal" case.
                  */
-                lvaltmp = *lval1;
+                const value lvaltmp = *lval1;
                 *lval1 = *lval2;
                 *lval2 = lvaltmp;
             }

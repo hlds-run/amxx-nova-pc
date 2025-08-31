@@ -317,9 +317,8 @@ char* swiext(const char* file, const char* ext, const int isO)
 
 char* FindFileName(const int argc, char** argv)
 {
-    int i = 0;
     int save = -1;
-    for (i = 1; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-' && argv[i][1] == 'o') {
             if (argv[i][2] == ' ' || argv[i][2] == '\0') {
                 if (i == argc - 1) {
@@ -361,6 +360,8 @@ void show_help()
     printf("\t-p<name>  set name of \"prefix\" file\n");
     printf("\t-r[name]  write cross reference report to console or to specified file\n");
     printf("\t-sui[+/-] show stack usage info\n");
+    printf("\tsym=val   define constant \"sym\" with value \"val\"\n");
+    printf("\tsym=      define constant \"sym\" with value 1\n");
 }
 
 #if defined(__linux__) || defined(__APPLE__)
