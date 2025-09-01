@@ -22,7 +22,9 @@
 #include <cstdlib>
 
 #ifdef BUILD_STATIC_AMXXPC
+extern "C" {
     #include <sc.h>
+}
 extern "C" void Compile32(int argc, char** argv);
 #else
     #if defined(EMSCRIPTEN)
@@ -96,7 +98,7 @@ int main(const int argc, char** argv)
     pc_printf("Copyright (c) 2004-2013 AMX Mod X Team\n");
     pc_printf("Copyright (c) 2025 hlds.run Team\n\n");
 
-    if (argc < 2) {
+    if (argc < 2 && (strlen(argv[1]) <= 2 || strncmp(argv[1], "-T", 2) != 0)) {
         pc_printf("Usage: <file.sma> [options]\n");
         pc_printf("Use -? or --help to see full options\n\n");
         getchar();
@@ -337,6 +339,12 @@ char* FindFileName(const int argc, char** argv)
         return swiext(argv[save], "amx", 0);
     }
 
+    const char* file = pc_pop_first_source_file();
+
+    if (file != nullptr && *file != '\0') {
+        return swiext(file, "amx", 0);
+    }
+
     return nullptr;
 }
 
@@ -358,7 +366,8 @@ void show_help()
     printf("\t-l        create list file (preprocess only)\n");
     printf("\t-o<name>  set base name of output file\n");
     printf("\t-p<name>  set name of \"prefix\" file\n");
-    printf("\t-r[name]  write cross reference report to console or to specified file\n");
+    printf("\t-r<name>  write cross reference report to console or to specified file\n");
+    printf("\t-T<name>  set name of the configuration file to use\n");
     printf("\t-sui[+/-] show stack usage info\n");
     printf("\tsym=val   define constant \"sym\" with value \"val\"\n");
     printf("\tsym=      define constant \"sym\" with value 1\n");

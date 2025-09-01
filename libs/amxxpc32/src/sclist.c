@@ -359,9 +359,25 @@ SC_FUNC void delete_substtable(void)
 
 /* ----- input file list (explicit files)------------------------- */
 static stringlist sourcefiles = {NULL, NULL};
+static char first_source_file[_MAX_PATH] = {0};
+
+SC_FUNC const char* pop_first_source_file(void)
+{
+    static char buffer[_MAX_PATH];
+    const int written = snprintf(buffer, sizeof(buffer), "%s", first_source_file);
+    if (written < 0 || written >= (int)sizeof(buffer)) {
+        buffer[sizeof(buffer) - 1] = '\0';
+    }
+    memset(first_source_file, 0, sizeof(first_source_file));
+    return buffer;
+}
 
 SC_FUNC stringlist* insert_sourcefile(const char* string)
 {
+    if (get_sourcefile(0) == NULL) {
+        strncpy(first_source_file, string, sizeof(first_source_file) - 1);
+        first_source_file[sizeof(first_source_file) - 1] = '\0';
+    }
     return insert_string(&sourcefiles, string);
 }
 

@@ -289,6 +289,14 @@ typedef struct s_valuepair {
 #define opcodes(n) ((n) * sizeof(cell)) /* opcode size */
 #define opargs(n) ((n) * sizeof(cell))  /* size of typical argument */
 
+/* general purpose macros */
+#if !defined sizearray
+    #define sizearray(a) (sizeof(a) / sizeof((a)[0]))
+#endif
+#if !defined makelong
+    #define makelong(low, high) ((long)(low) | ((long)(high) << (sizeof(long) * 4)))
+#endif
+
 /*  Tokens recognized by lex()
  *  Some of these constants are assigned as well to the variable "lastst"
  */
@@ -459,11 +467,14 @@ int pc_enablewarning(int number, int enable);
 #if PAWN_CELL_SIZE == 32
     #if defined __WIN32__ || defined _WIN32 || defined WIN32
 __declspec(dllexport) int pc_printf(const char* message, ...);
+__declspec(dllexport) const char* pc_pop_first_source_file(void);
     #else
-extern int __attribute__((visibility("default"))) pc_printf(const char* message, ...);
+__attribute__((visibility("default"))) extern int pc_printf(const char* message, ...);
+__attribute__((visibility("default"))) extern const char* pc_pop_first_source_file(void);
     #endif
 #else
 int pc_printf(const char* message, ...) INVISIBLE;
+const char* pc_pop_first_source_file(void) INVISIBLE;
 #endif
 
 /* error report function */
@@ -700,6 +711,7 @@ SC_FUNC int get_subst(int index, char** pattern, char** substitution);
 SC_FUNC stringpair* find_subst(const char* name, int length);
 SC_FUNC int delete_subst(const char* name, int length);
 SC_FUNC void delete_substtable(void);
+SC_FUNC const char* pop_first_source_file(void);
 SC_FUNC stringlist* insert_sourcefile(const char* string);
 SC_FUNC char* get_sourcefile(int index);
 SC_FUNC void delete_sourcefiletable(void);

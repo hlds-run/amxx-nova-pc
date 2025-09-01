@@ -129,6 +129,11 @@ int pc_error(const int number, const char* message, char* filename, const int fi
     return 0;
 }
 
+AMXXPC_API const char* pc_pop_first_source_file(void)
+{
+    return pop_first_source_file();
+}
+
 typedef struct src_file_s {
     FILE* fp;         // Set if writing.
     char* buffer;     // IO buffer.
