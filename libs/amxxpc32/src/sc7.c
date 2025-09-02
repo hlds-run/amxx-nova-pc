@@ -61,7 +61,7 @@ static void stgstring(char* start, const char* end);
 static void stgopt(char* start, const char* end);
 
 #define sSTG_GROW 512
-#define sSTG_MAX 20480
+#define sSTG_MAX  20480
 
 static char* stgbuf = NULL;
 static int stgmax = 0; /* current size of the staging buffer */
@@ -160,11 +160,10 @@ static int filewrite(char* str)
  */
 SC_FUNC void stgwrite(const char* st)
 {
-
     CHECK_STGBUFFER(0);
     if (staging) {
         if (stgidx >= 2 && stgbuf[stgidx - 1] == '\0' && stgbuf[stgidx - 2] != '\n') {
-            stgidx -= 1; /* overwrite last '\0' */
+            stgidx -= 1;      /* overwrite last '\0' */
         }
         while (*st != '\0') { /* copy to staging buffer */
             CHECK_STGBUFFER(stgidx);
@@ -231,7 +230,6 @@ typedef struct {
  */
 static void stgstring(char* start, const char* end)
 {
-
     while (start < end) {
         if (*start == sSTARTREORDER) {
             start += 1; /* skip token */
@@ -240,9 +238,9 @@ static void stgstring(char* start, const char* end)
             if (stack == NULL) {
                 error(103); /* insufficient memory */
             }
-            int nest = 1; /* nesting counter */
-            int argc = 0; /* argument counter */
-            int arg = -1; /* argument index; no valid argument yet */
+            int nest = 1;   /* nesting counter */
+            int argc = 0;   /* argument counter */
+            int arg = -1;   /* argument index; no valid argument yet */
             do {
                 switch (*start) {
                     case sSTARTREORDER:
@@ -362,7 +360,7 @@ SC_FUNC int phopt_cleanup(void)
 }
 
 #define MAX_OPT_VARS 4
-#define MAX_OPT_CAT 4 /* max. values that are concatenated */
+#define MAX_OPT_CAT  4 /* max. values that are concatenated */
 #if sNAMEMAX > (PAWN_CELL_SIZE / 4) * MAX_OPT_CAT
     #define MAX_ALIAS sNAMEMAX
 #else
@@ -439,7 +437,7 @@ static int matchsequence(const char* start, const char* end, const char* pattern
                     return FALSE;
                 }
                 assert(*(start + 1) == '\0');
-                start += 2; /* skip '\n' and '\0' */
+                start += 2;      /* skip '\n' and '\0' */
                 if (*(pattern + 1) != '\0') {
                     while ((start < end && *start == '\t') || *start == ' ') {
                         start++; /* skip leading white space of next instruction */
@@ -534,11 +532,11 @@ static void strreplace(
     char* dest, const char* replace, const int sub_length, const int repl_length, const int dest_length)
 {
     const int offset = sub_length - repl_length;
-    if (offset > 0) { /* delete a section */
+    if (offset > 0) {                                      /* delete a section */
         memmove(dest, dest + offset, dest_length - offset);
         memset(dest + dest_length - offset, 0xcc, offset); /* not needed, but for cleanlyness */
     }
-    else if (offset < 0) { /* insert a section */
+    else if (offset < 0) {                                 /* insert a section */
         memmove(dest - offset, dest, dest_length);
     } /* if */
     memcpy(dest, replace, repl_length);

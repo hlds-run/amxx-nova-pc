@@ -160,7 +160,6 @@ int main(const int argc, char** argv)
     Pl2Bh(&pl32, &bh32);
 
     try {
-
         static constexpr int kEntries = 1;
 
         // entry is 4 ints and a byte

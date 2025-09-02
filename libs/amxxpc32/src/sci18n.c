@@ -40,7 +40,7 @@
 
 #if !defined TRUE
     #define FALSE 0
-    #define TRUE 1
+    #define TRUE  1
 #endif
 #if !defined _MAX_PATH
     #define _MAX_PATH 250
@@ -64,7 +64,7 @@
     #if !defined MAXCODEPAGE
         #define MAXCODEPAGE 12 /* typically "cp" + 4 digits + ".txt" */
     #endif
-    #define INVALID 0xffffu /* 0xffff and 0xfffe are invalid Unicode characters */
+    #define INVALID  0xffffu   /* 0xffff and 0xfffe are invalid Unicode characters */
     #define LEADBYTE 0xfffeu
 
 struct wordpair {
@@ -115,7 +115,6 @@ static int cp_readline(FILE* fp, char* string, const size_t size)
  */
 SC_FUNC int cp_path(const char* root, const char* directory)
 {
-
     const size_t len1 = root != NULL ? strlen(root) : 0;
     const int add_slash1 = len1 == 0 || root[len1 - 1] != DIRSEP_CHAR;
     const size_t len2 = directory != NULL ? strlen(directory) : 0;
@@ -238,7 +237,7 @@ SC_FUNC int cp_set(const char* name)
     while (cp_readline(fp, filename, sizeof filename)) {
         char* ptr;
         if ((ptr = strchr(filename, '#')) != NULL) {
-            *ptr = '\0'; /* strip of comment */
+            *ptr = '\0';   /* strip of comment */
         }
         for (ptr = filename; *ptr > 0 && *ptr < ' '; ptr++)
             /* nothing */; /* skip leading whitespace */
@@ -287,7 +286,6 @@ SC_FUNC int cp_set(const char* name)
 
 SC_FUNC cell cp_translate(const unsigned char* string, const unsigned char** endptr)
 {
-
     wchar_t result = bytetable[*string++];
     /* check whether this is a leader code */
     if ((unsigned)result == LEADBYTE && wordtable != NULL) {

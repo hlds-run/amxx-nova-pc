@@ -46,9 +46,9 @@ typedef struct {
    inflate_table() calls in inflate.c and infback.c.  If the root table size is
    changed, then these maximum sizes would be need to be recalculated and
    updated. */
-#define ENOUGH_LENS 852
+#define ENOUGH_LENS  852
 #define ENOUGH_DISTS 592
-#define ENOUGH (ENOUGH_LENS + ENOUGH_DISTS)
+#define ENOUGH       (ENOUGH_LENS + ENOUGH_DISTS)
 
 /* Type of code to build for inflate_table() */
 typedef enum {

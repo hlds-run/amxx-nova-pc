@@ -114,7 +114,7 @@ SC_FUNC void writeleader(const symbol* root)
                 strcpy(stlist->name, itoh(getlabel()));
             } /* for */
             if (strcmp(sym->name, uENTRYFUNC) == 0) {
-                continue; /* do not generate stubs for this special function */
+                continue;         /* do not generate stubs for this special function */
             }
             sym->addr = code_idx; /* fix the function address now */
             /* get automaton id for this function */
@@ -374,9 +374,9 @@ SC_FUNC void alignframe(const int numbytes)
     stgwrite("\tlctrl 4\n");  /* get STK in PRI */
     stgwrite("\tconst.alt "); /* get ~(numbytes-1) in ALT */
     outval(~(numbytes - 1), TRUE);
-    stgwrite("\tand\n");     /* PRI = STK "and" ~(numbytes-1) */
-    stgwrite("\tsctrl 4\n"); /* set the new value of STK ... */
-    stgwrite("\tsctrl 5\n"); /* ... and FRM */
+    stgwrite("\tand\n");      /* PRI = STK "and" ~(numbytes-1) */
+    stgwrite("\tsctrl 4\n");  /* set the new value of STK ... */
+    stgwrite("\tsctrl 5\n");  /* ... and FRM */
     code_idx += opcodes(5) + opargs(4);
 }
 
@@ -392,7 +392,6 @@ SC_FUNC void load_i()
  */
 SC_FUNC void rvalue(const value* lval)
 {
-
     symbol* sym = lval->sym;
     if (lval->ident == iARRAYCELL) {
         /* indirect fetch, address already in PRI */
@@ -538,7 +537,6 @@ SC_FUNC void load_hidden_arg()
  */
 SC_FUNC void store(const value* lval)
 {
-
     symbol* sym = lval->sym;
     if (lval->ident == iARRAYCELL) {
         /* store at address in ALT */
@@ -922,7 +920,7 @@ SC_FUNC void modheap(const int delta)
 
 SC_FUNC void setheap_pri(void)
 {
-    stgwrite("\theap "); /* ALT = HEA++ */
+    stgwrite("\theap ");      /* ALT = HEA++ */
     outval(sizeof(cell), TRUE);
     stgwrite("\tstor.i\n");   /* store PRI (default value) at address ALT */
     stgwrite("\tmove.pri\n"); /* move ALT to PRI: PRI contains the address */
@@ -1271,7 +1269,6 @@ SC_FUNC void nooperation(void)
  */
 SC_FUNC void inc(const value* lval)
 {
-
     const symbol* sym = lval->sym;
     if (lval->ident == iARRAYCELL) {
         /* indirect increment, address already in PRI */
@@ -1337,7 +1334,6 @@ SC_FUNC void inc(const value* lval)
  */
 SC_FUNC void dec(const value* lval)
 {
-
     const symbol* sym = lval->sym;
     if (lval->ident == iARRAYCELL) {
         /* indirect decrement, address already in PRI */

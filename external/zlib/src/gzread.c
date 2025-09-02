@@ -573,7 +573,7 @@ char* ZEXPORT gzgets(gzFile file, char* buf, int len)
         do {
             /* assure that something is in the output buffer */
             if (state->x.have == 0 && gz_fetch(state) == -1) {
-                return NULL; /* error */
+                return NULL;          /* error */
             }
             if (state->x.have == 0) { /* end of file */
                 state->past = 1;      /* read past end */

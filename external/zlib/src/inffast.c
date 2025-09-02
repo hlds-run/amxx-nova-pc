@@ -60,24 +60,24 @@ void ZLIB_INTERNAL inflate_fast(z_streamp strm, unsigned start)
     unsigned char FAR* beg;          /* inflate()'s initial strm->next_out */
     unsigned char FAR* end;          /* while out < end, enough space available */
     #ifdef INFLATE_STRICT
-    unsigned dmax; /* maximum distance from zlib header */
+    unsigned dmax;                   /* maximum distance from zlib header */
     #endif
-    unsigned wsize;            /* window size or zero if not using window */
-    unsigned whave;            /* valid bytes in the window */
-    unsigned wnext;            /* window write index */
-    unsigned char FAR* window; /* allocated sliding window, if wsize != 0 */
-    unsigned long hold;        /* local strm->hold */
-    unsigned bits;             /* local strm->bits */
-    code const FAR* lcode;     /* local strm->lencode */
-    code const FAR* dcode;     /* local strm->distcode */
-    unsigned lmask;            /* mask for first level of length codes */
-    unsigned dmask;            /* mask for first level of distance codes */
-    code const* here;          /* retrieved table entry */
-    unsigned op;               /* code bits, operation, extra bits, or */
-                               /*  window position, window bytes to copy */
-    unsigned len;              /* match length, unused bytes */
-    unsigned dist;             /* match distance */
-    unsigned char FAR* from;   /* where to copy match from */
+    unsigned wsize;                  /* window size or zero if not using window */
+    unsigned whave;                  /* valid bytes in the window */
+    unsigned wnext;                  /* window write index */
+    unsigned char FAR* window;       /* allocated sliding window, if wsize != 0 */
+    unsigned long hold;              /* local strm->hold */
+    unsigned bits;                   /* local strm->bits */
+    code const FAR* lcode;           /* local strm->lencode */
+    code const FAR* dcode;           /* local strm->distcode */
+    unsigned lmask;                  /* mask for first level of length codes */
+    unsigned dmask;                  /* mask for first level of distance codes */
+    code const* here;                /* retrieved table entry */
+    unsigned op;                     /* code bits, operation, extra bits, or */
+                                     /*  window position, window bytes to copy */
+    unsigned len;                    /* match length, unused bytes */
+    unsigned dist;                   /* match distance */
+    unsigned char FAR* from;         /* where to copy match from */
 
     /* copy state to local variables */
     state = (struct inflate_state FAR*)strm->state;
@@ -124,7 +124,7 @@ void ZLIB_INTERNAL inflate_fast(z_streamp strm, unsigned start)
         }
         else if (op & 16) { /* length base */
             len = (unsigned)(here->val);
-            op &= 15; /* number of extra bits */
+            op &= 15;       /* number of extra bits */
             if (op) {
                 if (bits < op) {
                     hold += (unsigned long)(*in++) << bits;
@@ -149,7 +149,7 @@ void ZLIB_INTERNAL inflate_fast(z_streamp strm, unsigned start)
             op = (unsigned)(here->op);
             if (op & 16) { /* distance base */
                 dist = (unsigned)(here->val);
-                op &= 15; /* number of extra bits */
+                op &= 15;  /* number of extra bits */
                 if (bits < op) {
                     hold += (unsigned long)(*in++) << bits;
                     bits += 8;
@@ -202,7 +202,7 @@ void ZLIB_INTERNAL inflate_fast(z_streamp strm, unsigned start)
     #endif
                     }
                     from = window;
-                    if (wnext == 0) { /* very common case */
+                    if (wnext == 0) {   /* very common case */
                         from += wsize - op;
                         if (op < len) { /* some from window */
                             len -= op;
@@ -213,10 +213,10 @@ void ZLIB_INTERNAL inflate_fast(z_streamp strm, unsigned start)
                             from = out - dist; /* rest from output */
                         }
                     }
-                    else if (wnext < op) { /* wrap around window */
+                    else if (wnext < op) {     /* wrap around window */
                         from += wsize + wnext - op;
                         op -= wnext;
-                        if (op < len) { /* some from end of window */
+                        if (op < len) {        /* some from end of window */
                             len -= op;
                             do {
                                 *out++ = *from++;
@@ -234,7 +234,7 @@ void ZLIB_INTERNAL inflate_fast(z_streamp strm, unsigned start)
                             }
                         }
                     }
-                    else { /* contiguous in window */
+                    else {              /* contiguous in window */
                         from += wnext - op;
                         if (op < len) { /* some from window */
                             len -= op;

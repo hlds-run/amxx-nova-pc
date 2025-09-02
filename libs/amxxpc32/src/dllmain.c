@@ -20,7 +20,7 @@
  */
 
 #if defined _UNICODE || defined __UNICODE__ || defined UNICODE
-    #if !defined UNICODE /* for Windows */
+    #if !defined UNICODE  /* for Windows */
         #define UNICODE
     #endif
     #if !defined _UNICODE /* for C library */

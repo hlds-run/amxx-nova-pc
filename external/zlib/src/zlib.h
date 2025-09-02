@@ -41,11 +41,11 @@
 extern "C" {
 #endif
 
-#define ZLIB_VERSION "1.3.1.1-motley"
-#define ZLIB_VERNUM 0x1311
-#define ZLIB_VER_MAJOR 1
-#define ZLIB_VER_MINOR 3
-#define ZLIB_VER_REVISION 1
+#define ZLIB_VERSION         "1.3.1.1-motley"
+#define ZLIB_VERNUM          0x1311
+#define ZLIB_VER_MAJOR       1
+#define ZLIB_VER_MINOR       3
+#define ZLIB_VER_REVISION    1
 #define ZLIB_VER_SUBREVISION 1
 
 /*
@@ -88,25 +88,25 @@ typedef void (*free_func)(voidpf opaque, voidpf address);
 struct internal_state;
 
 typedef struct z_stream_s {
-    z_const Bytef* next_in; /* next input byte */
-    uInt avail_in;          /* number of bytes available at next_in */
-    uLong total_in;         /* total number of input bytes read so far */
+    z_const Bytef* next_in;           /* next input byte */
+    uInt avail_in;                    /* number of bytes available at next_in */
+    uLong total_in;                   /* total number of input bytes read so far */
 
-    Bytef* next_out; /* next output byte will go here */
-    uInt avail_out;  /* remaining free space at next_out */
-    uLong total_out; /* total number of bytes output so far */
+    Bytef* next_out;                  /* next output byte will go here */
+    uInt avail_out;                   /* remaining free space at next_out */
+    uLong total_out;                  /* total number of bytes output so far */
 
     z_const char* msg;                /* last error message, NULL if no error */
     struct internal_state FAR* state; /* not visible by applications */
 
-    alloc_func zalloc; /* used to allocate the internal state */
-    free_func zfree;   /* used to free the internal state */
-    voidpf opaque;     /* private data object passed to zalloc and zfree */
+    alloc_func zalloc;                /* used to allocate the internal state */
+    free_func zfree;                  /* used to free the internal state */
+    voidpf opaque;                    /* private data object passed to zalloc and zfree */
 
-    int data_type;  /* best guess about the data type: binary or text
-                       for deflate, or the decoding state for inflate */
-    uLong adler;    /* Adler-32 or CRC-32 value of the uncompressed data */
-    uLong reserved; /* reserved for future use */
+    int data_type;                    /* best guess about the data type: binary or text
+                                         for deflate, or the decoding state for inflate */
+    uLong adler;                      /* Adler-32 or CRC-32 value of the uncompressed data */
+    uLong reserved;                   /* reserved for future use */
 } z_stream;
 
 typedef z_stream FAR* z_streamp;
@@ -169,53 +169,53 @@ typedef gz_header FAR* gz_headerp;
 
 /* constants */
 
-#define Z_NO_FLUSH 0
-#define Z_PARTIAL_FLUSH 1
-#define Z_SYNC_FLUSH 2
-#define Z_FULL_FLUSH 3
-#define Z_FINISH 4
-#define Z_BLOCK 5
-#define Z_TREES 6
+#define Z_NO_FLUSH            0
+#define Z_PARTIAL_FLUSH       1
+#define Z_SYNC_FLUSH          2
+#define Z_FULL_FLUSH          3
+#define Z_FINISH              4
+#define Z_BLOCK               5
+#define Z_TREES               6
 /* Allowed flush values; see deflate() and inflate() below for details */
 
-#define Z_OK 0
-#define Z_STREAM_END 1
-#define Z_NEED_DICT 2
-#define Z_ERRNO (-1)
-#define Z_STREAM_ERROR (-2)
-#define Z_DATA_ERROR (-3)
-#define Z_MEM_ERROR (-4)
-#define Z_BUF_ERROR (-5)
-#define Z_VERSION_ERROR (-6)
+#define Z_OK                  0
+#define Z_STREAM_END          1
+#define Z_NEED_DICT           2
+#define Z_ERRNO               (-1)
+#define Z_STREAM_ERROR        (-2)
+#define Z_DATA_ERROR          (-3)
+#define Z_MEM_ERROR           (-4)
+#define Z_BUF_ERROR           (-5)
+#define Z_VERSION_ERROR       (-6)
 /* Return codes for the compression/decompression functions. Negative values
  * are errors, positive values are used for special but normal events.
  */
 
-#define Z_NO_COMPRESSION 0
-#define Z_BEST_SPEED 1
-#define Z_BEST_COMPRESSION 9
+#define Z_NO_COMPRESSION      0
+#define Z_BEST_SPEED          1
+#define Z_BEST_COMPRESSION    9
 #define Z_DEFAULT_COMPRESSION (-1)
 /* compression levels */
 
-#define Z_FILTERED 1
-#define Z_HUFFMAN_ONLY 2
-#define Z_RLE 3
-#define Z_FIXED 4
-#define Z_DEFAULT_STRATEGY 0
+#define Z_FILTERED            1
+#define Z_HUFFMAN_ONLY        2
+#define Z_RLE                 3
+#define Z_FIXED               4
+#define Z_DEFAULT_STRATEGY    0
 /* compression strategy; see deflateInit2() below for details */
 
-#define Z_BINARY 0
-#define Z_TEXT 1
-#define Z_ASCII Z_TEXT /* for compatibility with 1.2.2 and earlier */
-#define Z_UNKNOWN 2
+#define Z_BINARY              0
+#define Z_TEXT                1
+#define Z_ASCII               Z_TEXT /* for compatibility with 1.2.2 and earlier */
+#define Z_UNKNOWN             2
 /* Possible values of the data_type field for deflate() */
 
-#define Z_DEFLATED 8
+#define Z_DEFLATED            8
 /* The deflate compression method (the only one supported in this version) */
 
-#define Z_NULL 0 /* for initializing zalloc, zfree, opaque */
+#define Z_NULL                0 /* for initializing zalloc, zfree, opaque */
 
-#define zlib_version zlibVersion()
+#define zlib_version          zlibVersion()
 /* for compatibility with versions < 1.0.2 */
 
 /* basic functions */
@@ -1762,7 +1762,7 @@ ZEXTERN int ZEXPORT inflateBackInit_(
     z_streamp strm, int windowBits, unsigned char FAR* window, const char* version, int stream_size);
 #ifdef Z_PREFIX_SET
     #define z_deflateInit(strm, level) deflateInit_((strm), (level), ZLIB_VERSION, (int)sizeof(z_stream))
-    #define z_inflateInit(strm) inflateInit_((strm), ZLIB_VERSION, (int)sizeof(z_stream))
+    #define z_inflateInit(strm)        inflateInit_((strm), ZLIB_VERSION, (int)sizeof(z_stream))
     #define z_deflateInit2(strm, level, method, windowBits, memLevel, strategy)                                        \
         deflateInit2_(                                                                                                 \
             (strm), (level), (method), (windowBits), (memLevel), (strategy), ZLIB_VERSION, (int)sizeof(z_stream))
@@ -1771,7 +1771,7 @@ ZEXTERN int ZEXPORT inflateBackInit_(
         inflateBackInit_((strm), (windowBits), (window), ZLIB_VERSION, (int)sizeof(z_stream))
 #else
     #define deflateInit(strm, level) deflateInit_((strm), (level), ZLIB_VERSION, (int)sizeof(z_stream))
-    #define inflateInit(strm) inflateInit_((strm), ZLIB_VERSION, (int)sizeof(z_stream))
+    #define inflateInit(strm)        inflateInit_((strm), ZLIB_VERSION, (int)sizeof(z_stream))
     #define deflateInit2(strm, level, method, windowBits, memLevel, strategy)                                          \
         deflateInit2_(                                                                                                 \
             (strm), (level), (method), (windowBits), (memLevel), (strategy), ZLIB_VERSION, (int)sizeof(z_stream))
@@ -1820,20 +1820,20 @@ ZEXTERN uLong ZEXPORT crc32_combine_gen64(z_off64_t);
 
     #if !defined(ZLIB_INTERNAL) && defined(Z_WANT64)
         #ifdef Z_PREFIX_SET
-            #define z_gzopen z_gzopen64
-            #define z_gzseek z_gzseek64
-            #define z_gztell z_gztell64
-            #define z_gzoffset z_gzoffset64
-            #define z_adler32_combine z_adler32_combine64
-            #define z_crc32_combine z_crc32_combine64
+            #define z_gzopen            z_gzopen64
+            #define z_gzseek            z_gzseek64
+            #define z_gztell            z_gztell64
+            #define z_gzoffset          z_gzoffset64
+            #define z_adler32_combine   z_adler32_combine64
+            #define z_crc32_combine     z_crc32_combine64
             #define z_crc32_combine_gen z_crc32_combine_gen64
         #else
-            #define gzopen gzopen64
-            #define gzseek gzseek64
-            #define gztell gztell64
-            #define gzoffset gzoffset64
-            #define adler32_combine adler32_combine64
-            #define crc32_combine crc32_combine64
+            #define gzopen            gzopen64
+            #define gzseek            gzseek64
+            #define gztell            gztell64
+            #define gzoffset          gzoffset64
+            #define adler32_combine   adler32_combine64
+            #define crc32_combine     crc32_combine64
             #define crc32_combine_gen crc32_combine_gen64
         #endif
         #ifndef Z_LARGE64
@@ -1855,7 +1855,7 @@ ZEXTERN uLong ZEXPORT crc32_combine(uLong, uLong, z_off_t);
 ZEXTERN uLong ZEXPORT crc32_combine_gen(z_off_t);
     #endif
 
-#else /* Z_SOLO */
+#else  /* Z_SOLO */
 
 ZEXTERN uLong ZEXPORT adler32_combine(uLong, uLong, z_off_t);
 ZEXTERN uLong ZEXPORT crc32_combine(uLong, uLong, z_off_t);

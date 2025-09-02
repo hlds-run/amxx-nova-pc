@@ -22,9 +22,9 @@
 
 #define SCPACK_TERMINATOR , /* end each section with a comma */
 
-#define SCPACK_TABLE sequences_table
+#define SCPACK_TABLE      sequences_table
 
-#define seqsize(o, p) (opcodes(o) + opargs(p))
+#define seqsize(o, p)     (opcodes(o) + opargs(p))
 typedef struct {
     const char* find;
     const char* replace;
@@ -193,43 +193,43 @@ static SEQUENCE sequences_cmp[] = {
 #if !defined BIT16
     /* loading from array, "cell" shifted */
     {"addr.pri %1!push.pri!load.s.pri %2!bounds %3!shl.c.pri 2!pop.alt!add!load.i!",
-        "addr.alt %1!load.s.pri %2!bounds %3!lidx!", seqsize(8, 4) - seqsize(4, 3)},
+     "addr.alt %1!load.s.pri %2!bounds %3!lidx!", seqsize(8, 4) - seqsize(4, 3)},
     {"const.pri %1!push.pri!load.s.pri %2!bounds %3!shl.c.pri 2!pop.alt!add!load.i!",
-        "const.alt %1!load.s.pri %2!bounds %3!lidx!", seqsize(8, 4) - seqsize(4, 3)},
+     "const.alt %1!load.s.pri %2!bounds %3!lidx!", seqsize(8, 4) - seqsize(4, 3)},
     {"addr.pri %1!push.pri!load.s.pri %2!shl.c.pri 2!pop.alt!add!load.i!", "addr.alt %1!load.s.pri %2!lidx!",
-        seqsize(7, 3) - seqsize(3, 2)},
+     seqsize(7, 3) - seqsize(3, 2)},
     {"const.pri %1!push.pri!load.s.pri %2!shl.c.pri 2!pop.alt!add!load.i!", "const.alt %1!load.s.pri %2!lidx!",
-        seqsize(7, 3) - seqsize(3, 2)},
+     seqsize(7, 3) - seqsize(3, 2)},
 #endif
     /* loading from array, not "cell" shifted */
     {"addr.pri %1!push.pri!load.s.pri %2!bounds %3!shl.c.pri %4!pop.alt!add!load.i!",
-        "addr.alt %1!load.s.pri %2!bounds %3!lidx.b %4!", seqsize(8, 4) - seqsize(4, 4)},
+     "addr.alt %1!load.s.pri %2!bounds %3!lidx.b %4!", seqsize(8, 4) - seqsize(4, 4)},
     {"const.pri %1!push.pri!load.s.pri %2!bounds %3!shl.c.pri %4!pop.alt!add!load.i!",
-        "const.alt %1!load.s.pri %2!bounds %3!lidx.b %4!", seqsize(8, 4) - seqsize(4, 4)},
+     "const.alt %1!load.s.pri %2!bounds %3!lidx.b %4!", seqsize(8, 4) - seqsize(4, 4)},
     {"addr.pri %1!push.pri!load.s.pri %2!shl.c.pri %3!pop.alt!add!load.i!", "addr.alt %1!load.s.pri %2!lidx.b %3!",
-        seqsize(7, 3) - seqsize(3, 3)},
+     seqsize(7, 3) - seqsize(3, 3)},
     {"const.pri %1!push.pri!load.s.pri %2!shl.c.pri %3!pop.alt!add!load.i!", "const.alt %1!load.s.pri %2!lidx.b %3!",
-        seqsize(7, 3) - seqsize(3, 3)},
+     seqsize(7, 3) - seqsize(3, 3)},
 #if !defined BIT16
     /* array index calculation for storing a value, "cell" aligned */
     {"addr.pri %1!push.pri!load.s.pri %2!bounds %3!shl.c.pri 2!pop.alt!add!",
-        "addr.alt %1!load.s.pri %2!bounds %3!idxaddr!", seqsize(7, 4) - seqsize(4, 3)},
+     "addr.alt %1!load.s.pri %2!bounds %3!idxaddr!", seqsize(7, 4) - seqsize(4, 3)},
     {"const.pri %1!push.pri!load.s.pri %2!bounds %3!shl.c.pri 2!pop.alt!add!",
-        "const.alt %1!load.s.pri %2!bounds %3!idxaddr!", seqsize(7, 4) - seqsize(4, 3)},
+     "const.alt %1!load.s.pri %2!bounds %3!idxaddr!", seqsize(7, 4) - seqsize(4, 3)},
     {"addr.pri %1!push.pri!load.s.pri %2!shl.c.pri 2!pop.alt!add!", "addr.alt %1!load.s.pri %2!idxaddr!",
-        seqsize(6, 3) - seqsize(3, 2)},
+     seqsize(6, 3) - seqsize(3, 2)},
     {"const.pri %1!push.pri!load.s.pri %2!shl.c.pri 2!pop.alt!add!", "const.alt %1!load.s.pri %2!idxaddr!",
-        seqsize(6, 3) - seqsize(3, 2)},
+     seqsize(6, 3) - seqsize(3, 2)},
 #endif
     /* array index calculation for storing a value, not "cell" packed */
     {"addr.pri %1!push.pri!load.s.pri %2!bounds %3!shl.c.pri %4!pop.alt!add!",
-        "addr.alt %1!load.s.pri %2!bounds %3!idxaddr.b %4!", seqsize(7, 4) - seqsize(4, 4)},
+     "addr.alt %1!load.s.pri %2!bounds %3!idxaddr.b %4!", seqsize(7, 4) - seqsize(4, 4)},
     {"const.pri %1!push.pri!load.s.pri %2!bounds %3!shl.c.pri %4!pop.alt!add!",
-        "const.alt %1!load.s.pri %2!bounds %3!idxaddr.b %4!", seqsize(7, 4) - seqsize(4, 4)},
+     "const.alt %1!load.s.pri %2!bounds %3!idxaddr.b %4!", seqsize(7, 4) - seqsize(4, 4)},
     {"addr.pri %1!push.pri!load.s.pri %2!shl.c.pri %3!pop.alt!add!", "addr.alt %1!load.s.pri %2!idxaddr.b %3!",
-        seqsize(6, 3) - seqsize(3, 3)},
+     seqsize(6, 3) - seqsize(3, 3)},
     {"const.pri %1!push.pri!load.s.pri %2!shl.c.pri %3!pop.alt!add!", "const.alt %1!load.s.pri %2!idxaddr.b %3!",
-        seqsize(6, 3) - seqsize(3, 3)},
+     seqsize(6, 3) - seqsize(3, 3)},
 #if !defined BIT16
     /* the shorter array indexing sequences, see above for comments */
     {"shl.c.pri 2!pop.alt!add!loadi!", "pop.alt!lidx!", seqsize(4, 1) - seqsize(2, 0)},
@@ -252,9 +252,9 @@ static SEQUENCE sequences_cmp[] = {
      *    case is already handled (see #1#)
      */
     {"addr.pri %1!push.pri!load.s.pri %2!bounds %3!pop.alt!", "addr.alt %1!load.s.pri %2!bounds %3!",
-        seqsize(5, 3) - seqsize(3, 3)},
+     seqsize(5, 3) - seqsize(3, 3)},
     {"const.pri %1!push.pri!load.s.pri %2!bounds %3!pop.alt!", "const.alt %1!load.s.pri %2!bounds %3!",
-        seqsize(5, 3) - seqsize(3, 3)},
+     seqsize(5, 3) - seqsize(3, 3)},
     /* Declaration of simple variables often follows the sequence:
      *    ;$lcl <name> <stk>      ;$lcl <name> <stk>
      *    stack -4                push.c <constval>
@@ -263,9 +263,9 @@ static SEQUENCE sequences_cmp[] = {
      *    ;$exp                   -
      */
     {";$lcl %1 %2!stack -4!const.pri %3!stor.s.pri %2!;$exp!", ";$lcl %1 %2!push.c %3!;$exp!",
-        seqsize(3, 3) - seqsize(1, 1)},
+     seqsize(3, 3) - seqsize(1, 1)},
     {";$lcl %1 %2!stack -4!zero.pri!stor.s.pri %2!;$exp!", ";$lcl %1 %2!push.c 0!;$exp!",
-        seqsize(3, 2) - seqsize(1, 1)},
+     seqsize(3, 2) - seqsize(1, 1)},
     /* During a calculation, the intermediate result must sometimes
      * be moved from PRI to ALT, like in:
      *    push.pri                move.alt
@@ -531,4 +531,5 @@ static SEQUENCE sequences_cmp[] = {
     {"const.pri 0!", "zero.pri!", seqsize(1, 1) - seqsize(1, 0)},
     {"const.alt 0!", "zero.alt!", seqsize(1, 1) - seqsize(1, 0)},
     /* ----- */
-    {NULL, NULL, 0}};
+    {NULL, NULL, 0}
+};

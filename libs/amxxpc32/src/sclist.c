@@ -77,7 +77,6 @@ static stringpair* insert_stringpair(stringpair* root, const char* first, const 
 
 static void delete_stringpairtable(stringpair* root)
 {
-
     assert(root != NULL);
     stringpair* cur = root->next;
     while (cur != NULL) {
@@ -113,7 +112,6 @@ static stringpair* find_stringpair(stringpair* cur, const char* first, const int
 
 static int delete_stringpair(stringpair* root, stringpair* item)
 {
-
     assert(root != NULL);
     stringpair* cur = root;
     while (cur->next != NULL) {
@@ -155,7 +153,6 @@ static stringlist* insert_string(stringlist* root, const char* string)
 
 static char* get_string(const stringlist* root, int index)
 {
-
     assert(root != NULL);
     const stringlist* cur = root->next;
     while (cur != NULL && index-- > 0) {
@@ -188,7 +185,6 @@ static int delete_string(stringlist* root, int index)
 
 SC_FUNC void delete_stringtable(stringlist* root)
 {
-
     assert(root != NULL);
     stringlist* cur = root->next;
     while (cur != NULL) {
@@ -255,7 +251,7 @@ SC_FUNC void delete_pathtable(void)
 /* ----- text substitution patterns ------------------------------ */
 #if !defined NO_DEFINE
 
-static stringpair substpair = {NULL, NULL, NULL}; /* list of substitution pairs */
+static stringpair substpair = {NULL, NULL, NULL};     /* list of substitution pairs */
 
 static stringpair* substindex['z' - PUBLIC_CHAR + 1]; /* quick index to first character */
 static void adjustindex(const char c)
@@ -511,7 +507,6 @@ static stringlist dbgstrings = {NULL, NULL};
 
 SC_FUNC stringlist* insert_dbgfile(const char* filename)
 {
-
     if (sc_status == statWRITE && (sc_debug & sSYMBOLIC) != 0) {
         char string[_MAX_PATH + 40];
         assert(filename != NULL);

@@ -70,7 +70,7 @@
         }                                                                                                              \
         while (0)
 #else
-    #define MOD(a) a %= BASE
+    #define MOD(a)   a %= BASE
     #define MOD28(a) a %= BASE
     #define MOD63(a) a %= BASE
 #endif

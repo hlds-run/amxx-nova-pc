@@ -26,7 +26,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #if defined _UNICODE || defined __UNICODE__ || defined UNICODE
-    #if !defined UNICODE /* for Windows API */
+    #if !defined UNICODE  /* for Windows API */
         #define UNICODE
     #endif
     #if !defined _UNICODE /* for C library */
@@ -259,7 +259,7 @@ using OPCODE = enum {
     OP_NUM_OPCODES
 };
 
-#define USENAMETABLE(hdr) ((hdr)->defsize == sizeof(AMX_FUNCSTUBNT))
+#define USENAMETABLE(hdr)                 ((hdr)->defsize == sizeof(AMX_FUNCSTUBNT))
 #define NUMENTRIES(hdr, field, nextfield) (unsigned)(((hdr)->nextfield - (hdr)->field) / (hdr)->defsize)
 #define GETENTRY(hdr, table, index)                                                                                    \
     (AMX_FUNCSTUB*)((unsigned char*)(hdr) + (unsigned)(hdr)->table + (unsigned)index * (hdr)->defsize)
@@ -389,7 +389,6 @@ uint64_t* AMXAPI amx_Align64(uint64_t* v)
 #if defined AMX_FLAGS
 int AMXAPI amx_Flags(const AMX* amx, uint16_t* flags)
 {
-
     *flags = 0;
     if (amx == nullptr) {
         return AMX_ERR_FORMAT;
@@ -484,7 +483,7 @@ extern int AMXAPI asm_runJIT(void* sourceAMXbase, void* jumparray, void* compile
     #define RELOC_ABS(base, off)
     #define RELOC_VALUE(base, v)
 #else
-    #define JUMPABS(base, ip) ((cell*)*(ip))
+    #define JUMPABS(base, ip)    ((cell*)*(ip))
     #define RELOC_ABS(base, off) (*(ucell*)((base) + (int)(off)) += (ucell)(base))
     #define RELOC_VALUE(base, v) ((v) + ((ucell)(base)))
 #endif
@@ -1020,14 +1019,14 @@ int AMXAPI amx_Init(AMX* amx, void* program)
 
     #if defined JIT
 
-        #define CODESIZE_JIT 8192 /* approximate size of the code for the JIT */
+        #define CODESIZE_JIT 8192  /* approximate size of the code for the JIT */
 
-        #if defined __WIN32__ /* this also applies to Win32 "console" applications */
+        #if defined __WIN32__      /* this also applies to Win32 "console" applications */
 
-            #define PROT_READ 0x1  /* page can be read */
+            #define PROT_READ  0x1 /* page can be read */
             #define PROT_WRITE 0x2 /* page can be written */
-            #define PROT_EXEC 0x4  /* page can be executed */
-            #define PROT_NONE 0x0  /* page can not be accessed */
+            #define PROT_EXEC  0x4 /* page can be executed */
+            #define PROT_NONE  0x0 /* page can not be accessed */
 
 static int mprotect(void* addr, size_t len, int prot)
 {
@@ -1101,7 +1100,7 @@ int AMXAPI amx_InitJIT(AMX* amx, void* reloc_table, void* native_code)
     return (res == 0) ? AMX_ERR_NONE : AMX_ERR_INIT_JIT;
 }
 
-    #else /* #if defined JIT */
+    #else  /* #if defined JIT */
 
 int AMXAPI amx_InitJIT(const AMX* amx, const void* compiled_program, const void* reloc_table)
 {
@@ -1113,7 +1112,7 @@ int AMXAPI amx_InitJIT(const AMX* amx, const void* compiled_program, const void*
 
     #endif /* #if defined JIT */
 
-#endif /* AMX_INIT */
+#endif     /* AMX_INIT */
 
 #if defined AMX_CLEANUP
 int AMXAPI amx_Cleanup(AMX* amx)
@@ -1169,7 +1168,6 @@ int AMXAPI amx_Cleanup(AMX* amx)
 #if defined AMX_CLONE
 int AMXAPI amx_Clone(AMX* amxClone, const AMX* amxSource, void* data)
 {
-
     if (amxSource == nullptr) {
         return AMX_ERR_FORMAT;
     }
@@ -1219,7 +1217,6 @@ int AMXAPI amx_Clone(AMX* amxClone, const AMX* amxSource, void* data)
 #if defined AMX_MEMINFO
 int AMXAPI amx_MemInfo(const AMX* amx, long* codesize, long* datasize, long* stackheap)
 {
-
     if (amx == nullptr) {
         return AMX_ERR_FORMAT;
     }
@@ -1276,7 +1273,6 @@ int AMXAPI amx_NumNatives(const AMX* amx, int* number)
 
 int AMXAPI amx_GetNative(const AMX* amx, const int index, char* funcname)
 {
-
     const auto hdr = (AMX_HEADER*)amx->base;
     assert(hdr != NULL);
     assert(hdr->magic == AMX_MAGIC);
@@ -1333,7 +1329,6 @@ int AMXAPI amx_NumPublics(const AMX* amx, int* number)
 
 int AMXAPI amx_GetPublic(const AMX* amx, const int index, char* funcname)
 {
-
     const auto hdr = (AMX_HEADER*)amx->base;
     assert(hdr != NULL);
     assert(hdr->magic == AMX_MAGIC);
@@ -1390,7 +1385,6 @@ int AMXAPI amx_NumPubVars(const AMX* amx, int* number)
 
 int AMXAPI amx_GetPubVar(const AMX* amx, const int index, char* varname, cell* amx_addr)
 {
-
     const auto hdr = (AMX_HEADER*)amx->base;
     assert(hdr != NULL);
     assert(hdr->magic == AMX_MAGIC);
@@ -1459,7 +1453,6 @@ int AMXAPI amx_NumTags(const AMX* amx, int* number)
 
 int AMXAPI amx_GetTag(const AMX* amx, const int index, char* tagname, cell* tag_id)
 {
-
     const auto hdr = (AMX_HEADER*)amx->base;
     assert(hdr != NULL);
     assert(hdr->magic == AMX_MAGIC);
@@ -1575,7 +1568,6 @@ int AMXAPI amx_SetUserData(AMX* amx, const long tag, void* ptr)
 #if defined AMX_REGISTER || defined AMX_EXEC || defined AMX_INIT
 static AMX_NATIVE findfunction(const char* name, const AMX_NATIVE_INFO* list, const int number)
 {
-
     assert(list != NULL);
     for (int i = 0; list[i].name != nullptr && (i < number || number == -1); i++) {
         if (strcmp(name, list[i].name) == 0) {
@@ -1587,7 +1579,6 @@ static AMX_NATIVE findfunction(const char* name, const AMX_NATIVE_INFO* list, co
 
 int AMXAPI amx_Register(AMX* amx, const AMX_NATIVE_INFO* list, const int number)
 {
-
     const auto hdr = (AMX_HEADER*)amx->base;
     assert(hdr != NULL);
     assert(hdr->magic == AMX_MAGIC);
@@ -1632,7 +1623,6 @@ AMX_NATIVE_INFO* AMXAPI amx_NativeInfo(const char* name, const AMX_NATIVE func)
 
 int AMXAPI amx_Push(AMX* amx, const cell value)
 {
-
     if (amx->hea + STKMARGIN > amx->stk) {
         return AMX_ERR_STACKERR;
     }
@@ -1692,10 +1682,10 @@ int AMXAPI amx_PushString(
     return err;
 }
 
-    #define GETPARAM(v) (v = *(cell*)cip++)
+    #define GETPARAM(v)  (v = *(cell*)cip++)
     #define SKIPPARAM(n) (cip = (cell*)cip + (n))
-    #define PUSH(v) (stk -= sizeof(cell), *(cell*)(data + (int)stk) = v)
-    #define POP(v) (v = *(cell*)(data + (int)stk), stk += sizeof(cell))
+    #define PUSH(v)      (stk -= sizeof(cell), *(cell*)(data + (int)stk) = v)
+    #define POP(v)       (v = *(cell*)(data + (int)stk), stk += sizeof(cell))
     #define ABORT(amx, v)                                                                                              \
         {                                                                                                              \
             (amx)->stk = reset_stk;                                                                                    \
@@ -2151,7 +2141,7 @@ op_retn:
         ABORT(amx, AMX_ERR_MEMACCESS);
     }
     cip = (cell*)(code + offs);
-    stk += *(cell*)(data + stk) + sizeof(cell); /* remove parameters from the stack */
+    stk += *(cell*)(data + stk) + sizeof(cell);      /* remove parameters from the stack */
     NEXT(cip);
 op_call:
     PUSH((unsigned char*)cip - code + sizeof(cell)); /* push address behind instruction */
@@ -2834,7 +2824,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
     if (index != AMX_EXEC_CONT) {
         reset_stk += amx->paramcount * sizeof(cell);
         PUSH(amx->paramcount * sizeof(cell));
-        amx->paramcount = 0; /* push the parameter count to the stack & reset */
+        amx->paramcount = 0;        /* push the parameter count to the stack & reset */
         #if defined ASM32 || defined JIT
         PUSH(RELOC_VALUE(code, 0)); /* relocated zero return address */
         #else
@@ -3719,7 +3709,7 @@ int AMXAPI amx_Exec(AMX* amx, cell* retval, int index)
 
     #endif /* __GNUC__ */
 
-#endif /* AMX_EXEC || AMX_INIT */
+#endif     /* AMX_EXEC || AMX_INIT */
 
 #if defined AMX_SETCALLBACK
 int AMXAPI amx_SetCallback(AMX* amx, const AMX_CALLBACK callback)
@@ -3752,7 +3742,6 @@ int AMXAPI amx_RaiseError(AMX* amx, const int error)
 #if defined AMX_GETADDR
 int AMXAPI amx_GetAddr(const AMX* amx, const cell amx_addr, cell** phys_addr)
 {
-
     assert(amx != NULL);
     const auto hdr = (AMX_HEADER*)amx->base;
     assert(hdr != NULL);
@@ -3773,7 +3762,6 @@ int AMXAPI amx_GetAddr(const AMX* amx, const cell amx_addr, cell** phys_addr)
 #if defined AMX_ALLOT || defined AMX_EXEC
 int AMXAPI amx_Allot(AMX* amx, const int cells, cell* amx_addr, cell** phys_addr)
 {
-
     assert(amx != NULL);
     const auto hdr = (AMX_HEADER*)amx->base;
     assert(hdr != NULL);

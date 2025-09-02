@@ -69,13 +69,13 @@ local void gz_reset(gz_statep state)
         state->past = 0;          /* have not read past end yet */
         state->how = LOOK;        /* look for gzip header */
     }
-    else {                /* for writing ... */
-        state->reset = 0; /* no deflateReset pending */
+    else {                        /* for writing ... */
+        state->reset = 0;         /* no deflateReset pending */
     }
-    state->seek = 0;             /* no seek request pending */
-    gz_error(state, Z_OK, NULL); /* clear error */
-    state->x.pos = 0;            /* no uncompressed data yet */
-    state->strm.avail_in = 0;    /* no input data yet */
+    state->seek = 0;              /* no seek request pending */
+    gz_error(state, Z_OK, NULL);  /* clear error */
+    state->x.pos = 0;             /* no uncompressed data yet */
+    state->strm.avail_in = 0;     /* no input data yet */
 }
 
 /* Open a gzip file either by name or file descriptor. */
@@ -329,7 +329,7 @@ int ZEXPORT gzbuffer(gzFile file, unsigned size)
         return -1; /* need to be able to double it */
     }
     if (size < 8) {
-        size = 8; /* needed to behave well with flushing */
+        size = 8;  /* needed to behave well with flushing */
     }
     state->want = size;
     return 0;
@@ -416,7 +416,7 @@ z_off64_t ZEXPORT gzseek64(gzFile file, z_off64_t offset, int whence)
             return -1;
         }
         offset += state->x.pos;
-        if (offset < 0) { /* before start of file! */
+        if (offset < 0) {           /* before start of file! */
             return -1;
         }
         if (gzrewind(file) == -1) { /* rewind, then skip to offset */

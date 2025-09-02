@@ -24,8 +24,8 @@
     #include <stdio.h>
     #ifndef DYNAMIC_CRC_TABLE
         #define DYNAMIC_CRC_TABLE
-    #endif /* !DYNAMIC_CRC_TABLE */
-#endif     /* MAKECRCH */
+    #endif         /* !DYNAMIC_CRC_TABLE */
+#endif             /* MAKECRCH */
 
 #include "zutil.h" /* for Z_U4, Z_U8, z_crc_t, and FAR definitions */
 
@@ -564,9 +564,9 @@ const z_crc_t FAR* ZEXPORT get_crc_table(void)
        Constants empirically determined to maximize speed. These values are from
        measurements on a Cortex-A57. Your mileage may vary.
      */
-    #define Z_BATCH 3990             /* number of words in a batch */
+    #define Z_BATCH       3990       /* number of words in a batch */
     #define Z_BATCH_ZEROS 0xa10d3d0c /* computed from Z_BATCH = 3990 */
-    #define Z_BATCH_MIN 800          /* fewest words in a final batch */
+    #define Z_BATCH_MIN   800        /* fewest words in a final batch */
 
 unsigned long ZEXPORT crc32_z(unsigned long crc, const unsigned char FAR* buf, z_size_t len)
 {
