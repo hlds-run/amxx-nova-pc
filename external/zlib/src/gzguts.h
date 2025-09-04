@@ -155,15 +155,15 @@ ZEXTERN z_off64_t ZEXPORT gzoffset64(gzFile);
 #define GZBUFSIZE 8192
 
 /* gzip modes, also provide a little integrity check on the passed structure */
-#define GZ_NONE 0
-#define GZ_READ 7247
-#define GZ_WRITE 31153
+#define GZ_NONE   0
+#define GZ_READ   7247
+#define GZ_WRITE  31153
 #define GZ_APPEND 1 /* mode set to GZ_WRITE after the file is opened */
 
 /* values for gz_state how */
-#define LOOK 0 /* look for a gzip header */
-#define COPY 1 /* copy input directly */
-#define GZIP 2 /* decompress a gzip stream */
+#define LOOK      0 /* look for a gzip header */
+#define COPY      1 /* copy input directly */
+#define GZIP      2 /* decompress a gzip stream */
 
 /* internal gzip file state data structure */
 typedef struct {

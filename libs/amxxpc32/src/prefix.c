@@ -126,7 +126,6 @@ char* br_locate(void* symbol)
 
         sscanf(line, "%lx-%lx ", &start, &end);
         if (symbol >= (void*)start && symbol < (void*)end) {
-
             /* Extract the filename; it is always an absolute path */
             char* path = strchr(line, '/');
 
@@ -167,7 +166,6 @@ char* br_locate(void* symbol)
  */
 char* br_locate_prefix(void* symbol)
 {
-
     br_return_val_if_fail(symbol != NULL, NULL);
 
     char* path = br_locate(symbol);
@@ -234,7 +232,6 @@ static pthread_once_t br_thread_key_once = PTHREAD_ONCE_INIT;
 
 static void br_thread_local_store_fini()
 {
-
     char* specific = (char*)pthread_getspecific(br_thread_key);
     if (specific) {
         free(specific);
@@ -258,7 +255,7 @@ static void br_thread_local_store_init()
     }
 }
 
-#else /* BR_PTHREADS */
+#else      /* BR_PTHREADS */
     #ifdef ENABLE_BINRELOC
 
 static char* br_last_value = (char*)NULL;
@@ -331,7 +328,6 @@ const char* br_thread_local_store(char* str)
  */
 char* br_strcat(const char* str1, const char* str2)
 {
-
     if (!str1) {
         str1 = "";
     }
@@ -383,7 +379,6 @@ static char* br_strndup(const char* str, size_t size)
  */
 char* br_extract_dir(const char* path)
 {
-
     br_return_val_if_fail(path != (char*)NULL, (char*)NULL);
 
     char* end = strrchr(path, '/');
@@ -417,7 +412,6 @@ char* br_extract_dir(const char* path)
  */
 char* br_extract_prefix(const char* path)
 {
-
     br_return_val_if_fail(path != (char*)NULL, (char*)NULL);
 
     if (!*path) {

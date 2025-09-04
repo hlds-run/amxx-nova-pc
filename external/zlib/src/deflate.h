@@ -34,37 +34,37 @@
 #define LENGTH_CODES 29
 /* number of length codes, not counting the special END_BLOCK code */
 
-#define LITERALS 256
+#define LITERALS     256
 /* number of literal bytes 0..255 */
 
-#define L_CODES (LITERALS + 1 + LENGTH_CODES)
+#define L_CODES      (LITERALS + 1 + LENGTH_CODES)
 /* number of Literal or Length codes, including the END_BLOCK code */
 
-#define D_CODES 30
+#define D_CODES      30
 /* number of distance codes */
 
-#define BL_CODES 19
+#define BL_CODES     19
 /* number of codes used to transfer the bit lengths */
 
-#define HEAP_SIZE (2 * L_CODES + 1)
+#define HEAP_SIZE    (2 * L_CODES + 1)
 /* maximum heap size */
 
-#define MAX_BITS 15
+#define MAX_BITS     15
 /* All codes must not exceed MAX_BITS bits */
 
-#define Buf_size 16
+#define Buf_size     16
 /* size of bit buffer in bi_buf */
 
-#define INIT_STATE 42 /* zlib header -> BUSY_STATE */
+#define INIT_STATE   42   /* zlib header -> BUSY_STATE */
 #ifdef GZIP
     #define GZIP_STATE 57 /* gzip header -> BUSY_STATE | EXTRA_STATE */
 #endif
-#define EXTRA_STATE 69   /* gzip extra block -> NAME_STATE */
-#define NAME_STATE 73    /* gzip file name -> COMMENT_STATE */
-#define COMMENT_STATE 91 /* gzip comment -> HCRC_STATE */
-#define HCRC_STATE 103   /* gzip header CRC -> BUSY_STATE */
-#define BUSY_STATE 113   /* deflate -> FINISH_STATE */
-#define FINISH_STATE 666 /* stream complete */
+#define EXTRA_STATE   69  /* gzip extra block -> NAME_STATE */
+#define NAME_STATE    73  /* gzip file name -> COMMENT_STATE */
+#define COMMENT_STATE 91  /* gzip comment -> HCRC_STATE */
+#define HCRC_STATE    103 /* gzip header CRC -> BUSY_STATE */
+#define BUSY_STATE    113 /* deflate -> FINISH_STATE */
+#define FINISH_STATE  666 /* stream complete */
 /* Stream status */
 
 /* Data structure describing a single value and its code string. */
@@ -74,15 +74,15 @@ typedef struct ct_data_s {
         ush code; /* bit string */
     } fc;
     union {
-        ush dad; /* father node in Huffman tree */
-        ush len; /* length of bit string */
+        ush dad;  /* father node in Huffman tree */
+        ush len;  /* length of bit string */
     } dl;
 } FAR ct_data;
 
 #define Freq fc.freq
 #define Code fc.code
-#define Dad dl.dad
-#define Len dl.len
+#define Dad  dl.dad
+#define Len  dl.len
 
 typedef struct static_tree_desc_s static_tree_desc;
 
@@ -140,7 +140,7 @@ typedef struct internal_state {
      * An index in this array is thus a window index modulo 32K.
      */
 
-    Posf* head; /* Heads of the hash chains or NIL. */
+    Posf* head;     /* Heads of the hash chains or NIL. */
 
     uInt ins_h;     /* hash index of string to be inserted */
     uInt hash_size; /* number of elements in hash table */
@@ -202,9 +202,9 @@ typedef struct internal_state {
     struct ct_data_s dyn_dtree[2 * D_CODES + 1]; /* distance tree */
     struct ct_data_s bl_tree[2 * BL_CODES + 1];  /* Huffman tree for bit lengths */
 
-    struct tree_desc_s l_desc;  /* desc. for literal tree */
-    struct tree_desc_s d_desc;  /* desc. for distance tree */
-    struct tree_desc_s bl_desc; /* desc. for bit length tree */
+    struct tree_desc_s l_desc;                   /* desc. for literal tree */
+    struct tree_desc_s d_desc;                   /* desc. for distance tree */
+    struct tree_desc_s bl_desc;                  /* desc. for bit length tree */
 
     ush bl_count[MAX_BITS + 1];
     /* number of codes at each bit length for an optimal tree */
@@ -249,13 +249,13 @@ typedef struct internal_state {
      *   - I can't count above 4
      */
 
-    uInt sym_next; /* running index in symbol buffer */
-    uInt sym_end;  /* symbol table full when sym_next reaches this */
+    uInt sym_next;      /* running index in symbol buffer */
+    uInt sym_end;       /* symbol table full when sym_next reaches this */
 
-    ulg opt_len;    /* bit length of current block with optimal trees */
-    ulg static_len; /* bit length of current block with static trees */
-    uInt matches;   /* number of string matches in current block */
-    uInt insert;    /* bytes at end of window left to insert */
+    ulg opt_len;        /* bit length of current block with optimal trees */
+    ulg static_len;     /* bit length of current block with static trees */
+    uInt matches;       /* number of string matches in current block */
+    uInt insert;        /* bytes at end of window left to insert */
 
 #ifdef ZLIB_DEBUG
     ulg compressed_len; /* total bit length of compressed file mod 2^32 */
@@ -296,12 +296,12 @@ typedef struct internal_state {
  * See deflate.c for comments about the MIN_MATCH+1.
  */
 
-#define MAX_DIST(s) ((s)->w_size - MIN_LOOKAHEAD)
+#define MAX_DIST(s)   ((s)->w_size - MIN_LOOKAHEAD)
 /* In order to simplify the code, particularly on 16 bit machines, match
  * distances are limited to MAX_DIST instead of WSIZE.
  */
 
-#define WIN_INIT MAX_MATCH
+#define WIN_INIT      MAX_MATCH
 /* Number of bytes after end of data in window to initialize in order to avoid
    memory checker errors from longest match routines */
 
@@ -374,7 +374,7 @@ extern const uch ZLIB_INTERNAL _dist_code[];
             }
     #endif
 #else
-    #define _tr_tally_lit(s, c, flush) flush = _tr_tally(s, 0, c)
+    #define _tr_tally_lit(s, c, flush)                 flush = _tr_tally(s, 0, c)
     #define _tr_tally_dist(s, distance, length, flush) flush = _tr_tally(s, distance, length)
 #endif
 

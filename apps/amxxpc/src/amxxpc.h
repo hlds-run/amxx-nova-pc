@@ -28,8 +28,8 @@
 typedef void* HINSTANCE;
 #else
     #define dlsym(x, s) GetProcAddress(x, s)
-    #define dlmount(x) LoadLibrary(x)
-    #define dlclose(x) FreeLibrary(x)
+    #define dlmount(x)  LoadLibrary(x)
+    #define dlclose(x)  FreeLibrary(x)
 #endif
 
 #include "binary.h"

@@ -7,8 +7,7 @@
 // Additional exceptions apply. For full license details, see LICENSE.txt or visit:
 //     https://alliedmods.net/amxmodx-license
 
-#include <stdio.h>
-#if defined(__linux__) | defined(__APPLE__)
+#if defined(__linux__) || defined(__APPLE__)
     #include <unistd.h>
 #else
     #include <fcntl.h>
@@ -19,7 +18,22 @@
 #include "amxxpc.h"
 #include "binary.h"
 #include "zlib.h"
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
+
+#ifdef BUILD_STATIC_AMXXPC
+extern "C" {
+    #include <sc.h>
+}
+extern "C" void Compile32(int argc, char** argv);
+#else
+    #if defined(EMSCRIPTEN)
+extern "C" void Compile32(int argc, char** argv);
+extern "C" int pc_printf(const char* message, ...);
+    #else
+static PRINTF pc_printf = nullptr;
+    #endif
+#endif
 
 #ifdef _MSC_VER
     // MSVC8 - replace POSIX functions with ISO C++ conformant ones as they are deprecated
@@ -33,21 +47,15 @@ bool CompressPl(abl* pl);
 void Pl2Bh(const abl* pl, BinPlugin* bh);
 void WriteBh(const BinaryWriter* bw, const BinPlugin* bh);
 
-#if defined(EMSCRIPTEN)
-extern "C" void Compile32(int argc, char** argv);
-extern "C" int pc_printf(const char* message, ...);
-#else
-static PRINTF pc_printf = nullptr;
-#endif
-
 int main(const int argc, char** argv)
 {
     abl pl32;
 
-#if defined(EMSCRIPTEN)
+#ifndef BUILD_STATIC_AMXXPC
+    #if defined(EMSCRIPTEN)
     COMPILER sc32 = (COMPILER)Compile32;
-#else
-    #if defined(__linux__)
+    #else
+        #if defined(__linux__)
     HINSTANCE lib = NULL;
     if (FileExists("./amxxpc32.so")) {
         lib = dlmount("./amxxpc32.so");
@@ -55,39 +63,42 @@ int main(const int argc, char** argv)
     else {
         lib = dlmount("amxxpc32.so");
     }
-    #elif defined(__APPLE__)
+        #elif defined(__APPLE__)
     HINSTANCE lib = dlmount("amxxpc32.dylib");
-    #else
+        #else
     const HINSTANCE lib = dlmount("amxxpc32.dll");
-    #endif
+        #endif
     if (!lib) {
-    #if defined(__linux__) || defined(__APPLE__)
+        #if defined(__linux__) || defined(__APPLE__)
         printf("compiler failed to instantiate: %s\n", dlerror());
-    #else
+        #else
         printf("compiler failed to instantiate: %d\n", GetLastError());
-    #endif
+        #endif
         exit(EXIT_FAILURE);
     }
 
     const auto sc32 = (COMPILER)dlsym(lib, "Compile32");
     pc_printf = (PRINTF)dlsym(lib, "pc_printf");
-#endif // EMSCRIPTEN
+    #endif // EMSCRIPTEN
 
     if (!sc32 || !pc_printf) {
-#if defined(__linux__) || defined(__APPLE__)
+    #if defined(__linux__) || defined(__APPLE__)
         printf("compiler failed to link: %p.\n", sc32);
-#else
+    #else
         printf("compiler failed to link: %d.\n", GetLastError());
-#endif
+    #endif
         exit(EXIT_FAILURE);
     }
+#else
+    const auto sc32 = (COMPILER)Compile32;
+#endif
 
     pc_printf("AMX Mod X Compiler %s\n\n", AMXX_VERSION);
     pc_printf("Copyright (c) 1997-2006 ITB CompuPhase\n");
     pc_printf("Copyright (c) 2004-2013 AMX Mod X Team\n");
     pc_printf("Copyright (c) 2025 hlds.run Team\n\n");
 
-    if (argc < 2) {
+    if (argc < 2 && (strlen(argv[1]) <= 2 || strncmp(argv[1], "-T", 2) != 0)) {
         pc_printf("Usage: <file.sma> [options]\n");
         pc_printf("Use -? or --help to see full options\n\n");
         getchar();
@@ -149,7 +160,6 @@ int main(const int argc, char** argv)
     Pl2Bh(&pl32, &bh32);
 
     try {
-
         static constexpr int kEntries = 1;
 
         // entry is 4 ints and a byte
@@ -175,7 +185,7 @@ int main(const int argc, char** argv)
         fclose(fp);
         unlink(file);
         pc_printf("Error, failed to write binary\n");
-#if !defined EMSCRIPTEN
+#if !defined(BUILD_STATIC_AMXXPC) && !defined(EMSCRIPTEN)
         dlclose(lib);
 #endif
         exit(EXIT_FAILURE);
@@ -190,7 +200,7 @@ int main(const int argc, char** argv)
     and "Compile and upload" buttons in AMXX-Studio doesn't work.
     */
     pc_printf("Done.\n");
-#if !defined EMSCRIPTEN
+#if !defined(BUILD_STATIC_AMXXPC) && !defined(EMSCRIPTEN)
     dlclose(lib);
 #endif
 
@@ -308,9 +318,8 @@ char* swiext(const char* file, const char* ext, const int isO)
 
 char* FindFileName(const int argc, char** argv)
 {
-    int i = 0;
     int save = -1;
-    for (i = 1; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-' && argv[i][1] == 'o') {
             if (argv[i][2] == ' ' || argv[i][2] == '\0') {
                 if (i == argc - 1) {
@@ -327,6 +336,12 @@ char* FindFileName(const int argc, char** argv)
 
     if (save > 0) {
         return swiext(argv[save], "amx", 0);
+    }
+
+    const char* file = pc_pop_first_source_file();
+
+    if (file != nullptr && *file != '\0') {
+        return swiext(file, "amx", 0);
     }
 
     return nullptr;
@@ -350,8 +365,11 @@ void show_help()
     printf("\t-l        create list file (preprocess only)\n");
     printf("\t-o<name>  set base name of output file\n");
     printf("\t-p<name>  set name of \"prefix\" file\n");
-    printf("\t-r[name]  write cross reference report to console or to specified file\n");
+    printf("\t-r<name>  write cross reference report to console or to specified file\n");
+    printf("\t-T<name>  set name of the configuration file to use\n");
     printf("\t-sui[+/-] show stack usage info\n");
+    printf("\tsym=val   define constant \"sym\" with value \"val\"\n");
+    printf("\tsym=      define constant \"sym\" with value 1\n");
 }
 
 #if defined(__linux__) || defined(__APPLE__)

@@ -1,7 +1,7 @@
 ---
 AccessModifierOffset: -2
 AlignAfterOpenBracket: DontAlign
-AlignArrayOfStructures: None
+AlignArrayOfStructures: Left
 AlignConsecutiveAssignments:
   Enabled: false
   AcrossEmptyLines: false
@@ -27,13 +27,13 @@ AlignConsecutiveDeclarations:
   AlignFunctionPointers: false
   PadOperators: false
 AlignConsecutiveMacros:
-  Enabled: false
-  AcrossEmptyLines: false
-  AcrossComments: false
-  AlignCompound: false
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: true
+  AlignCompound: true
   #AlignFunctionDeclarations: false
-  AlignFunctionPointers: false
-  PadOperators: false
+  AlignFunctionPointers: true
+  PadOperators: true
 AlignConsecutiveShortCaseStatements:
   Enabled: false
   AcrossEmptyLines: false
@@ -68,11 +68,11 @@ AlignEscapedNewlines: Right
 AlignOperands: Align
 AlignTrailingComments:
   Kind: Always
-  OverEmptyLines: 0
+  OverEmptyLines: 2
 AllowAllArgumentsOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowBreakBeforeNoexceptSpecifier: Never
-AllowShortBlocksOnASingleLine: Never
+AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseExpressionOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortCompoundRequirementOnASingleLine: true
@@ -165,7 +165,7 @@ IndentGotoLabels: true
 IndentPPDirectives: BeforeHash
 IndentRequiresClause: true
 IndentWidth: 4
-IndentWrappedFunctionNames: false
+IndentWrappedFunctionNames: true
 InsertBraces: true
 InsertNewlineAtEOF: true
 InsertTrailingCommas: None
@@ -177,9 +177,9 @@ IntegerLiteralSeparator:
   Hex: 0
   HexMinDigits: 0
 KeepEmptyLines:
-  AtEndOfFile: false
-  AtStartOfBlock: true
-  AtStartOfFile: true
+  AtEndOfFile: true
+  AtStartOfBlock: false
+  AtStartOfFile: false
 #KeepFormFeed: false
 LambdaBodyIndentation: Signature
 LineEnding: LF

@@ -121,7 +121,7 @@ local void fixedtables(struct inflate_state FAR* state)
         /* do this just once */
         virgin = 0;
     }
-#else /* !BUILDFIXED */
+#else  /* !BUILDFIXED */
     #include "inffixed.h"
 #endif /* BUILDFIXED */
     state->lencode = lenfix;
@@ -316,12 +316,12 @@ int ZEXPORT inflateBack(z_streamp strm, in_func in, void FAR* in_desc, out_func 
                         Tracev((stderr, "inflate:     stored block%s\n", state->last ? " (last)" : ""));
                         state->mode = STORED;
                         break;
-                    case 1: /* fixed block */
+                    case 1:                /* fixed block */
                         fixedtables(state);
                         Tracev((stderr, "inflate:     fixed codes block%s\n", state->last ? " (last)" : ""));
                         state->mode = LEN; /* decode codes */
                         break;
-                    case 2: /* dynamic block */
+                    case 2:                /* dynamic block */
                         Tracev((stderr, "inflate:     dynamic codes block%s\n", state->last ? " (last)" : ""));
                         state->mode = TABLE;
                         break;

@@ -58,7 +58,7 @@ typedef unsigned long ulg;
 extern z_const char* const z_errmsg[10]; /* indexed by 2-zlib_error */
 /* (size given to avoid silly warnings with Visual C++) */
 
-#define ERR_MSG(err) z_errmsg[(err) < -6 || (err) > 2 ? 9 : 2 - (err)]
+#define ERR_MSG(err)          z_errmsg[(err) < -6 || (err) > 2 ? 9 : 2 - (err)]
 
 #define ERR_RETURN(strm, err) return (strm->msg = ERR_MSG(err), (err))
 /* To be used only when the state is known to be valid */
@@ -81,14 +81,14 @@ extern z_const char* const z_errmsg[10]; /* indexed by 2-zlib_error */
 
 #define STORED_BLOCK 0
 #define STATIC_TREES 1
-#define DYN_TREES 2
+#define DYN_TREES    2
 /* The three kinds of block type */
 
-#define MIN_MATCH 3
-#define MAX_MATCH 258
+#define MIN_MATCH    3
+#define MAX_MATCH    258
 /* The minimum and maximum match lengths */
 
-#define PRESET_DICT 0x20 /* preset dictionary flag in zlib header */
+#define PRESET_DICT  0x20 /* preset dictionary flag in zlib header */
 
 /* target dependencies */
 
@@ -114,7 +114,7 @@ void* _Cdecl farmalloc(unsigned long nbytes);
 #endif
 
 #if defined(VAXC) || defined(VMS)
-    #define OS_CODE 2
+    #define OS_CODE            2
     #define F_OPEN(name, mode) fopen((name), (mode), "mbc=60", "ctx=stm", "rfm=fix", "mrs=512")
 #endif
 
@@ -203,12 +203,12 @@ ZEXTERN uLong ZEXPORT crc32_combine_gen64(z_off64_t);
 #endif
 #ifdef HAVE_MEMCPY
     #ifdef SMALL_MEDIUM /* MSDOS small or medium model */
-        #define zmemcpy _fmemcpy
-        #define zmemcmp _fmemcmp
+        #define zmemcpy             _fmemcpy
+        #define zmemcmp             _fmemcmp
         #define zmemzero(dest, len) _fmemset(dest, 0, len)
     #else
-        #define zmemcpy memcpy
-        #define zmemcmp memcmp
+        #define zmemcpy             memcpy
+        #define zmemcmp             memcmp
         #define zmemzero(dest, len) memset(dest, 0, len)
     #endif
 #else
@@ -267,7 +267,7 @@ void ZLIB_INTERNAL zcfree(voidpf opaque, voidpf ptr);
 #endif
 
 #define ZALLOC(strm, items, size) (*((strm)->zalloc))((strm)->opaque, (items), (size))
-#define ZFREE(strm, addr) (*((strm)->zfree))((strm)->opaque, (voidpf)(addr))
+#define ZFREE(strm, addr)         (*((strm)->zfree))((strm)->opaque, (voidpf)(addr))
 #define TRY_FREE(s, p)                                                                                                 \
     {                                                                                                                  \
         if (p)                                                                                                         \

@@ -87,6 +87,10 @@ target_compile_definitions("${TARGET_NAME}"
     AMX_ANSIONLY
     HAVE_STDINT_H
 
+    $<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:
+      BUILD_STATIC_AMXXPC
+    >
+
     $<$<PLATFORM_ID:Windows>:
       _MBCS
       _CRT_SECURE_NO_WARNINGS

@@ -106,21 +106,33 @@ typedef struct config_s {
 local const config configuration_table[2] = {
     /*      good lazy nice chain */
     /* 0 */ {0, 0, 0, 0, deflate_stored}, /* store only */
-    /* 1 */ {4, 4, 8, 4, deflate_fast}};  /* max speed, no lazy matches */
+                                          /* 1 */
+    {4, 4, 8, 4, deflate_fast  }
+};          /* max speed, no lazy matches */
 #else
 local const config configuration_table[10] = {
     /*      good lazy nice chain */
-    /* 0 */ {0, 0, 0, 0, deflate_stored}, /* store only */
-    /* 1 */ {4, 4, 8, 4, deflate_fast},   /* max speed, no lazy matches */
-    /* 2 */ {4, 5, 16, 8, deflate_fast},
-    /* 3 */ {4, 6, 32, 32, deflate_fast},
+    /* 0 */ {0,  0,   0,   0,    deflate_stored}, /* store only */
+                                          /* 1 */
+    {4,  4,   8,   4,    deflate_fast  }, /* max speed, no lazy matches */
+                                          /* 2 */
+    {4,  5,   16,  8,    deflate_fast  },
+    /* 3 */
+    {4,  6,   32,  32,   deflate_fast  },
 
-    /* 4 */ {4, 4, 16, 16, deflate_slow}, /* lazy matches */
-    /* 5 */ {8, 16, 32, 32, deflate_slow},
-    /* 6 */ {8, 16, 128, 128, deflate_slow},
-    /* 7 */ {8, 32, 128, 256, deflate_slow},
-    /* 8 */ {32, 128, 258, 1024, deflate_slow},
-    /* 9 */ {32, 258, 258, 4096, deflate_slow}}; /* max compression */
+    /* 4 */
+    {4,  4,   16,  16,   deflate_slow  }, /* lazy matches */
+                                  /* 5 */
+    {8,  16,  32,  32,   deflate_slow  },
+    /* 6 */
+    {8,  16,  128, 128,  deflate_slow  },
+    /* 7 */
+    {8,  32,  128, 256,  deflate_slow  },
+    /* 8 */
+    {32, 128, 258, 1024, deflate_slow  },
+    /* 9 */
+    {32, 258, 258, 4096, deflate_slow  }
+}; /* max compression */
 #endif
 
 /* Note: the deflate() code requires max_lazy >= MIN_MATCH and max_chain >= 4
@@ -129,7 +141,7 @@ local const config configuration_table[10] = {
  */
 
 /* rank Z_BLOCK between Z_NO_FLUSH and Z_PARTIAL_FLUSH */
-#define RANK(f) (((f) * 2) - ((f) > 4 ? 9 : 0))
+#define RANK(f)              (((f) * 2) - ((f) > 4 ? 9 : 0))
 
 /* ===========================================================================
  * Update a hash value with the given input byte
@@ -181,7 +193,7 @@ __attribute__((no_sanitize("memory")))
     #endif
 #endif
 local void
-slide_hash(deflate_state* s)
+    slide_hash(deflate_state* s)
 {
     unsigned n, m;
     Posf* p;
@@ -281,7 +293,6 @@ local void fill_window(deflate_state* s)
          * move the upper half to the lower one to make room in the upper half.
          */
         if (s->strstart >= wsize + MAX_DIST(s)) {
-
             zmemcpy(s->window, s->window + wsize, (unsigned)wsize - more);
             s->match_start -= wsize;
             s->strstart -= wsize; /* we now have strstart >= MAX_DIST */
@@ -470,7 +481,7 @@ int ZEXPORT deflateInit2_(z_streamp strm, int level, int method, int windowBits,
     s->prev = (Posf*)ZALLOC(strm, s->w_size, sizeof(Pos));
     s->head = (Posf*)ZALLOC(strm, s->hash_size, sizeof(Pos));
 
-    s->high_water = 0; /* nothing written to s->window yet */
+    s->high_water = 0;                    /* nothing written to s->window yet */
 
     s->lit_bufsize = 1 << (memLevel + 6); /* 16K elements by default */
 
@@ -925,7 +936,7 @@ uLong ZEXPORT deflateBound(z_streamp strm, uLong sourceLen)
             wraplen = 6 + (s->strstart ? 4 : 0);
             break;
 #ifdef GZIP
-        case 2: /* gzip wrapper */
+        case 2:                        /* gzip wrapper */
             wraplen = 18;
             if (s->gzhead != Z_NULL) { /* user-supplied gzip header */
                 Bytef* str;
@@ -1525,7 +1536,7 @@ local uInt longest_match(deflate_state* s, IPos cur_match)
         len = (MAX_MATCH - 1) - (int)(strend - scan);
         scan = strend - (MAX_MATCH - 1);
 
-    #else /* UNALIGNED_OK */
+    #else  /* UNALIGNED_OK */
 
         if (match[best_len] != scan_end || match[best_len - 1] != scan_end1 || *match != *scan || *++match != scan[1]) {
             continue;
@@ -1578,7 +1589,7 @@ local uInt longest_match(deflate_state* s, IPos cur_match)
     return s->lookahead;
 }
 
-#else /* FASTEST */
+#else  /* FASTEST */
 
 /* ---------------------------------------------------------------------------
  * Optimized version for FASTEST only
@@ -1703,7 +1714,7 @@ local void check_match(deflate_state* s, IPos start, IPos match, int length)
 #define MAX_STORED 65535
 
 /* Minimum of a and b. */
-#define MIN(a, b) ((a) > (b) ? (b) : (a))
+#define MIN(a, b)  ((a) > (b) ? (b) : (a))
 
 /* ===========================================================================
  * Copy without compression as much as possible from the input stream, return
@@ -1749,10 +1760,10 @@ local block_state deflate_stored(deflate_state* s, int flush)
         have = s->strm->avail_out - have;
         left = s->strstart - s->block_start; /* bytes left in window */
         if (len > (ulg)left + s->strm->avail_in) {
-            len = left + s->strm->avail_in; /* limit len to the input */
+            len = left + s->strm->avail_in;  /* limit len to the input */
         }
         if (len > have) {
-            len = have; /* limit len to the output */
+            len = have;                      /* limit len to the output */
         }
 
         /* If the stored block would be less than min_block in length, or if
@@ -1869,7 +1880,7 @@ local block_state deflate_stored(deflate_state* s, int flush)
         s->strstart -= s->w_size;
         zmemcpy(s->window, s->window + s->w_size, s->strstart);
         if (s->matches < 2) {
-            s->matches++; /* add a pending slide_hash() */
+            s->matches++;  /* add a pending slide_hash() */
         }
         have += s->w_size; /* more space now */
         if (s->insert > s->strstart) {

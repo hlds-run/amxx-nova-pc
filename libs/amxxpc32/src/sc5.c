@@ -131,7 +131,7 @@ SC_FUNC int error(const int number, ...)
         errstart = errline; /* forced error position, set single line destination */
     }
     else {
-        errline = fline; /* normal error, errstart may (or may not) have been marked, endpoint is current line */
+        errline = fline;    /* normal error, errstart may (or may not) have been marked, endpoint is current line */
     }
     if (errstart > errline) {
         errstart = errline; /* special case: error found at end of included file */
@@ -140,7 +140,7 @@ SC_FUNC int error(const int number, ...)
         filename = get_inputfile(errfile); /* forced filename */
     }
     else {
-        filename = inpfname; /* current file */
+        filename = inpfname;               /* current file */
     }
     assert(filename != NULL);
 
@@ -205,16 +205,16 @@ SC_FUNC void errorset(const int code, const int line)
 {
     switch (code) {
         case sRESET:
-            errflag = FALSE; /* start reporting errors */
+            errflag = FALSE;  /* start reporting errors */
             break;
         case sFORCESET:
-            errflag = TRUE; /* stop reporting errors */
+            errflag = TRUE;   /* stop reporting errors */
             break;
         case sEXPRMARK:
             errstart = fline; /* save start line number */
             break;
         case sEXPRRELEASE:
-            errstart = -1; /* forget start line number */
+            errstart = -1;    /* forget start line number */
             errline = -1;
             errfile = -1;
             break;
@@ -240,7 +240,6 @@ SC_FUNC void errorset(const int code, const int line)
  */
 int pc_enablewarning(int number, const int enable)
 {
-
     if (number < 200) {
         return FALSE; /* errors and fatal errors cannot be disabled */
     }

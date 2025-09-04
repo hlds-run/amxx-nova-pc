@@ -301,7 +301,7 @@ void ZLIB_INTERNAL zcfree(voidpf opaque, voidpf ptr)
 
             #if (!defined(_MSC_VER) || (_MSC_VER <= 600))
                 #define _halloc halloc
-                #define _hfree hfree
+                #define _hfree  hfree
             #endif
 
 voidpf ZLIB_INTERNAL zcalloc(voidpf opaque, uInt items, uInt size)
@@ -316,9 +316,9 @@ void ZLIB_INTERNAL zcfree(voidpf opaque, voidpf ptr)
     _hfree(ptr);
 }
 
-        #endif /* M_I86 */
+        #endif         /* M_I86 */
 
-    #endif /* SYS16BIT */
+    #endif             /* SYS16BIT */
 
     #ifndef MY_ZCALLOC /* Any system without a special alloc function */
 
@@ -342,4 +342,4 @@ void ZLIB_INTERNAL zcfree(voidpf opaque, voidpf ptr)
 
     #endif /* MY_ZCALLOC */
 
-#endif /* !Z_SOLO */
+#endif     /* !Z_SOLO */

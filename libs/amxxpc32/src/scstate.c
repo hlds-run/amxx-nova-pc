@@ -60,17 +60,16 @@
 
 typedef struct s_statelist {
     struct s_statelist* next;
-    int* states;   /* list of states in this combination */
-    int numstates; /* number of items in the above list */
-    int fsa;       /* automaton id */
-    int listid;    /* unique id for this combination list */
+    int* states;                                        /* list of states in this combination */
+    int numstates;                                      /* number of items in the above list */
+    int fsa;                                            /* automaton id */
+    int listid;                                         /* unique id for this combination list */
 } statelist;
 
 static statelist statelist_tab = {NULL, NULL, 0, 0, 0}; /* state combinations table */
 
 static constvalue* find_automaton(const char* name, int* last)
 {
-
     assert(last != NULL);
     *last = 0;
     constvalue* ptr = sc_automaton_tab.next;
@@ -118,7 +117,6 @@ SC_FUNC constvalue* automaton_findid(const int id)
 
 static constvalue* find_state(const char* name, const int fsa, int* last)
 {
-
     assert(last != NULL);
     *last = 0;
     constvalue* ptr = sc_state_tab.next;
@@ -262,7 +260,6 @@ SC_FUNC int state_addlist(const int* list, const int count, const int fsa)
 
 SC_FUNC void state_deletetable(void)
 {
-
     while (statelist_tab.next != NULL) {
         statelist* ptr = statelist_tab.next;
         /* unlink first */
@@ -291,7 +288,6 @@ SC_FUNC int state_count(const int listid)
 
 SC_FUNC int state_inlist(const int listid, const int state)
 {
-
     const statelist* ptr = state_getlist_ptr(listid);
     if (ptr == NULL) {
         return FALSE; /* unknown list, state not in it */
@@ -306,7 +302,6 @@ SC_FUNC int state_inlist(const int listid, const int state)
 
 SC_FUNC int state_listitem(const int listid, const int index)
 {
-
     const statelist* ptr = state_getlist_ptr(listid);
     assert(ptr != NULL);
     assert(index >= 0 && index < ptr->numstates);
@@ -319,7 +314,6 @@ SC_FUNC int state_listitem(const int listid, const int index)
  */
 SC_FUNC void state_conflict(const symbol* root)
 {
-
     assert(root != NULL);
     for (symbol* sym = root->next; sym != NULL; sym = sym->next) {
         if (sym->parent != NULL || sym->ident != iFUNCTN) {

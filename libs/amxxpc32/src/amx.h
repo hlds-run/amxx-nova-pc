@@ -22,8 +22,8 @@
 #ifdef _MSC_VER
     // MSVC8 - replace POSIX functions with ISO C++ conformant ones as they are deprecated
     #if _MSC_VER >= 1400
-        #define access _access
-        #define chdir _chdir
+        #define access  _access
+        #define chdir   _chdir
         #define stricmp _stricmp
     #endif
 #endif
@@ -143,9 +143,9 @@ extern "C" {
      *   7 (name table, opcodes SYMTAG & SYSREQ.D)  7
      *   8 (opcode STMT, renewed debug interface)   8
      */
-    #define CUR_FILE_VERSION 8 /* current file version; also the current AMX version */
-    #define MIN_FILE_VERSION 6 /* lowest supported file format version for the current AMX version */
-    #define MIN_AMX_VERSION 8  /* minimum AMX version needed to support the current file format */
+    #define CUR_FILE_VERSION 8    /* current file version; also the current AMX version */
+    #define MIN_FILE_VERSION 6    /* lowest supported file format version for the current AMX version */
+    #define MIN_AMX_VERSION  8    /* minimum AMX version needed to support the current file format */
 
     #if !defined PAWN_CELL_SIZE
         #define PAWN_CELL_SIZE 32 /* by default, use 32-bit cells */
@@ -164,7 +164,7 @@ typedef int64_t cell;
     #endif
 
     #define UNPACKEDMAX ((1L << (sizeof(cell) - 1) * 8) - 1)
-    #define UNLIMITED (~1u >> 1)
+    #define UNLIMITED   (~1u >> 1)
 
 struct tagAMX;
 typedef cell(AMX_NATIVE_CALL* AMX_NATIVE)(struct tagAMX* amx, cell* params);
@@ -213,8 +213,8 @@ typedef struct tagAMX_NATIVE_INFO {
 } PACKED AMX_NATIVE_INFO;
 
     #define AMX_USERNUM 4
-    #define sEXPMAX 19  /* maximum name length for file version <= 6 */
-    #define sNAMEMAX 63 /* maximum name length of symbol name */
+    #define sEXPMAX     19 /* maximum name length for file version <= 6 */
+    #define sNAMEMAX    63 /* maximum name length of symbol name */
 
 typedef struct tagAMX_FUNCSTUB {
     ucell address PACKED;
@@ -233,7 +233,7 @@ typedef struct tagAMX {
     unsigned char _FAR* base PACKED; /* points to the AMX header plus the code, optionally also the data */
     unsigned char _FAR* data PACKED; /* points to separate data+stack+heap, may be NULL */
     AMX_CALLBACK callback PACKED;
-    AMX_DEBUG debug PACKED; /* debug callback */
+    AMX_DEBUG debug PACKED;          /* debug callback */
     /* for external functions a few registers must be accessible from the outside */
     cell cip PACKED;  /* instruction pointer: relative to base + amxhdr->cod */
     cell frm PACKED;  /* stack frame base: relative to base + amxhdr->dat */
@@ -264,10 +264,10 @@ typedef struct tagAMX {
  * structure is used internaly.
  */
 typedef struct tagAMX_HEADER {
-    int32_t size PACKED;   /* size of the "file" */
-    uint16_t magic PACKED; /* signature */
-    char file_version;     /* file format version */
-    char amx_version;      /* required version of the AMX */
+    int32_t size PACKED;      /* size of the "file" */
+    uint16_t magic PACKED;    /* signature */
+    char file_version;        /* file format version */
+    char amx_version;         /* required version of the AMX */
     int16_t flags PACKED;
     int16_t defsize PACKED;   /* size of a definition record */
     int32_t cod PACKED;       /* initial value of COD - code block */
@@ -289,19 +289,19 @@ typedef struct tagAMX_HEADER {
 enum {
     AMX_ERR_NONE,
     /* reserve the first 15 error codes for exit codes of the abstract machine */
-    AMX_ERR_EXIT,      /* forced exit */
-    AMX_ERR_ASSERT,    /* assertion failed */
-    AMX_ERR_STACKERR,  /* stack/heap collision */
-    AMX_ERR_BOUNDS,    /* index out of bounds */
-    AMX_ERR_MEMACCESS, /* invalid memory access */
-    AMX_ERR_INVINSTR,  /* invalid instruction */
-    AMX_ERR_STACKLOW,  /* stack underflow */
-    AMX_ERR_HEAPLOW,   /* heap underflow */
-    AMX_ERR_CALLBACK,  /* no callback, or invalid callback */
-    AMX_ERR_NATIVE,    /* native function failed */
-    AMX_ERR_DIVIDE,    /* divide by zero */
-    AMX_ERR_SLEEP,     /* go into sleepmode - code can be restarted */
-    AMX_ERR_INVSTATE,  /* invalid state for this access */
+    AMX_ERR_EXIT,        /* forced exit */
+    AMX_ERR_ASSERT,      /* assertion failed */
+    AMX_ERR_STACKERR,    /* stack/heap collision */
+    AMX_ERR_BOUNDS,      /* index out of bounds */
+    AMX_ERR_MEMACCESS,   /* invalid memory access */
+    AMX_ERR_INVINSTR,    /* invalid instruction */
+    AMX_ERR_STACKLOW,    /* stack underflow */
+    AMX_ERR_HEAPLOW,     /* heap underflow */
+    AMX_ERR_CALLBACK,    /* no callback, or invalid callback */
+    AMX_ERR_NATIVE,      /* native function failed */
+    AMX_ERR_DIVIDE,      /* divide by zero */
+    AMX_ERR_SLEEP,       /* go into sleepmode - code can be restarted */
+    AMX_ERR_INVSTATE,    /* invalid state for this access */
 
     AMX_ERR_MEMORY = 16, /* out of memory */
     AMX_ERR_FORMAT,      /* invalid file format */
@@ -318,17 +318,17 @@ enum {
 };
 
     /*      AMX_FLAG_CHAR16   0x01     no longer used */
-    #define AMX_FLAG_DEBUG 0x02    /* symbolic info. available */
-    #define AMX_FLAG_COMPACT 0x04  /* compact encoding */
-    #define AMX_FLAG_BYTEOPC 0x08  /* opcode is a byte (not a cell) */
-    #define AMX_FLAG_NOCHECKS 0x10 /* no array bounds checking; no STMT opcode */
-    #define AMX_FLAG_NTVREG 0x1000 /* all native functions are registered */
-    #define AMX_FLAG_JITC 0x2000   /* abstract machine is JIT compiled */
-    #define AMX_FLAG_BROWSE 0x4000 /* busy browsing */
-    #define AMX_FLAG_RELOC 0x8000  /* jump/call addresses relocated */
+    #define AMX_FLAG_DEBUG          0x02   /* symbolic info. available */
+    #define AMX_FLAG_COMPACT        0x04   /* compact encoding */
+    #define AMX_FLAG_BYTEOPC        0x08   /* opcode is a byte (not a cell) */
+    #define AMX_FLAG_NOCHECKS       0x10   /* no array bounds checking; no STMT opcode */
+    #define AMX_FLAG_NTVREG         0x1000 /* all native functions are registered */
+    #define AMX_FLAG_JITC           0x2000 /* abstract machine is JIT compiled */
+    #define AMX_FLAG_BROWSE         0x4000 /* busy browsing */
+    #define AMX_FLAG_RELOC          0x8000 /* jump/call addresses relocated */
 
-    #define AMX_EXEC_MAIN -1 /* start at program entry point */
-    #define AMX_EXEC_CONT -2 /* continue from last address */
+    #define AMX_EXEC_MAIN           -1     /* start at program entry point */
+    #define AMX_EXEC_CONT           -2     /* continue from last address */
 
     #define AMX_USERTAG(a, b, c, d) ((a) | ((b) << 8) | ((long)(c) << 16) | ((long)(d) << 24))
 
@@ -341,8 +341,8 @@ enum {
      * changing the bit pattern
      */
     #if PAWN_CELL_SIZE == 32
-        #define amx_ftoc(f) (*((cell*)&f))  /* float to cell */
-        #define amx_ctof(c) (*((float*)&c)) /* cell to float */
+        #define amx_ftoc(f) (*((cell*)&f))   /* float to cell */
+        #define amx_ctof(c) (*((float*)&c))  /* cell to float */
     #elif PAWN_CELL_SIZE == 64
         #define amx_ftoc(f) (*((cell*)&f))   /* float to cell */
         #define amx_ctof(c) (*((double*)&c)) /* cell to float */

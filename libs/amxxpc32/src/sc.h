@@ -35,7 +35,7 @@
     /* setjmp() and longjmp() not well supported in 16-bit windows */
     #include <windows.h>
 typedef int jmp_buf[9];
-    #define setjmp(b) Catch(b)
+    #define setjmp(b)     Catch(b)
     #define longjmp(b, e) Throw(b, e)
 #else
     #include <setjmp.h>
@@ -50,17 +50,17 @@ typedef int jmp_buf[9];
 
 /* Note: the "cell" and "ucell" types are defined in AMX.H */
 
-#define PUBLIC_CHAR '@' /* character that defines a function "public" */
-#define CTRL_CHAR '^'   /* default control character */
-#define sCHARBITS 8     /* size of a packed character */
+#define PUBLIC_CHAR   '@'           /* character that defines a function "public" */
+#define CTRL_CHAR     '^'           /* default control character */
+#define sCHARBITS     8             /* size of a packed character */
 
-#define sDIMEN_MAX 4              /* maximum number of array dimensions */
-#define sLINEMAX 4095             /* input line length (in characters) */
-#define sCOMP_STACK 32            /* maximum nesting of #if .. #endif sections */
-#define sDEF_LITMAX 500           /* initial size of the literal pool, in "cells" */
-#define sDEF_AMXSTACK 4096        /* default stack size for AMX files */
-#define PREPROC_TERM '\x7f'       /* termination character for preprocessor expressions (the "DEL" code) */
-#define sDEF_PREFIX "default.inc" /* default prefix filename */
+#define sDIMEN_MAX    4             /* maximum number of array dimensions */
+#define sLINEMAX      4095          /* input line length (in characters) */
+#define sCOMP_STACK   32            /* maximum nesting of #if .. #endif sections */
+#define sDEF_LITMAX   500           /* initial size of the literal pool, in "cells" */
+#define sDEF_AMXSTACK 4096          /* default stack size for AMX files */
+#define PREPROC_TERM  '\x7f'        /* termination character for preprocessor expressions (the "DEL" code) */
+#define sDEF_PREFIX   "default.inc" /* default prefix filename */
 
 #if defined WIN32 || defined __clang__
     #define INVISIBLE
@@ -69,34 +69,34 @@ typedef int jmp_buf[9];
 #endif
 
 typedef union {
-    void* pv; /* e.g. a name */
+    void* pv;                 /* e.g. a name */
     int i;
-} stkitem; /* type of items stored on the compiler stack */
+} stkitem;                    /* type of items stored on the compiler stack */
 
-typedef struct s_arginfo { /* function argument info */
+typedef struct s_arginfo {    /* function argument info */
     char name[sNAMEMAX + 1];
-    char ident;  /* iVARIABLE, iREFERENCE, iREFARRAY or iVARARGS */
-    char usage;  /* uCONST */
-    int* tags;   /* argument tag id. list */
-    int numtags; /* number of tags in the tag list */
+    char ident;               /* iVARIABLE, iREFERENCE, iREFARRAY or iVARARGS */
+    char usage;               /* uCONST */
+    int* tags;                /* argument tag id. list */
+    int numtags;              /* number of tags in the tag list */
     int dim[sDIMEN_MAX];
     int idxtag[sDIMEN_MAX];
     int numdim;               /* number of dimensions */
     unsigned char hasdefault; /* bit0: is there a default value? bit6: "tagof"; bit7: "sizeof" */
     union {
-        cell val; /* default value */
+        cell val;             /* default value */
         struct {
-            char* symname; /* name of another symbol */
-            short level;   /* indirection level for that symbol */
-        } size;            /* used for "sizeof" default value */
+            char* symname;    /* name of another symbol */
+            short level;      /* indirection level for that symbol */
+        } size;               /* used for "sizeof" default value */
         struct {
-            cell* data;    /* values of default array */
-            int size;      /* complete length of default array */
-            int arraysize; /* size to reserve on the heap */
-            cell addr;     /* address of the default array in the data segment */
+            cell* data;       /* values of default array */
+            int size;         /* complete length of default array */
+            int arraysize;    /* size to reserve on the heap */
+            cell addr;        /* address of the default array in the data segment */
         } array;
-    } defvalue;       /* default value, or pointer to default array */
-    int defvalue_tag; /* tag of the default value */
+    } defvalue;               /* default value, or pointer to default array */
+    int defvalue_tag;         /* tag of the default value */
 } arginfo;
 
 /*  Equate table, tagname table, library table */
@@ -120,38 +120,38 @@ typedef struct s_constvalue {
  */
 typedef struct s_symbol {
     struct s_symbol* next;
-    struct s_symbol* parent; /* hierarchical types (multi-dimensional arrays) */
+    struct s_symbol* parent;  /* hierarchical types (multi-dimensional arrays) */
     char name[sNAMEMAX + 1];
-    uint32_t hash; /* value derived from name, for quicker searching */
-    cell addr;     /* address or offset (or value for constant, index for native function) */
-    cell codeaddr; /* address (in the code segment) where the symbol declaration starts */
-    char vclass;   /* sLOCAL if "addr" refers to a local symbol */
-    char ident;    /* see below for possible values */
-    short usage;   /* see below for possible values */
-    char flags;    /* see below for possible values */
-    int compound;  /* compound level (braces nesting level) */
-    int tag;       /* tagname id */
-    int fieldtag;  /* enumeration fields, where a size is attached to the field */
+    uint32_t hash;            /* value derived from name, for quicker searching */
+    cell addr;                /* address or offset (or value for constant, index for native function) */
+    cell codeaddr;            /* address (in the code segment) where the symbol declaration starts */
+    char vclass;              /* sLOCAL if "addr" refers to a local symbol */
+    char ident;               /* see below for possible values */
+    short usage;              /* see below for possible values */
+    char flags;               /* see below for possible values */
+    int compound;             /* compound level (braces nesting level) */
+    int tag;                  /* tagname id */
+    int fieldtag;             /* enumeration fields, where a size is attached to the field */
     union {
-        int declared;    /* label: how many local variables are declared */
-        int idxtag;      /* array & enum: tag of array indices or the enum item */
-        constvalue* lib; /* native function: library it is part of */
-        long stacksize;  /* normal/public function: stack requirements */
-    } x;                 /* 'x' for 'extra' */
+        int declared;         /* label: how many local variables are declared */
+        int idxtag;           /* array & enum: tag of array indices or the enum item */
+        constvalue* lib;      /* native function: library it is part of */
+        long stacksize;       /* normal/public function: stack requirements */
+    } x;                      /* 'x' for 'extra' */
     union {
         arginfo* arglist;     /* types of all parameters for functions */
         constvalue* enumlist; /* list of names for the "root" of an enumeration */
         struct {
-            cell length; /* arrays: length (size) */
-            short level; /* number of dimensions below this level */
+            cell length;      /* arrays: length (size) */
+            short level;      /* number of dimensions below this level */
         } array;
-    } dim;                   /* for 'dimension', both functions and arrays */
-    constvalue* states;      /* list of state function addresses */
-    int fnumber;             /* static global variables: file number in which the declaration is visible */
-    int lnumber;             /* line number (in the current source file) for the declaration */
-    struct s_symbol** refer; /* referrer list, functions that "use" this symbol */
-    int numrefers;           /* number of entries in the referrer list */
-    char* documentation;     /* optional documentation string */
+    } dim;                    /* for 'dimension', both functions and arrays */
+    constvalue* states;       /* list of state function addresses */
+    int fnumber;              /* static global variables: file number in which the declaration is visible */
+    int lnumber;              /* line number (in the current source file) for the declaration */
+    struct s_symbol** refer;  /* referrer list, functions that "use" this symbol */
+    int numrefers;            /* number of entries in the referrer list */
+    char* documentation;      /* optional documentation string */
 } symbol;
 
 /*  Possible entries for "ident". These are used in the "symbol", "value"
@@ -159,18 +159,18 @@ typedef struct s_symbol {
  *  In an argument list, the list is terminated with a "zero" ident; labels
  *  cannot be passed as function arguments, so the value 0 is overloaded.
  */
-#define iLABEL 0
-#define iVARIABLE 1  /* cell that has an address and that can be fetched directly (lvalue) */
-#define iREFERENCE 2 /* iVARIABLE, but must be dereferenced */
-#define iARRAY 3
-#define iREFARRAY 4   /* an array passed by reference (i.e. a pointer) */
-#define iARRAYCELL 5  /* array element, cell that must be fetched indirectly */
-#define iARRAYCHAR 6  /* array element, character from cell from array */
-#define iEXPRESSION 7 /* expression result, has no address (rvalue) */
-#define iCONSTEXPR 8  /* constant expression (or constant symbol) */
-#define iFUNCTN 9
-#define iREFFUNC 10
-#define iVARARGS 11 /* function specified ... as argument(s) */
+#define iLABEL        0
+#define iVARIABLE     1  /* cell that has an address and that can be fetched directly (lvalue) */
+#define iREFERENCE    2  /* iVARIABLE, but must be dereferenced */
+#define iARRAY        3
+#define iREFARRAY     4  /* an array passed by reference (i.e. a pointer) */
+#define iARRAYCELL    5  /* array element, cell that must be fetched indirectly */
+#define iARRAYCHAR    6  /* array element, character from cell from array */
+#define iEXPRESSION   7  /* expression result, has no address (rvalue) */
+#define iCONSTEXPR    8  /* constant expression (or constant symbol) */
+#define iFUNCTN       9
+#define iREFFUNC      10
+#define iVARARGS      11 /* function specified ... as argument(s) */
 
 /*  Possible entries for "usage"
  *
@@ -203,48 +203,48 @@ typedef struct s_symbol {
  *        5     (uENUMROOT) the constant is the "root" of an enumeration
  *        6     (uENUMFIELD) the constant is a field in a named enumeration
  */
-#define uDEFINE 0x01
-#define uREAD 0x02
-#define uWRITTEN 0x04
-#define uRETVALUE 0x04 /* function returns (or should return) a value */
-#define uCONST 0x08
-#define uPROTOTYPED 0x08
-#define uPREDEF 0x08 /* constant is pre-defined */
-#define uPUBLIC 0x10
-#define uNATIVE 0x20
-#define uENUMROOT 0x20
-#define uSTOCK 0x40
-#define uENUMFIELD 0x40
-#define uMISSING 0x80
-#define uVISITED 0x100 /* temporary flag, to mark fields as "visited" in recursive loops */
+#define uDEFINE       0x01
+#define uREAD         0x02
+#define uWRITTEN      0x04
+#define uRETVALUE     0x04 /* function returns (or should return) a value */
+#define uCONST        0x08
+#define uPROTOTYPED   0x08
+#define uPREDEF       0x08 /* constant is pre-defined */
+#define uPUBLIC       0x10
+#define uNATIVE       0x20
+#define uENUMROOT     0x20
+#define uSTOCK        0x40
+#define uENUMFIELD    0x40
+#define uMISSING      0x80
+#define uVISITED      0x100 /* temporary flag, to mark fields as "visited" in recursive loops */
 /* uRETNONE is not stored in the "usage" field of a symbol. It is
  * used during parsing a function, to detect a mix of "return;" and
  * "return value;" in a few special cases.
  */
-#define uRETNONE 0x10
+#define uRETNONE      0x10
 
 #define flgDEPRECATED 0x01 /* symbol is deprecated (avoid use) */
 
-#define uTAGOF 0x40  /* set in the "hasdefault" field of the arginfo struct */
-#define uSIZEOF 0x80 /* set in the "hasdefault" field of the arginfo struct */
+#define uTAGOF        0x40 /* set in the "hasdefault" field of the arginfo struct */
+#define uSIZEOF       0x80 /* set in the "hasdefault" field of the arginfo struct */
 
-#define uMAINFUNC "main"
-#define uENTRYFUNC "entry"
+#define uMAINFUNC     "main"
+#define uENTRYFUNC    "entry"
 
-#define sGLOBAL 0 /* global/local variable/constant class */
-#define sLOCAL 1
-#define sSTATIC 2 /* global life, local scope */
+#define sGLOBAL       0 /* global/local variable/constant class */
+#define sLOCAL        1
+#define sSTATIC       2 /* global life, local scope */
 
 typedef struct s_value {
-    symbol* sym;     /* symbol in symbol table, NULL for (constant) expression */
-    cell constval;   /* value of the constant expression (if ident==iCONSTEXPR)
-                      * also used for the size of a literal array */
-    int tag;         /* tagname id (of the expression) */
-    char forceuntag; /* whether expression is untagged using _: */
-    char ident;      /* iCONSTEXPR, iVARIABLE, iARRAY, iARRAYCELL,
-                      * iEXPRESSION or iREFERENCE */
-    char boolresult; /* boolean result for relational operators */
-    cell* arrayidx;  /* last used array indices, for checking self assignment */
+    symbol* sym;        /* symbol in symbol table, NULL for (constant) expression */
+    cell constval;      /* value of the constant expression (if ident==iCONSTEXPR)
+                         * also used for the size of a literal array */
+    int tag;            /* tagname id (of the expression) */
+    char forceuntag;    /* whether expression is untagged using _: */
+    char ident;         /* iCONSTEXPR, iVARIABLE, iARRAY, iARRAYCELL,
+                         * iEXPRESSION or iREFERENCE */
+    char boolresult;    /* boolean result for relational operators */
+    cell* arrayidx;     /* last used array indices, for checking self assignment */
 } value;
 
 /*  "while" statement queue (also used for "for" and "do - while" loops) */
@@ -254,15 +254,15 @@ enum {
     wqLOOP, /* loop start label number */
     wqEXIT, /* loop exit label number (jump if false) */
     /* --- */
-    wqSIZE /* "while queue" size */
+    wqSIZE                    /* "while queue" size */
 };
 #define wqTABSZ (24 * wqSIZE) /* 24 nested loop statements */
 
 enum {
-    statIDLE,  /* not compiling yet */
-    statFIRST, /* first pass */
-    statWRITE, /* writing output */
-    statSKIP,  /* skipping output */
+    statIDLE,                 /* not compiling yet */
+    statFIRST,                /* first pass */
+    statWRITE,                /* writing output */
+    statSKIP,                 /* skipping output */
 };
 
 typedef struct s_stringlist {
@@ -287,140 +287,148 @@ typedef struct s_valuepair {
 
 /* macros for code generation */
 #define opcodes(n) ((n) * sizeof(cell)) /* opcode size */
-#define opargs(n) ((n) * sizeof(cell))  /* size of typical argument */
+#define opargs(n)  ((n) * sizeof(cell)) /* size of typical argument */
+
+/* general purpose macros */
+#if !defined sizearray
+    #define sizearray(a) (sizeof(a) / sizeof((a)[0]))
+#endif
+#if !defined makelong
+    #define makelong(low, high) ((long)(low) | ((long)(high) << (sizeof(long) * 4)))
+#endif
 
 /*  Tokens recognized by lex()
  *  Some of these constants are assigned as well to the variable "lastst"
  */
-#define tFIRST 256  /* value of first multi-character operator */
-#define tMIDDLE 280 /* value of last multi-character operator */
-#define tLAST 325   /* value of last multi-character match-able token */
+#define tFIRST          256 /* value of first multi-character operator */
+#define tMIDDLE         280 /* value of last multi-character operator */
+#define tLAST           325 /* value of last multi-character match-able token */
 /* multi-character operators */
-#define taMULT 256    /* *= */
-#define taDIV 257     /* /= */
-#define taMOD 258     /* %= */
-#define taADD 259     /* += */
-#define taSUB 260     /* -= */
-#define taSHL 261     /* <<= */
-#define taSHRU 262    /* >>>= */
-#define taSHR 263     /* >>= */
-#define taAND 264     /* &= */
-#define taXOR 265     /* ^= */
-#define taOR 266      /* |= */
-#define tlOR 267      /* || */
-#define tlAND 268     /* && */
-#define tlEQ 269      /* == */
-#define tlNE 270      /* != */
-#define tlLE 271      /* <= */
-#define tlGE 272      /* >= */
-#define tSHL 273      /* << */
-#define tSHRU 274     /* >>> */
-#define tSHR 275      /* >> */
-#define tINC 276      /* ++ */
-#define tDEC 277      /* -- */
-#define tELLIPS 278   /* ... */
-#define tDBLDOT 279   /* .. */
-#define tDBLCOLON 280 /* :: */
+#define taMULT          256 /* *= */
+#define taDIV           257 /* /= */
+#define taMOD           258 /* %= */
+#define taADD           259 /* += */
+#define taSUB           260 /* -= */
+#define taSHL           261 /* <<= */
+#define taSHRU          262 /* >>>= */
+#define taSHR           263 /* >>= */
+#define taAND           264 /* &= */
+#define taXOR           265 /* ^= */
+#define taOR            266 /* |= */
+#define tlOR            267 /* || */
+#define tlAND           268 /* && */
+#define tlEQ            269 /* == */
+#define tlNE            270 /* != */
+#define tlLE            271 /* <= */
+#define tlGE            272 /* >= */
+#define tSHL            273 /* << */
+#define tSHRU           274 /* >>> */
+#define tSHR            275 /* >> */
+#define tINC            276 /* ++ */
+#define tDEC            277 /* -- */
+#define tELLIPS         278 /* ... */
+#define tDBLDOT         279 /* .. */
+#define tDBLCOLON       280 /* :: */
 /* reserved words (statements) */
-#define tASSERT 281
-#define tBREAK 282
-#define tCASE 283
-#define tCHAR 284
-#define tCONST 285
-#define tCONTINUE 286
-#define tDEFAULT 287
-#define tDEFINED 288
-#define tDO 289
-#define tELSE 290
-#define tENUM 291
-#define tEXIT 292
-#define tFOR 293
-#define tFORWARD 294
-#define tGOTO 295
-#define tIF 296
-#define tNATIVE 297
-#define tNEW 298
-#define tOPERATOR 299
-#define tPUBLIC 300
-#define tRETURN 301
-#define tSIZEOF 302
-#define tSLEEP 303
-#define tSTATE 304
-#define tSTATIC 305
-#define tSTOCK 306
-#define tSWITCH 307
-#define tTAGOF 308
-#define tWHILE 309
+#define tASSERT         281
+#define tBREAK          282
+#define tCASE           283
+#define tCHAR           284
+#define tCONST          285
+#define tCONTINUE       286
+#define tDEFAULT        287
+#define tDEFINED        288
+#define tDO             289
+#define tELSE           290
+#define tENUM           291
+#define tEXIT           292
+#define tFOR            293
+#define tFORWARD        294
+#define tGOTO           295
+#define tIF             296
+#define tNATIVE         297
+#define tNEW            298
+#define tOPERATOR       299
+#define tPUBLIC         300
+#define tRETURN         301
+#define tSIZEOF         302
+#define tSLEEP          303
+#define tSTATE          304
+#define tSTATIC         305
+#define tSTOCK          306
+#define tSWITCH         307
+#define tTAGOF          308
+#define tWHILE          309
 /* compiler directives */
-#define tpASSERT 310 /* #assert */
-#define tpDEFINE 311
-#define tpELSE 312   /* #else */
-#define tpELSEIF 313 /* #elseif */
-#define tpEMIT 314
-#define tpENDIF 315
-#define tpENDINPUT 316
-#define tpENDSCRPT 317
-#define tpERROR 318
-#define tpFILE 319
-#define tpIF 320 /* #if */
-#define tINCLUDE 321
-#define tpLINE 322
-#define tpPRAGMA 323
-#define tpTRYINCLUDE 324
-#define tpUNDEF 325
+#define tpASSERT        310 /* #assert */
+#define tpDEFINE        311
+#define tpELSE          312 /* #else */
+#define tpELSEIF        313 /* #elseif */
+#define tpEMIT          314
+#define tpENDIF         315
+#define tpENDINPUT      316
+#define tpENDSCRPT      317
+#define tpERROR         318
+#define tpFILE          319
+#define tpIF            320 /* #if */
+#define tINCLUDE        321
+#define tpLINE          322
+#define tpPRAGMA        323
+#define tpTRYINCLUDE    324
+#define tpUNDEF         325
 /* semicolon is a special case, because it can be optional */
-#define tTERM 326    /* semicolon or newline */
-#define tENDEXPR 327 /* forced end of expression */
+#define tTERM           326 /* semicolon or newline */
+#define tENDEXPR        327 /* forced end of expression */
 /* other recognized tokens */
-#define tNUMBER 328   /* integer number */
-#define tRATIONAL 329 /* rational number */
-#define tSYMBOL 330
-#define tLABEL 331
-#define tSTRING 332
+#define tNUMBER         328 /* integer number */
+#define tRATIONAL       329 /* rational number */
+#define tSYMBOL         330
+#define tLABEL          331
+#define tSTRING         332
 #define tPENDING_STRING 333
-#define tEXPR 334       /* for assigment to "lastst" only */
-#define tEMPTYBLOCK 335 /* empty blocks for AM bug 4825 */
+#define tEXPR           334 /* for assigment to "lastst" only */
+#define tEMPTYBLOCK     335 /* empty blocks for AM bug 4825 */
 
 /* (reversed) evaluation of staging buffer */
-#define sSTARTREORDER 0x01
-#define sENDREORDER 0x02
-#define sEXPRSTART 0x80 /* top bit set, rest is free */
-#define sMAXARGS 127    /* relates to the bit pattern of sEXPRSTART */
+#define sSTARTREORDER   0x01
+#define sENDREORDER     0x02
+#define sEXPRSTART      0x80 /* top bit set, rest is free */
+#define sMAXARGS        127  /* relates to the bit pattern of sEXPRSTART */
 
-#define sDOCSEP 0x01 /* to separate documentation comments between functions */
+#define sDOCSEP         0x01 /* to separate documentation comments between functions */
 
 /* codes for ffabort() */
-#define xEXIT 1           /* exit code in PRI */
-#define xASSERTION 2      /* abort caused by failing assertion */
-#define xSTACKERROR 3     /* stack/heap overflow */
-#define xBOUNDSERROR 4    /* array index out of bounds */
-#define xMEMACCESS 5      /* data access error */
-#define xINVINSTR 6       /* invalid instruction */
-#define xSTACKUNDERFLOW 7 /* stack underflow */
-#define xHEAPUNDERFLOW 8  /* heap underflow */
-#define xCALLBACKERR 9    /* no, or invalid, callback */
-#define xSLEEP 12         /* sleep, exit code in PRI, tag in ALT */
+#define xEXIT           1  /* exit code in PRI */
+#define xASSERTION      2  /* abort caused by failing assertion */
+#define xSTACKERROR     3  /* stack/heap overflow */
+#define xBOUNDSERROR    4  /* array index out of bounds */
+#define xMEMACCESS      5  /* data access error */
+#define xINVINSTR       6  /* invalid instruction */
+#define xSTACKUNDERFLOW 7  /* stack underflow */
+#define xHEAPUNDERFLOW  8  /* heap underflow */
+#define xCALLBACKERR    9  /* no, or invalid, callback */
+#define xSLEEP          12 /* sleep, exit code in PRI, tag in ALT */
 
 /* Miscellaneous  */
 #if !defined TRUE
     #define FALSE 0
-    #define TRUE 1
+    #define TRUE  1
 #endif
-#define sIN_CSEG 1     /* if parsing CODE */
-#define sIN_DSEG 2     /* if parsing DATA */
-#define sCHKBOUNDS 1   /* bit position in "debug" variable: check bounds */
-#define sSYMBOLIC 2    /* bit position in "debug" variable: symbolic info */
-#define sNOOPTIMIZE 4  /* bit position in "debug" variable: no optimization */
-#define sRESET 0       /* reset error flag */
-#define sFORCESET 1    /* force error flag on */
-#define sEXPRMARK 2    /* mark start of expression */
+#define sIN_CSEG     1 /* if parsing CODE */
+#define sIN_DSEG     2 /* if parsing DATA */
+#define sCHKBOUNDS   1 /* bit position in "debug" variable: check bounds */
+#define sSYMBOLIC    2 /* bit position in "debug" variable: symbolic info */
+#define sNOOPTIMIZE  4 /* bit position in "debug" variable: no optimization */
+#define sRESET       0 /* reset error flag */
+#define sFORCESET    1 /* force error flag on */
+#define sEXPRMARK    2 /* mark start of expression */
 #define sEXPRRELEASE 3 /* mark end of expression */
-#define sSETLINE 4     /* set line number for the error */
-#define sSETFILE 5     /* set file number for the error */
+#define sSETLINE     4 /* set line number for the error */
+#define sSETFILE     5 /* set file number for the error */
 
 typedef enum s_regid {
-    sPRI, /* indicates the primary register */
-    sALT, /* indicates the secundary register */
+    sPRI,              /* indicates the primary register */
+    sALT,              /* indicates the secundary register */
 } regid;
 
 typedef enum s_optmark {
@@ -431,10 +439,10 @@ typedef enum s_optmark {
 
 #if INT_MAX < 0x8000u
     #define PUBLICTAG 0x8000u
-    #define FIXEDTAG 0x4000u
+    #define FIXEDTAG  0x4000u
 #else
     #define PUBLICTAG 0x80000000Lu
-    #define FIXEDTAG 0x40000000Lu
+    #define FIXEDTAG  0x40000000Lu
 #endif
 #define TAGMASK (~PUBLICTAG)
 
@@ -459,24 +467,27 @@ int pc_enablewarning(int number, int enable);
 #if PAWN_CELL_SIZE == 32
     #if defined __WIN32__ || defined _WIN32 || defined WIN32
 __declspec(dllexport) int pc_printf(const char* message, ...);
+__declspec(dllexport) const char* pc_pop_first_source_file(void);
     #else
-extern int __attribute__((visibility("default"))) pc_printf(const char* message, ...);
+__attribute__((visibility("default"))) extern int pc_printf(const char* message, ...);
+__attribute__((visibility("default"))) extern const char* pc_pop_first_source_file(void);
     #endif
 #else
 int pc_printf(const char* message, ...) INVISIBLE;
+const char* pc_pop_first_source_file(void) INVISIBLE;
 #endif
 
 /* error report function */
 int pc_error(int number, const char* message, char* filename, int firstline, int lastline, va_list argptr);
 
 /* input from source file */
-void* pc_opensrc(const char* filename); /* reading only */
+void* pc_opensrc(const char* filename);         /* reading only */
 void* pc_createsrc(const char* filename);
 void pc_closesrc(void* handle);                 /* never delete */
 void pc_resetsrc(void* handle, void* position); /* reset to a position marked earlier */
 char* pc_readsrc(void* handle, unsigned char* target, int maxchars);
 int pc_writesrc(void* handle, unsigned char* source);
-void* pc_getpossrc(const void* handle); /* mark the current position */
+void* pc_getpossrc(const void* handle);         /* mark the current position */
 int pc_eofsrc(const void* handle);
 
 /* output to intermediate (.ASM) file */
@@ -563,6 +574,7 @@ SC_FUNC void delete_symbol(symbol* root, symbol* sym);
 SC_FUNC void delete_symbols(symbol* root, int level, int del_labels, int delete_functions);
 SC_FUNC int refer_symbol(symbol* entry, symbol* bywhom);
 SC_FUNC void markusage(symbol* sym, int usage);
+SC_FUNC uint32_t namehash(const char* name);
 SC_FUNC symbol* findglb(const char* name);
 SC_FUNC symbol* findloc(const char* name);
 SC_FUNC symbol* findconst(const char* name);
@@ -649,10 +661,10 @@ SC_FUNC void ob_eq(void);   /* equality */
 SC_FUNC void ob_ne(void);   /* inequality */
 SC_FUNC void relop_prefix(void);
 SC_FUNC void relop_suffix(void);
-SC_FUNC void os_le(void); /* less or equal (signed) */
-SC_FUNC void os_ge(void); /* greater or equal (signed) */
-SC_FUNC void os_lt(void); /* less (signed) */
-SC_FUNC void os_gt(void); /* greater (signed) */
+SC_FUNC void os_le(void);   /* less or equal (signed) */
+SC_FUNC void os_ge(void);   /* greater or equal (signed) */
+SC_FUNC void os_lt(void);   /* less (signed) */
+SC_FUNC void os_gt(void);   /* greater (signed) */
 
 SC_FUNC void lneg(void);
 SC_FUNC void neg(void);
@@ -699,6 +711,7 @@ SC_FUNC int get_subst(int index, char** pattern, char** substitution);
 SC_FUNC stringpair* find_subst(const char* name, int length);
 SC_FUNC int delete_subst(const char* name, int length);
 SC_FUNC void delete_substtable(void);
+SC_FUNC const char* pop_first_source_file(void);
 SC_FUNC stringlist* insert_sourcefile(const char* string);
 SC_FUNC char* get_sourcefile(int index);
 SC_FUNC void delete_sourcefiletable(void);
@@ -760,65 +773,63 @@ SC_FUNC void state_conflict(const symbol* root);
 
 /* external variables (defined in scvars.c) */
 #if !defined SC_SKIP_VDECL
-typedef struct HashTable HashTable;
-SC_VDECL HashTable* sp_Globals;
-SC_VDECL symbol loctab;             /* local symbol table */
-SC_VDECL symbol glbtab;             /* global symbol table */
-SC_VDECL cell* litq;                /* the literal queue */
-SC_VDECL unsigned char pline[];     /* the line read from the input file */
-SC_VDECL const unsigned char* lptr; /* points to the current position in "pline" */
-SC_VDECL constvalue tagname_tab;    /* tagname table */
-SC_VDECL constvalue libname_tab;    /* library table (#pragma library "..." syntax) */
-SC_VDECL constvalue* curlibrary;    /* current library */
-SC_VDECL int pc_addlibtable;        /* is the library table added to the AMX file? */
-SC_VDECL symbol* curfunc;           /* pointer to current function */
-SC_VDECL char* inpfname;            /* name of the file currently read from */
-SC_VDECL char outfname[];           /* intermediate (assembler) file name */
-SC_VDECL char binfname[];           /* binary file name */
-SC_VDECL char errfname[];           /* error file name */
-SC_VDECL char sc_ctrlchar;          /* the control character (or escape character) */
-SC_VDECL char sc_ctrlchar_org;      /* the default control character */
-SC_VDECL int litidx;                /* index to literal table */
-SC_VDECL int litmax;                /* current size of the literal table */
-SC_VDECL int stgidx;                /* index to the staging buffer */
-SC_VDECL int sc_labnum;             /* number of (internal) labels */
-SC_VDECL int staging;               /* true if staging output */
-SC_VDECL cell declared;             /* number of local cells declared */
-SC_VDECL cell glb_declared;         /* number of global cells declared */
-SC_VDECL cell code_idx;             /* number of bytes with generated code */
-SC_VDECL int ntv_funcid;            /* incremental number of native function */
-SC_VDECL int errnum;                /* number of errors */
-SC_VDECL int warnnum;               /* number of warnings */
-SC_VDECL int sc_debug;              /* debug/optimization options (bit field) */
-SC_VDECL int sc_packstr;            /* strings are packed by default? */
-SC_VDECL int sc_asmfile;            /* create .ASM file? */
-SC_VDECL int sc_listing;            /* create .LST file? */
-SC_VDECL int sc_compress;           /* compress bytecode? */
-SC_VDECL int sc_needsemicolon;      /* semicolon required to terminate expressions? */
-SC_VDECL int sc_dataalign;          /* data alignment value */
-SC_VDECL int sc_alignnext;          /* must frame of the next function be aligned? */
-SC_VDECL int pc_docexpr;            /* must expression be attached to documentation comment? */
-SC_VDECL int sc_showincludes;       /* show include files? */
-SC_VDECL int curseg;                /* 1 if currently parsing CODE, 2 if parsing DATA */
-SC_VDECL cell sc_stksize;           /* stack size */
-SC_VDECL cell sc_amxlimit;          /* abstract machine size limit */
-SC_VDECL int freading;              /* is there an input file ready for reading? */
-SC_VDECL int fline;                 /* the line number in the current file */
-SC_VDECL short fnumber;             /* number of files in the input file table */
-SC_VDECL short fcurrent;            /* current file being processed */
-SC_VDECL short sc_intest;           /* true if inside a test */
-SC_VDECL int sideeffect;            /* true if an expression causes a side-effect */
-SC_VDECL int stmtindent;            /* current indent of the statement */
-SC_VDECL int indent_nowarn;         /* skip warning "217 loose indentation" */
-SC_VDECL int sc_tabsize;            /* number of spaces that a TAB represents */
-SC_VDECL short sc_allowtags;        /* allow/detect tagnames in lex() */
-SC_VDECL int sc_status;             /* read/write status */
-SC_VDECL int sc_rationaltag;        /* tag for rational numbers */
-SC_VDECL int rational_digits;       /* number of fractional digits */
-SC_VDECL int sc_allowproccall;      /* allow/detect tagnames in lex() */
-SC_VDECL char* pc_deprecate;        /* if non-NULL, mark next declaration as deprecated */
+SC_VDECL symbol loctab;               /* local symbol table */
+SC_VDECL symbol glbtab;               /* global symbol table */
+SC_VDECL cell* litq;                  /* the literal queue */
+SC_VDECL unsigned char pline[];       /* the line read from the input file */
+SC_VDECL const unsigned char* lptr;   /* points to the current position in "pline" */
+SC_VDECL constvalue tagname_tab;      /* tagname table */
+SC_VDECL constvalue libname_tab;      /* library table (#pragma library "..." syntax) */
+SC_VDECL constvalue* curlibrary;      /* current library */
+SC_VDECL int pc_addlibtable;          /* is the library table added to the AMX file? */
+SC_VDECL symbol* curfunc;             /* pointer to current function */
+SC_VDECL char* inpfname;              /* name of the file currently read from */
+SC_VDECL char outfname[];             /* intermediate (assembler) file name */
+SC_VDECL char binfname[];             /* binary file name */
+SC_VDECL char errfname[];             /* error file name */
+SC_VDECL char sc_ctrlchar;            /* the control character (or escape character) */
+SC_VDECL char sc_ctrlchar_org;        /* the default control character */
+SC_VDECL int litidx;                  /* index to literal table */
+SC_VDECL int litmax;                  /* current size of the literal table */
+SC_VDECL int stgidx;                  /* index to the staging buffer */
+SC_VDECL int sc_labnum;               /* number of (internal) labels */
+SC_VDECL int staging;                 /* true if staging output */
+SC_VDECL cell declared;               /* number of local cells declared */
+SC_VDECL cell glb_declared;           /* number of global cells declared */
+SC_VDECL cell code_idx;               /* number of bytes with generated code */
+SC_VDECL int ntv_funcid;              /* incremental number of native function */
+SC_VDECL int errnum;                  /* number of errors */
+SC_VDECL int warnnum;                 /* number of warnings */
+SC_VDECL int sc_debug;                /* debug/optimization options (bit field) */
+SC_VDECL int sc_packstr;              /* strings are packed by default? */
+SC_VDECL int sc_asmfile;              /* create .ASM file? */
+SC_VDECL int sc_listing;              /* create .LST file? */
+SC_VDECL int sc_compress;             /* compress bytecode? */
+SC_VDECL int sc_needsemicolon;        /* semicolon required to terminate expressions? */
+SC_VDECL int sc_dataalign;            /* data alignment value */
+SC_VDECL int sc_alignnext;            /* must frame of the next function be aligned? */
+SC_VDECL int pc_docexpr;              /* must expression be attached to documentation comment? */
+SC_VDECL int sc_showincludes;         /* show include files? */
+SC_VDECL int curseg;                  /* 1 if currently parsing CODE, 2 if parsing DATA */
+SC_VDECL cell sc_stksize;             /* stack size */
+SC_VDECL cell sc_amxlimit;            /* abstract machine size limit */
+SC_VDECL int freading;                /* is there an input file ready for reading? */
+SC_VDECL int fline;                   /* the line number in the current file */
+SC_VDECL short fnumber;               /* number of files in the input file table */
+SC_VDECL short fcurrent;              /* current file being processed */
+SC_VDECL short sc_intest;             /* true if inside a test */
+SC_VDECL int sideeffect;              /* true if an expression causes a side-effect */
+SC_VDECL int stmtindent;              /* current indent of the statement */
+SC_VDECL int indent_nowarn;           /* skip warning "217 loose indentation" */
+SC_VDECL int sc_tabsize;              /* number of spaces that a TAB represents */
+SC_VDECL short sc_allowtags;          /* allow/detect tagnames in lex() */
+SC_VDECL int sc_status;               /* read/write status */
+SC_VDECL int sc_rationaltag;          /* tag for rational numbers */
+SC_VDECL int rational_digits;         /* number of fractional digits */
+SC_VDECL int sc_allowproccall;        /* allow/detect tagnames in lex() */
+SC_VDECL char* pc_deprecate;          /* if non-NULL, mark next declaration as deprecated */
 SC_VDECL int sc_warnings_are_errors;
-SC_VDECL int sc_stkusageinfo; /* show stack usage info? */
+SC_VDECL int sc_stkusageinfo;         /* show stack usage info? */
 
 SC_VDECL constvalue sc_automaton_tab; /* automaton table */
 SC_VDECL constvalue sc_state_tab;     /* state table */
@@ -837,6 +848,6 @@ SC_VDECL SC_VDEFINE char sLiteralQueueDisabled;
 SC_VDECL int sc_makereport; /* generate a cross-reference report */
     #endif
 
-#endif /* SC_SKIP_VDECL */
+#endif                      /* SC_SKIP_VDECL */
 
-#endif /* SC_H_INCLUDED */
+#endif                      /* SC_H_INCLUDED */

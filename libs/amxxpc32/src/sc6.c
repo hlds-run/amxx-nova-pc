@@ -174,8 +174,8 @@ static uint64_t* align64(uint64_t* v)
         #define aligncell(v) align64(v)
     #endif
 #else
-    #define align16(v) (v)
-    #define align32(v) (v)
+    #define align16(v)   (v)
+    #define align32(v)   (v)
     #define aligncell(v) (v)
 #endif
 
@@ -200,13 +200,13 @@ static char* stripcomment(char* str)
 static void write_encoded(FILE* fbin, const ucell* c, int num)
 {
 #if PAWN_CELL_SIZE == 16
-    #define ENC_MAX 3     /* a 16-bit cell is encoded in max. 3 bytes */
+    #define ENC_MAX  3    /* a 16-bit cell is encoded in max. 3 bytes */
     #define ENC_MASK 0x03 /* after 2x7 bits, 2 bits remain to make 16 bits */
 #elif PAWN_CELL_SIZE == 32
-    #define ENC_MAX 5     /* a 32-bit cell is encoded in max. 5 bytes */
+    #define ENC_MAX  5    /* a 32-bit cell is encoded in max. 5 bytes */
     #define ENC_MASK 0x0f /* after 4x7 bits, 4 bits remain to make 32 bits */
 #elif PAWN_CELL_SIZE == 64
-    #define ENC_MAX 10    /* a 32-bit cell is encoded in max. 10 bytes */
+    #define ENC_MAX  10   /* a 32-bit cell is encoded in max. 10 bytes */
     #define ENC_MASK 0x01 /* after 9x7 bits, 1 bit remains to make 64 bits */
 #endif
 
@@ -258,6 +258,17 @@ static void write_encoded(FILE* fbin, const ucell* c, int num)
 #endif
 static cell noop(FILE* fbin, char* params, cell opcode)
 {
+    return 0;
+}
+
+#if defined __BORLANDC__ || defined __WATCOMC__
+    #pragma argsused
+#endif
+static cell set_currentfile(FILE* fbin, char* params, cell opcode)
+{
+    (void)fbin;
+    (void)opcode;
+    fcurrent = (short)getparam(params, NULL);
     return 0;
 }
 
@@ -397,150 +408,150 @@ static cell do_case(FILE* fbin, char* params, cell opcode)
 
 static OPCODE opcodelist[] = {
     /* node for "invalid instruction" */
-    {0, NULL, 0, noop},
+    {0,   NULL,         0,        noop           },
     /* opcodes in sorted order */
-    {78, "add", sIN_CSEG, parm0},
-    {87, "add.c", sIN_CSEG, parm1},
-    {14, "addr.alt", sIN_CSEG, parm1},
-    {13, "addr.pri", sIN_CSEG, parm1},
-    {30, "align.alt", sIN_CSEG, parm1},
-    {29, "align.pri", sIN_CSEG, parm1},
-    {81, "and", sIN_CSEG, parm0},
-    {121, "bounds", sIN_CSEG, parm1},
-    {137, "break", sIN_CSEG, parm0}, /* version 8 */
-    {49, "call", sIN_CSEG, do_call},
-    {50, "call.pri", sIN_CSEG, parm0},
-    {0, "case", sIN_CSEG, do_case},
-    {130, "casetbl", sIN_CSEG, parm0}, /* version 1 */
-    {118, "cmps", sIN_CSEG, parm1},
-    {0, "code", 0, noop},
-    {12, "const.alt", sIN_CSEG, parm1},
-    {11, "const.pri", sIN_CSEG, parm1},
-    {0, "data", 0, noop},
-    {114, "dec", sIN_CSEG, parm1},
-    {113, "dec.alt", sIN_CSEG, parm0},
-    {116, "dec.i", sIN_CSEG, parm0},
-    {112, "dec.pri", sIN_CSEG, parm0},
-    {115, "dec.s", sIN_CSEG, parm1},
-    {0, "dump", sIN_DSEG, do_dump},
-    {95, "eq", sIN_CSEG, parm0},
-    {106, "eq.c.alt", sIN_CSEG, parm1},
-    {105, "eq.c.pri", sIN_CSEG, parm1},
+    {78,  "add",        sIN_CSEG, parm0          },
+    {87,  "add.c",      sIN_CSEG, parm1          },
+    {14,  "addr.alt",   sIN_CSEG, parm1          },
+    {13,  "addr.pri",   sIN_CSEG, parm1          },
+    {30,  "align.alt",  sIN_CSEG, parm1          },
+    {29,  "align.pri",  sIN_CSEG, parm1          },
+    {81,  "and",        sIN_CSEG, parm0          },
+    {121, "bounds",     sIN_CSEG, parm1          },
+    {137, "break",      sIN_CSEG, parm0          }, /* version 8 */
+    {49,  "call",       sIN_CSEG, do_call        },
+    {50,  "call.pri",   sIN_CSEG, parm0          },
+    {0,   "case",       sIN_CSEG, do_case        },
+    {130, "casetbl",    sIN_CSEG, parm0          }, /* version 1 */
+    {118, "cmps",       sIN_CSEG, parm1          },
+    {0,   "code",       sIN_CSEG, set_currentfile},
+    {12,  "const.alt",  sIN_CSEG, parm1          },
+    {11,  "const.pri",  sIN_CSEG, parm1          },
+    {0,   "data",       sIN_CSEG, set_currentfile},
+    {114, "dec",        sIN_CSEG, parm1          },
+    {113, "dec.alt",    sIN_CSEG, parm0          },
+    {116, "dec.i",      sIN_CSEG, parm0          },
+    {112, "dec.pri",    sIN_CSEG, parm0          },
+    {115, "dec.s",      sIN_CSEG, parm1          },
+    {0,   "dump",       sIN_DSEG, do_dump        },
+    {95,  "eq",         sIN_CSEG, parm0          },
+    {106, "eq.c.alt",   sIN_CSEG, parm1          },
+    {105, "eq.c.pri",   sIN_CSEG, parm1          },
     /*{124, "file",       sIN_CSEG, do_file }, */
-    {119, "fill", sIN_CSEG, parm1},
-    {100, "geq", sIN_CSEG, parm0},
-    {99, "grtr", sIN_CSEG, parm0},
-    {120, "halt", sIN_CSEG, parm1},
-    {45, "heap", sIN_CSEG, parm1},
-    {27, "idxaddr", sIN_CSEG, parm0},
-    {28, "idxaddr.b", sIN_CSEG, parm1},
-    {109, "inc", sIN_CSEG, parm1},
-    {108, "inc.alt", sIN_CSEG, parm0},
-    {111, "inc.i", sIN_CSEG, parm0},
-    {107, "inc.pri", sIN_CSEG, parm0},
-    {110, "inc.s", sIN_CSEG, parm1},
-    {86, "invert", sIN_CSEG, parm0},
-    {55, "jeq", sIN_CSEG, do_jump},
-    {60, "jgeq", sIN_CSEG, do_jump},
-    {59, "jgrtr", sIN_CSEG, do_jump},
-    {58, "jleq", sIN_CSEG, do_jump},
-    {57, "jless", sIN_CSEG, do_jump},
-    {56, "jneq", sIN_CSEG, do_jump},
-    {54, "jnz", sIN_CSEG, do_jump},
-    {52, "jrel", sIN_CSEG, parm1}, /* always a number */
-    {64, "jsgeq", sIN_CSEG, do_jump},
-    {63, "jsgrtr", sIN_CSEG, do_jump},
-    {62, "jsleq", sIN_CSEG, do_jump},
-    {61, "jsless", sIN_CSEG, do_jump},
-    {51, "jump", sIN_CSEG, do_jump},
-    {128, "jump.pri", sIN_CSEG, parm0}, /* version 1 */
-    {53, "jzer", sIN_CSEG, do_jump},
-    {31, "lctrl", sIN_CSEG, parm1},
-    {98, "leq", sIN_CSEG, parm0},
-    {97, "less", sIN_CSEG, parm0},
-    {25, "lidx", sIN_CSEG, parm0},
-    {26, "lidx.b", sIN_CSEG, parm1},
+    {119, "fill",       sIN_CSEG, parm1          },
+    {100, "geq",        sIN_CSEG, parm0          },
+    {99,  "grtr",       sIN_CSEG, parm0          },
+    {120, "halt",       sIN_CSEG, parm1          },
+    {45,  "heap",       sIN_CSEG, parm1          },
+    {27,  "idxaddr",    sIN_CSEG, parm0          },
+    {28,  "idxaddr.b",  sIN_CSEG, parm1          },
+    {109, "inc",        sIN_CSEG, parm1          },
+    {108, "inc.alt",    sIN_CSEG, parm0          },
+    {111, "inc.i",      sIN_CSEG, parm0          },
+    {107, "inc.pri",    sIN_CSEG, parm0          },
+    {110, "inc.s",      sIN_CSEG, parm1          },
+    {86,  "invert",     sIN_CSEG, parm0          },
+    {55,  "jeq",        sIN_CSEG, do_jump        },
+    {60,  "jgeq",       sIN_CSEG, do_jump        },
+    {59,  "jgrtr",      sIN_CSEG, do_jump        },
+    {58,  "jleq",       sIN_CSEG, do_jump        },
+    {57,  "jless",      sIN_CSEG, do_jump        },
+    {56,  "jneq",       sIN_CSEG, do_jump        },
+    {54,  "jnz",        sIN_CSEG, do_jump        },
+    {52,  "jrel",       sIN_CSEG, parm1          }, /* always a number */
+    {64,  "jsgeq",      sIN_CSEG, do_jump        },
+    {63,  "jsgrtr",     sIN_CSEG, do_jump        },
+    {62,  "jsleq",      sIN_CSEG, do_jump        },
+    {61,  "jsless",     sIN_CSEG, do_jump        },
+    {51,  "jump",       sIN_CSEG, do_jump        },
+    {128, "jump.pri",   sIN_CSEG, parm0          }, /* version 1 */
+    {53,  "jzer",       sIN_CSEG, do_jump        },
+    {31,  "lctrl",      sIN_CSEG, parm1          },
+    {98,  "leq",        sIN_CSEG, parm0          },
+    {97,  "less",       sIN_CSEG, parm0          },
+    {25,  "lidx",       sIN_CSEG, parm0          },
+    {26,  "lidx.b",     sIN_CSEG, parm1          },
     /*{125, "line",       sIN_CSEG, parm2 }, */
-    {2, "load.alt", sIN_CSEG, parm1},
-    {9, "load.i", sIN_CSEG, parm0},
-    {1, "load.pri", sIN_CSEG, parm1},
-    {4, "load.s.alt", sIN_CSEG, parm1},
-    {3, "load.s.pri", sIN_CSEG, parm1},
-    {10, "lodb.i", sIN_CSEG, parm1},
-    {6, "lref.alt", sIN_CSEG, parm1},
-    {5, "lref.pri", sIN_CSEG, parm1},
-    {8, "lref.s.alt", sIN_CSEG, parm1},
-    {7, "lref.s.pri", sIN_CSEG, parm1},
-    {34, "move.alt", sIN_CSEG, parm0},
-    {33, "move.pri", sIN_CSEG, parm0},
-    {117, "movs", sIN_CSEG, parm1},
-    {85, "neg", sIN_CSEG, parm0},
-    {96, "neq", sIN_CSEG, parm0},
-    {134, "nop", sIN_CSEG, parm0}, /* version 6 */
-    {84, "not", sIN_CSEG, parm0},
-    {82, "or", sIN_CSEG, parm0},
-    {43, "pop.alt", sIN_CSEG, parm0},
-    {42, "pop.pri", sIN_CSEG, parm0},
-    {46, "proc", sIN_CSEG, parm0},
-    {40, "push", sIN_CSEG, parm1},
-    {37, "push.alt", sIN_CSEG, parm0},
-    {39, "push.c", sIN_CSEG, parm1},
-    {36, "push.pri", sIN_CSEG, parm0},
-    {38, "push.r", sIN_CSEG, parm1},
-    {41, "push.s", sIN_CSEG, parm1},
-    {133, "pushaddr", sIN_CSEG, parm1}, /* version 4 */
-    {47, "ret", sIN_CSEG, parm0},
-    {48, "retn", sIN_CSEG, parm0},
-    {32, "sctrl", sIN_CSEG, parm1},
-    {73, "sdiv", sIN_CSEG, parm0},
-    {74, "sdiv.alt", sIN_CSEG, parm0},
-    {104, "sgeq", sIN_CSEG, parm0},
-    {103, "sgrtr", sIN_CSEG, parm0},
-    {65, "shl", sIN_CSEG, parm0},
-    {69, "shl.c.alt", sIN_CSEG, parm1},
-    {68, "shl.c.pri", sIN_CSEG, parm1},
-    {66, "shr", sIN_CSEG, parm0},
-    {71, "shr.c.alt", sIN_CSEG, parm1},
-    {70, "shr.c.pri", sIN_CSEG, parm1},
-    {94, "sign.alt", sIN_CSEG, parm0},
-    {93, "sign.pri", sIN_CSEG, parm0},
-    {102, "sleq", sIN_CSEG, parm0},
-    {101, "sless", sIN_CSEG, parm0},
-    {72, "smul", sIN_CSEG, parm0},
-    {88, "smul.c", sIN_CSEG, parm1},
+    {2,   "load.alt",   sIN_CSEG, parm1          },
+    {9,   "load.i",     sIN_CSEG, parm0          },
+    {1,   "load.pri",   sIN_CSEG, parm1          },
+    {4,   "load.s.alt", sIN_CSEG, parm1          },
+    {3,   "load.s.pri", sIN_CSEG, parm1          },
+    {10,  "lodb.i",     sIN_CSEG, parm1          },
+    {6,   "lref.alt",   sIN_CSEG, parm1          },
+    {5,   "lref.pri",   sIN_CSEG, parm1          },
+    {8,   "lref.s.alt", sIN_CSEG, parm1          },
+    {7,   "lref.s.pri", sIN_CSEG, parm1          },
+    {34,  "move.alt",   sIN_CSEG, parm0          },
+    {33,  "move.pri",   sIN_CSEG, parm0          },
+    {117, "movs",       sIN_CSEG, parm1          },
+    {85,  "neg",        sIN_CSEG, parm0          },
+    {96,  "neq",        sIN_CSEG, parm0          },
+    {134, "nop",        sIN_CSEG, parm0          }, /* version 6 */
+    {84,  "not",        sIN_CSEG, parm0          },
+    {82,  "or",         sIN_CSEG, parm0          },
+    {43,  "pop.alt",    sIN_CSEG, parm0          },
+    {42,  "pop.pri",    sIN_CSEG, parm0          },
+    {46,  "proc",       sIN_CSEG, parm0          },
+    {40,  "push",       sIN_CSEG, parm1          },
+    {37,  "push.alt",   sIN_CSEG, parm0          },
+    {39,  "push.c",     sIN_CSEG, parm1          },
+    {36,  "push.pri",   sIN_CSEG, parm0          },
+    {38,  "push.r",     sIN_CSEG, parm1          },
+    {41,  "push.s",     sIN_CSEG, parm1          },
+    {133, "pushaddr",   sIN_CSEG, parm1          }, /* version 4 */
+    {47,  "ret",        sIN_CSEG, parm0          },
+    {48,  "retn",       sIN_CSEG, parm0          },
+    {32,  "sctrl",      sIN_CSEG, parm1          },
+    {73,  "sdiv",       sIN_CSEG, parm0          },
+    {74,  "sdiv.alt",   sIN_CSEG, parm0          },
+    {104, "sgeq",       sIN_CSEG, parm0          },
+    {103, "sgrtr",      sIN_CSEG, parm0          },
+    {65,  "shl",        sIN_CSEG, parm0          },
+    {69,  "shl.c.alt",  sIN_CSEG, parm1          },
+    {68,  "shl.c.pri",  sIN_CSEG, parm1          },
+    {66,  "shr",        sIN_CSEG, parm0          },
+    {71,  "shr.c.alt",  sIN_CSEG, parm1          },
+    {70,  "shr.c.pri",  sIN_CSEG, parm1          },
+    {94,  "sign.alt",   sIN_CSEG, parm0          },
+    {93,  "sign.pri",   sIN_CSEG, parm0          },
+    {102, "sleq",       sIN_CSEG, parm0          },
+    {101, "sless",      sIN_CSEG, parm0          },
+    {72,  "smul",       sIN_CSEG, parm0          },
+    {88,  "smul.c",     sIN_CSEG, parm1          },
     /*{127, "srange",     sIN_CSEG, parm2 }, -- version 1 */
-    {20, "sref.alt", sIN_CSEG, parm1},
-    {19, "sref.pri", sIN_CSEG, parm1},
-    {22, "sref.s.alt", sIN_CSEG, parm1},
-    {21, "sref.s.pri", sIN_CSEG, parm1},
-    {67, "sshr", sIN_CSEG, parm0},
-    {44, "stack", sIN_CSEG, parm1},
-    {0, "stksize", 0, noop},
-    {16, "stor.alt", sIN_CSEG, parm1},
-    {23, "stor.i", sIN_CSEG, parm0},
-    {15, "stor.pri", sIN_CSEG, parm1},
-    {18, "stor.s.alt", sIN_CSEG, parm1},
-    {17, "stor.s.pri", sIN_CSEG, parm1},
-    {24, "strb.i", sIN_CSEG, parm1},
-    {79, "sub", sIN_CSEG, parm0},
-    {80, "sub.alt", sIN_CSEG, parm0},
-    {132, "swap.alt", sIN_CSEG, parm0},   /* version 4 */
-    {131, "swap.pri", sIN_CSEG, parm0},   /* version 4 */
-    {129, "switch", sIN_CSEG, do_switch}, /* version 1 */
+    {20,  "sref.alt",   sIN_CSEG, parm1          },
+    {19,  "sref.pri",   sIN_CSEG, parm1          },
+    {22,  "sref.s.alt", sIN_CSEG, parm1          },
+    {21,  "sref.s.pri", sIN_CSEG, parm1          },
+    {67,  "sshr",       sIN_CSEG, parm0          },
+    {44,  "stack",      sIN_CSEG, parm1          },
+    {0,   "stksize",    0,        noop           },
+    {16,  "stor.alt",   sIN_CSEG, parm1          },
+    {23,  "stor.i",     sIN_CSEG, parm0          },
+    {15,  "stor.pri",   sIN_CSEG, parm1          },
+    {18,  "stor.s.alt", sIN_CSEG, parm1          },
+    {17,  "stor.s.pri", sIN_CSEG, parm1          },
+    {24,  "strb.i",     sIN_CSEG, parm1          },
+    {79,  "sub",        sIN_CSEG, parm0          },
+    {80,  "sub.alt",    sIN_CSEG, parm0          },
+    {132, "swap.alt",   sIN_CSEG, parm0          }, /* version 4 */
+    {131, "swap.pri",   sIN_CSEG, parm0          }, /* version 4 */
+    {129, "switch",     sIN_CSEG, do_switch      }, /* version 1 */
                                           /*{126, "symbol",     sIN_CSEG, do_symbol }, */
                                           /*{136, "symtag",     sIN_CSEG, parm1 },  -- version 7 */
-    {123, "sysreq.c", sIN_CSEG, parm1},
-    {135, "sysreq.d", sIN_CSEG, parm1}, /* version 7, not generated directly */
-    {122, "sysreq.pri", sIN_CSEG, parm0},
-    {76, "udiv", sIN_CSEG, parm0},
-    {77, "udiv.alt", sIN_CSEG, parm0},
-    {75, "umul", sIN_CSEG, parm0},
-    {35, "xchg", sIN_CSEG, parm0},
-    {83, "xor", sIN_CSEG, parm0},
-    {91, "zero", sIN_CSEG, parm1},
-    {90, "zero.alt", sIN_CSEG, parm0},
-    {89, "zero.pri", sIN_CSEG, parm0},
-    {92, "zero.s", sIN_CSEG, parm1},
+    {123, "sysreq.c",   sIN_CSEG, parm1          },
+    {135, "sysreq.d",   sIN_CSEG, parm1          }, /* version 7, not generated directly */
+    {122, "sysreq.pri", sIN_CSEG, parm0          },
+    {76,  "udiv",       sIN_CSEG, parm0          },
+    {77,  "udiv.alt",   sIN_CSEG, parm0          },
+    {75,  "umul",       sIN_CSEG, parm0          },
+    {35,  "xchg",       sIN_CSEG, parm0          },
+    {83,  "xor",        sIN_CSEG, parm0          },
+    {91,  "zero",       sIN_CSEG, parm1          },
+    {90,  "zero.alt",   sIN_CSEG, parm0          },
+    {89,  "zero.pri",   sIN_CSEG, parm0          },
+    {92,  "zero.s",     sIN_CSEG, parm1          },
 };
 
 #define MAX_INSTR_LEN 30
@@ -575,7 +586,7 @@ static int findopcode(const char* instr, const int maxlen)
     if (stricmp(str, opcodelist[low].name) == 0) {
         return low; /* found */
     }
-    return 0; /* not found, return special index */
+    return 0;       /* not found, return special index */
 }
 
 SC_FUNC int assemble(FILE* fout, FILE* fin)
@@ -596,14 +607,12 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
     constvalue* constptr;
     cell mainaddr;
 
-    fcurrent = -1;
-
     /* if compression failed, restart the assembly with compaction switched off */
     if (setjmp(compact_err) != 0) {
         assert(sc_compress); /* cannot arrive here if compact encoding was disabled */
         sc_compress = FALSE;
         pc_resetbin(fout, 0);
-        error(232); /* disabled compact encoding */
+        error(232);          /* disabled compact encoding */
     } /* if */
 
 #if !defined NDEBUG
@@ -755,7 +764,7 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
     if (numnatives > 0) {
         nativelist = (symbol**)malloc(numnatives * sizeof(symbol*));
         if (nativelist == NULL) {
-            error(103); /* insufficient memory */
+            error(103);                                      /* insufficient memory */
         }
 #if !defined NDEBUG
         memset(nativelist, 0, numnatives * sizeof(symbol*)); /* for NULL checking */
@@ -953,7 +962,7 @@ SC_FUNC int assemble(FILE* fout, FILE* fin)
         hdr.size = pc_lengthbin(fout); /* get this value before appending debug info */
     }
     if (!writeerror && (sc_debug & sSYMBOLIC) != 0) {
-        append_dbginfo(fout); /* optionally append debug file */
+        append_dbginfo(fout);          /* optionally append debug file */
     }
 
     if (writeerror) {

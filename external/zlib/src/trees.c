@@ -47,13 +47,13 @@
 #define MAX_BL_BITS 7
 /* Bit length codes must not exceed MAX_BL_BITS bits */
 
-#define END_BLOCK 256
+#define END_BLOCK   256
 /* end of block literal code */
 
-#define REP_3_6 16
+#define REP_3_6     16
 /* repeat previous bit length 3-6 times (2 bits of repeat count) */
 
-#define REPZ_3_10 17
+#define REPZ_3_10   17
 /* repeat a zero length 3-10 times  (3 bits of repeat count) */
 
 #define REPZ_11_138 18
@@ -62,10 +62,10 @@
 local const int extra_lbits[LENGTH_CODES] /* extra bits for each length code */
     = {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0};
 
-local const int extra_dbits[D_CODES] /* extra bits for each distance code */
+local const int extra_dbits[D_CODES]      /* extra bits for each distance code */
     = {0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13};
 
-local const int extra_blbits[BL_CODES] /* extra bits for each bit length code */
+local const int extra_blbits[BL_CODES]    /* extra bits for each bit length code */
     = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 7};
 
 local const uch bl_order[BL_CODES] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
@@ -111,7 +111,7 @@ local int base_dist[D_CODES];
 
 #else
     #include "trees.h"
-#endif /* GEN_TREES_H */
+#endif                          /* GEN_TREES_H */
 
 struct static_tree_desc_s {
     const ct_data* static_tree; /* static tree or NULL */
@@ -718,10 +718,10 @@ local void build_tree(deflate_state* s, tree_desc* desc)
     /* Construct the Huffman tree by repeatedly combining the least two
      * frequent nodes.
      */
-    node = elems; /* next internal node of the tree */
+    node = elems;                     /* next internal node of the tree */
     do {
-        pqremove(s, tree, n);  /* n = node of least frequency */
-        m = s->heap[SMALLEST]; /* m = node of next least frequency */
+        pqremove(s, tree, n);         /* n = node of least frequency */
+        m = s->heap[SMALLEST];        /* m = node of next least frequency */
 
         s->heap[--(s->heap_max)] = n; /* keep the nodes sorted by frequency */
         s->heap[--(s->heap_max)] = m;
@@ -813,13 +813,13 @@ local void scan_tree(deflate_state* s, ct_data* tree, int max_code)
  */
 local void send_tree(deflate_state* s, ct_data* tree, int max_code)
 {
-    int n;                     /* iterates over all tree elements */
-    int prevlen = -1;          /* last emitted length */
-    int curlen;                /* length of current code */
-    int nextlen = tree[0].Len; /* length of next code */
-    int count = 0;             /* repeat count of the current code */
-    int max_count = 7;         /* max repeat count */
-    int min_count = 4;         /* min repeat count */
+    int n;                             /* iterates over all tree elements */
+    int prevlen = -1;                  /* last emitted length */
+    int curlen;                        /* length of current code */
+    int nextlen = tree[0].Len;         /* length of next code */
+    int count = 0;                     /* repeat count of the current code */
+    int max_count = 7;                 /* max repeat count */
+    int min_count = 4;                 /* min repeat count */
 
     /* tree[max_code + 1].Len = -1; */ /* guard already set */
     if (nextlen == 0) {
@@ -917,7 +917,7 @@ local void send_all_trees(deflate_state* s, int lcodes, int dcodes, int blcodes)
     Tracev((stderr, "\nbl counts: "));
     send_bits(s, lcodes - 257, 5); /* not +255 as stated in appnote.txt */
     send_bits(s, dcodes - 1, 5);
-    send_bits(s, blcodes - 4, 4); /* not -3 as stated in appnote.txt */
+    send_bits(s, blcodes - 4, 4);  /* not -3 as stated in appnote.txt */
     for (rank = 0; rank < blcodes; rank++) {
         Tracev((stderr, "\nbl code %2d ", bl_order[rank]));
         send_bits(s, s->bl_tree[bl_order[rank]].Len, 3);
@@ -1008,7 +1008,7 @@ local void compress_block(deflate_state* s, const ct_data* ltree, const ct_data*
                     lc -= base_length[code];
                     send_bits(s, lc, extra); /* send the extra length bits */
                 }
-                dist--; /* dist is now the match distance - 1 */
+                dist--;                      /* dist is now the match distance - 1 */
                 code = d_code(dist);
                 Assert(code < D_CODES, "bad d_code");
 
@@ -1089,7 +1089,6 @@ void ZLIB_INTERNAL _tr_flush_block(deflate_state* s, charf* buf, ulg stored_len,
 
     /* Build the Huffman trees unless a stored block is forced */
     if (s->level > 0) {
-
         /* Check if the file is binary or text */
         if (s->strm->data_type == Z_UNKNOWN) {
             s->strm->data_type = detect_data_type(s);

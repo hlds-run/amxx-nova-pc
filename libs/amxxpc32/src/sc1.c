@@ -50,11 +50,11 @@
 static unsigned total_drives; /* dummy variable */
     #define dos_setdrive(i) _dos_setdrive(i, &total_drives)
 #elif defined _MSC_VER && defined _WIN32
-    #include <direct.h> /* for _chdrive() */
+    #include <direct.h>       /* for _chdrive() */
     #define dos_setdrive(i) _chdrive(i)
 #endif
 #if defined __BORLANDC__
-    #include <dir.h> /* for chdir() */
+    #include <dir.h>    /* for chdir() */
 #elif defined __WATCOMC__
     #include <direct.h> /* for chdir() */
 #endif
@@ -65,7 +65,6 @@ static unsigned total_drives; /* dummy variable */
 #include <time.h>
 
 #include "sc.h"
-#include "sp_symhash.h"
 
 #define VERSION_STR "3.0.3367-amxx"
 #define VERSION_INT 0x30A
@@ -75,7 +74,7 @@ int pc_anytag;
 static void resetglobals(void);
 static void initglobals(void);
 static void setopt(int argc, char** argv, char* oname, char* ename, char* pname, char* rname, char* codepage);
-static void setconfig(char* root);
+static void setconfig(const char* root);
 static void setcaption(void);
 static void about(void);
 static void setconstants(void);
@@ -129,25 +128,74 @@ static int* readwhile(void);
 static void inst_datetime_defines(void);
 static void inst_binary_name(char* binfname);
 
-static int lastst = 0;         /* last executed statement type */
-static int nestlevel = 0;      /* number of active (open) compound statements */
-static int rettype = 0;        /* the type that a "return" expression should have */
-static int skipinput = 0;      /* number of lines to skip from the first input file */
-static int optproccall = TRUE; /* support "procedure call" */
-static int verbosity = 1;      /* verbosity level, 0=quiet, 1=normal, 2=verbose */
-static int sc_reparse = 0;     /* needs 3th parse because of changed prototypes? */
-static int sc_parsenum = 0;    /* number of the extra parses */
-static int wq[wqTABSZ];        /* "while queue", internal stack for nested loops */
-static int* wqptr;             /* pointer to next entry */
+static int lastst = 0;                /* last executed statement type */
+static int nestlevel = 0;             /* number of active (open) compound statements */
+static int rettype = 0;               /* the type that a "return" expression should have */
+static int skipinput = 0;             /* number of lines to skip from the first input file */
+static int optproccall = TRUE;        /* support "procedure call" */
+static int verbosity = 1;             /* verbosity level, 0=quiet, 1=normal, 2=verbose */
+static int sc_reparse = 0;            /* needs 3th parse because of changed prototypes? */
+static int sc_parsenum = 0;           /* number of the extra parses */
+static int wq[wqTABSZ];               /* "while queue", internal stack for nested loops */
+static int* wqptr;                    /* pointer to next entry */
 #if !defined SC_LIGHT
+static char sc_rootpath[_MAX_PATH];   /* base path of the installation */
+static char sc_binpath[_MAX_PATH];    /* path for the binaries, often sc_rootpath + /bin */
 static char* sc_documentation = NULL; /* main documentation */
 #endif
 #if defined __WIN32__ || defined _WIN32 || defined _Windows
 static HWND hwndFinish = 0;
 #endif
 
-#if !defined NO_MAIN
+typedef struct s_cli_define {
+    char* name;
+    char* value;
+    struct s_cli_define* next;
+} cli_define;
 
+static cli_define* cli_defines_list = NULL;
+
+static void add_cli_define(const char* name, const char* value)
+{
+    cli_define* def = malloc(sizeof(cli_define));
+    if (def == NULL) {
+        error(103); /* insufficient memory */
+    }
+    def->name = strdup(name);
+    if (def->name == NULL) {
+        error(103);
+    }
+    def->value = strdup(value);
+    if (def->value == NULL) {
+        error(103);
+    }
+    def->next = cli_defines_list;
+    cli_defines_list = def;
+}
+
+static void delete_cli_defines(void)
+{
+    cli_define* def = cli_defines_list;
+    while (def != NULL) {
+        cli_define* next = def->next;
+        free(def->name);
+        free(def->value);
+        free(def);
+        def = next;
+    }
+    cli_defines_list = NULL;
+}
+
+static void inst_cli_defines(void)
+{
+    const cli_define* def = cli_defines_list;
+    while (def != NULL) {
+        insert_subst(def->name, def->value, (int)strlen(def->name));
+        def = def->next;
+    }
+}
+
+#if !defined NO_MAIN
     #if defined __TURBOC__ && !defined __32BIT__
 extern unsigned int _stklen = 0x2000;
     #endif
@@ -414,7 +462,6 @@ void inst_file_name(char* file, const int strip_path)
     char* fileptr = NULL;
 
     if (strip_path) {
-
         const size_t len = strlen(file);
         for (size_t i = len - 1; i < len; i--) {
             int slashchar = file[i] == '/';
@@ -496,11 +543,6 @@ extern "C"
         goto cleanup;
     }
 
-    sp_Globals = NewHashTable();
-    if (!sp_Globals) {
-        error(123);
-    }
-
     /* allocate memory for fixed tables */
     inpfname = (char*)malloc(_MAX_PATH);
     if (inpfname == NULL) {
@@ -508,12 +550,13 @@ extern "C"
     }
     litq = (cell*)malloc(litmax * sizeof(cell));
     if (litq == NULL) {
-        error(103); /* insufficient memory */
+        error(103);     /* insufficient memory */
     }
     if (!phopt_init()) {
-        error(103); /* insufficient memory */
+        error(103);     /* insufficient memory */
     }
 
+    setconfig(argv[0]); /* the path to the include and codepage files, plus the root path */
     setopt(argc, argv, outfname, errfname, incfname, reportname, codepage);
     /* set output names that depend on the input name */
     if (sc_listing) {
@@ -522,7 +565,7 @@ extern "C"
     else {
         set_extension(outfname, ".asm", TRUE);
     }
-    strcpy(binfname, outfname);
+    snprintf(binfname, _MAX_PATH, "%s", outfname);
     set_extension(binfname, ".amx", TRUE);
     if (strlen(errfname) != 0) {
         remove(errfname); /* delete file on startup */
@@ -530,7 +573,7 @@ extern "C"
     else if (verbosity > 0) {
         setcaption();
     }
-    setconfig(argv[0]); /* the path to the include and codepage files */
+
     sc_ctrlchar_org = sc_ctrlchar;
     lcl_packstr = sc_packstr;
     lcl_needsemicolon = sc_needsemicolon;
@@ -607,7 +650,7 @@ extern "C"
     setconstants();                       /* set predefined constants and tagnames */
     for (int i = 0; i < skipinput; i++) { /* skip lines in the input file */
         if (pc_readsrc(inpf_org, pline, sLINEMAX) != NULL) {
-            fline++; /* keep line number up to date */
+            fline++;                      /* keep line number up to date */
         }
     }
     skipinput = fline;
@@ -637,6 +680,7 @@ extern "C"
         inst_datetime_defines();
         inst_binary_name(binfname);
         inst_file_name(inpfname, TRUE);
+        inst_cli_defines();
 #endif
         resetglobals();
         sc_ctrlchar = sc_ctrlchar_org;
@@ -647,13 +691,13 @@ extern "C"
         /* reset the source file */
         inpf = inpf_org;
         freading = TRUE;
-        pc_resetsrc(inpf, inpfmark); /* reset file position */
-        fline = skipinput;           /* reset line number */
-        sc_reparse = FALSE;          /* assume no extra passes */
-        sc_status = statFIRST;       /* resetglobals() resets it to IDLE */
+        pc_resetsrc(inpf, inpfmark);                  /* reset file position */
+        fline = skipinput;                            /* reset line number */
+        sc_reparse = FALSE;                           /* assume no extra passes */
+        sc_status = statFIRST;                        /* resetglobals() resets it to IDLE */
         if (strlen(incfname) > 0) {
             if (strcmp(incfname, sDEF_PREFIX) == 0) {
-                plungefile(incfname, FALSE, TRUE); /* parse "default.inc" */
+                plungefile(incfname, FALSE, TRUE);    /* parse "default.inc" */
             }
             else {
                 if (!plungequalifiedfile(incfname)) { /* parse "prefix" include file */
@@ -709,6 +753,7 @@ extern "C"
     inst_datetime_defines();
     inst_binary_name(binfname);
     inst_file_name(inpfname, TRUE);
+    inst_cli_defines();
 #endif
     resetglobals();
     sc_ctrlchar = sc_ctrlchar_org;
@@ -719,30 +764,30 @@ extern "C"
     /* reset the source file */
     inpf = inpf_org;
     freading = TRUE;
-    pc_resetsrc(inpf, inpfmark); /* reset file position */
-    fline = skipinput;           /* reset line number */
-    lexinit();                   /* clear internal flags of lex() */
-    sc_status = statWRITE;       /* allow to write --this variable was reset by resetglobals() */
+    pc_resetsrc(inpf, inpfmark);               /* reset file position */
+    fline = skipinput;                         /* reset line number */
+    lexinit();                                 /* clear internal flags of lex() */
+    sc_status = statWRITE;                     /* allow to write --this variable was reset by resetglobals() */
     writeleader(&glbtab);
-    insert_dbgfile(inpfname);   /* attach to debug information */
-    insert_inputfile(inpfname); /* save for the error system */
+    insert_dbgfile(inpfname);                  /* attach to debug information */
+    insert_inputfile(inpfname);                /* save for the error system */
     if (strlen(incfname) > 0) {
         if (strcmp(incfname, sDEF_PREFIX) == 0) {
             plungefile(incfname, FALSE, TRUE); /* parse "default.inc" (again) */
         }
         else {
-            plungequalifiedfile(incfname); /* parse implicit include file (again) */
+            plungequalifiedfile(incfname);     /* parse implicit include file (again) */
         }
     } /* if */
     preprocess(); /* fetch first line */
     parse();      /* process all input */
     /* inpf is already closed when readline() attempts to pop of a file */
-    writetrailer(); /* write remaining stuff */
+    writetrailer();                               /* write remaining stuff */
 
     entry = testsymbols(&glbtab, 0, TRUE, FALSE); /* test for unused or undefined
                                                    * functions and variables */
     if (!entry) {
-        error(13); /* no entry point (no public functions) */
+        error(13);                                /* no entry point (no public functions) */
     }
 
 cleanup:
@@ -847,7 +892,6 @@ cleanup:
     delete_symbols(&loctab, 0, TRUE, TRUE);      /* delete local variables if not yet
                                                   * done (i.e. on a fatal error) */
     delete_symbols(&glbtab, 0, TRUE, TRUE);
-    DestroyHashTable(sp_Globals);
     delete_consttable(&tagname_tab);
     delete_consttable(&libname_tab);
     delete_consttable(&sc_automaton_tab);
@@ -860,6 +904,7 @@ cleanup:
     delete_dbgstringtable();
 #if !defined NO_DEFINE
     delete_substtable();
+    delete_cli_defines();
 #endif
 #if !defined SC_LIGHT
     delete_docstringtable();
@@ -989,51 +1034,51 @@ static void initglobals(void)
 {
     resetglobals();
 
-    sc_asmfile = FALSE;      /* do not create .ASM file */
-    sc_listing = FALSE;      /* do not create .LST file */
-    skipinput = 0;           /* number of lines to skip from the first input file */
-    sc_ctrlchar = CTRL_CHAR; /* the escape character */
-    litmax = sDEF_LITMAX;    /* current size of the literal table */
-    errnum = 0;              /* number of errors */
-    warnnum = 0;             /* number of warnings */
-    optproccall = TRUE;      /* support "procedure call" */
+    sc_asmfile = FALSE;                /* do not create .ASM file */
+    sc_listing = FALSE;                /* do not create .LST file */
+    skipinput = 0;                     /* number of lines to skip from the first input file */
+    sc_ctrlchar = CTRL_CHAR;           /* the escape character */
+    litmax = sDEF_LITMAX;              /* current size of the literal table */
+    errnum = 0;                        /* number of errors */
+    warnnum = 0;                       /* number of warnings */
+    optproccall = TRUE;                /* support "procedure call" */
 #if PAWN_CELL_SIZE == 32
-    verbosity = 1; /* verbosity level, no copyright banner */
+    verbosity = 1;                     /* verbosity level, no copyright banner */
 #else
     verbosity = 0;
 #endif
     sc_debug = sCHKBOUNDS | sSYMBOLIC; /* by default: bounds checking+assertions */
     sc_packstr = FALSE;                /* strings are unpacked by default */
     sc_compress = FALSE;
-    sc_needsemicolon = FALSE; /* semicolon required to terminate expressions? */
+    sc_needsemicolon = FALSE;          /* semicolon required to terminate expressions? */
     sc_dataalign = sizeof(cell);
-    sc_stksize = sDEF_AMXSTACK; /* default stack size */
-    sc_amxlimit = 0;            /* no limit on size of the abstract machine */
-    sc_tabsize = 8;             /* assume a TAB is 8 spaces */
-    sc_rationaltag = 0;         /* assume no support for rational numbers */
-    rational_digits = 0;        /* number of fractional digits */
+    sc_stksize = sDEF_AMXSTACK;        /* default stack size */
+    sc_amxlimit = 0;                   /* no limit on size of the abstract machine */
+    sc_tabsize = 8;                    /* assume a TAB is 8 spaces */
+    sc_rationaltag = 0;                /* assume no support for rational numbers */
+    rational_digits = 0;               /* number of fractional digits */
 
-    outfname[0] = '\0';      /* output file name */
-    errfname[0] = '\0';      /* error file name */
-    inpf = NULL;             /* file read from */
-    inpfname = NULL;         /* pointer to name of the file currently read from */
-    outf = NULL;             /* file written to */
-    litq = NULL;             /* the literal queue */
-    glbtab.next = NULL;      /* clear global variables/constants table */
-    loctab.next = NULL;      /*   "   local      "    /    "       "   */
-    tagname_tab.next = NULL; /* tagname table */
-    libname_tab.next = NULL; /* library table (#pragma library "..." syntax) */
+    outfname[0] = '\0';                /* output file name */
+    errfname[0] = '\0';                /* error file name */
+    inpf = NULL;                       /* file read from */
+    inpfname = NULL;                   /* pointer to name of the file currently read from */
+    outf = NULL;                       /* file written to */
+    litq = NULL;                       /* the literal queue */
+    glbtab.next = NULL;                /* clear global variables/constants table */
+    loctab.next = NULL;                /*   "   local      "    /    "       "   */
+    tagname_tab.next = NULL;           /* tagname table */
+    libname_tab.next = NULL;           /* library table (#pragma library "..." syntax) */
 
-    pline[0] = '\0';   /* the line read from the input file */
-    lptr = NULL;       /* points to the current position in "pline" */
-    curlibrary = NULL; /* current library */
-    inpf_org = NULL;   /* main source file */
+    pline[0] = '\0';                   /* the line read from the input file */
+    lptr = NULL;                       /* points to the current position in "pline" */
+    curlibrary = NULL;                 /* current library */
+    inpf_org = NULL;                   /* main source file */
 
-    wqptr = wq; /* initialize while queue pointer */
+    wqptr = wq;                        /* initialize while queue pointer */
 
 #if !defined SC_LIGHT
     sc_documentation = NULL;
-    sc_makereport = FALSE; /* do not generate a cross-reference report */
+    sc_makereport = FALSE;   /* do not generate a cross-reference report */
 #endif
 
     sc_stkusageinfo = FALSE; /* stack usage info disabled by default */
@@ -1045,7 +1090,6 @@ static void initglobals(void)
  */
 SC_FUNC void set_extension(char* filename, const char* extension, const int force)
 {
-
     assert(extension != NULL && (*extension == '\0' || *extension == '.'));
     assert(filename != NULL);
     char* ptr = strrchr(filename, '.');
@@ -1063,26 +1107,62 @@ SC_FUNC void set_extension(char* filename, const char* extension, const int forc
     }
 }
 
-static const char* option_value(const char* optptr)
+static const char* option_value_ptr(const char* optptr)
 {
-    return *(optptr + 1) == '=' || *(optptr + 1) == ':' ? optptr + 2 : optptr + 1;
+    if (!optptr || !optptr[0]) {
+        return "";
+    }
+
+    return optptr[1] == '=' || optptr[1] == ':' ? optptr + 2 : optptr + 1;
+}
+
+static char* option_value_copy(const char* optptr, char* buffer, const size_t buffer_size)
+{
+    if (!buffer || buffer_size == 0) {
+        return NULL;
+    }
+
+    const char* value = option_value_ptr(optptr);
+    const size_t len = strlen(value);
+
+    if (len >= 2 && value[0] == '"' && value[len - 1] == '"') {
+        /* quoted string: copy without quotes */
+        const size_t content_len = len - 2;
+        if (content_len >= buffer_size) {
+            memcpy(buffer, value + 1, buffer_size - 1);
+            buffer[buffer_size - 1] = '\0';
+        }
+        else {
+            memcpy(buffer, value + 1, content_len);
+            buffer[content_len] = '\0';
+        }
+    }
+    else {
+        /* copy as-is */
+        strncpy(buffer, value, buffer_size - 1);
+        buffer[buffer_size - 1] = '\0';
+    }
+
+    return buffer;
 }
 
 static int toggle_option(const char* optptr, int option)
 {
-    switch (*option_value(optptr)) {
-        case '\0':
+    switch (*option_value_ptr(optptr)) {
+        case '\0': /* empty string -> invert the current state */
             option = !option;
             break;
-        case '-':
+        case '-':  /* explicit disable */
             option = FALSE;
             break;
-        case '+':
+        case '+':  /* explicit enable */
             option = TRUE;
             break;
         default:
-            about();
-    } /* switch */
+            about(); /* invalid option format */
+            break;
+    }
+
     return option;
 }
 
@@ -1112,7 +1192,7 @@ static void parseoptions(
             ptr = &argv[arg][1];
             switch (*ptr) {
                 case 'A':
-                    i = atoi(option_value(ptr));
+                    i = atoi(option_value_ptr(ptr));
                     if (i % sizeof(cell) == 0) {
                         sc_dataalign = i;
                     }
@@ -1134,25 +1214,24 @@ static void parseoptions(
 #endif
                     break;
                 case 'c':
-                    strncpy(codepage, option_value(ptr), MAXCODEPAGE); /* set name of codepage */
-                    codepage[MAXCODEPAGE] = '\0';
+                    option_value_copy(ptr, codepage, MAXCODEPAGE); /* set name of codepage */
                     break;
 #if defined dos_setdrive
-                case 'D': /* set active directory */
-                    ptr = option_value(ptr);
-                    if (ptr[1] == ':') {
-                        dos_setdrive(toupper(*ptr) - 'A' + 1); /* set active drive */
+                case 'D':                                          /* set active directory */
+                    option_value_copy(ptr, str, sizeof str);
+                    if (str[1] == ':') {
+                        dos_setdrive(toupper(str[0]) - 'A' + 1);   /* set active drive */
                     }
-                    chdir(ptr);
+                    chdir(str);
                     break;
 #endif
                 case 'd':
-                    switch (*option_value(ptr)) {
+                    switch (*option_value_ptr(ptr)) {
                         case '0':
                             sc_debug = 0;
                             break;
                         case '1':
-                            sc_debug = sCHKBOUNDS; /* assertions and bounds checking */
+                            sc_debug = sCHKBOUNDS;             /* assertions and bounds checking */
                             break;
                         case '2':
                             sc_debug = sCHKBOUNDS | sSYMBOLIC; /* also symbolic info */
@@ -1166,15 +1245,14 @@ static void parseoptions(
                     } /* switch */
                     break;
                 case 'e':
-                    strncpy(ename, option_value(ptr), _MAX_PATH); /* set name of error file */
-                    ename[_MAX_PATH - 1] = '\0';
+                    option_value_copy(ptr, ename, _MAX_PATH); /* set name of error file */
                     break;
                 case 'E':
                     sc_warnings_are_errors = 1;
                     break;
 #if defined __WIN32__ || defined _WIN32 || defined _Windows
                 case 'H':
-                    hwndFinish = (HWND)atoi(option_value(ptr));
+                    hwndFinish = (HWND)atoi(option_value_ptr(ptr));
                     if (!IsWindow(hwndFinish)) {
                         hwndFinish = (HWND)0;
                     }
@@ -1184,8 +1262,7 @@ static void parseoptions(
                     sc_showincludes = 1;
                     break;
                 case 'i':
-                    strncpy(str, option_value(ptr), sizeof str); /* set name of include directory */
-                    str[sizeof(str) - 1] = '\0';
+                    option_value_copy(ptr, str, sizeof str); /* set name of include directory */
                     i = strlen(str);
                     if (i > 0) {
                         if (str[i - 1] != DIRSEP_CHAR) {
@@ -1199,20 +1276,17 @@ static void parseoptions(
                     if (*(ptr + 1) != '\0') {
                         about();
                     }
-                    sc_listing = TRUE; /* skip second pass & code generation */
+                    sc_listing = TRUE;                        /* skip second pass & code generation */
                     break;
                 case 'o':
-                    strncpy(oname, option_value(ptr), _MAX_PATH); /* set name of (binary) output file */
-                    oname[_MAX_PATH - 1] = '\0';
+                    option_value_copy(ptr, oname, _MAX_PATH); /* set name of (binary) output file */
                     break;
                 case 'p':
-                    strncpy(pname, option_value(ptr), _MAX_PATH); /* set name of implicit include file */
-                    pname[_MAX_PATH - 1] = '\0';
+                    option_value_copy(ptr, pname, _MAX_PATH); /* set name of implicit include file */
                     break;
 #if !defined SC_LIGHT
                 case 'r':
-                    strncpy(rname, option_value(ptr), _MAX_PATH); /* set name of report file */
-                    rname[_MAX_PATH - 1] = '\0';
+                    option_value_copy(ptr, rname, _MAX_PATH); /* set name of report file */
                     sc_makereport = TRUE;
                     if (strlen(rname) > 0) {
                         set_extension(rname, ".xml", FALSE);
@@ -1227,13 +1301,13 @@ static void parseoptions(
                             ptr = name;
                         }
                         assert(strlen(ptr) < _MAX_PATH);
-                        strcpy(rname, ptr);
+                        snprintf(rname, _MAX_PATH, "%s", ptr);
                         set_extension(rname, ".xml", TRUE);
                     } /* if */
                     break;
 #endif
                 case 'S':
-                    i = atoi(option_value(ptr));
+                    i = atoi(option_value_ptr(ptr));
                     if (i > 64) {
                         sc_stksize = i; /* stack size has minimum size */
                     }
@@ -1250,11 +1324,14 @@ static void parseoptions(
                         }
                     }
 
-                    skipinput = atoi(option_value(ptr));
+                    skipinput = atoi(option_value_ptr(ptr));
                     break;
                 }
+                case 'T':
+                    /* this option was already handled on an initial scan, see setopt() */
+                    break;
                 case 't':
-                    i = atoi(option_value(ptr));
+                    i = atoi(option_value_ptr(ptr));
                     if (i > 0) {
                         sc_tabsize = i;
                     }
@@ -1263,10 +1340,10 @@ static void parseoptions(
                     }
                     break;
                 case 'v':
-                    verbosity = isdigit(*option_value(ptr)) ? atoi(option_value(ptr)) : 2;
+                    verbosity = isdigit(*option_value_ptr(ptr)) ? atoi(option_value_ptr(ptr)) : 2;
                     break;
                 case 'w':
-                    i = (int)strtol(option_value(ptr), (char**)&ptr, 10);
+                    i = (int)strtol(option_value_ptr(ptr), (char**)&ptr, 10);
                     if (*ptr == '-') {
                         pc_enablewarning(i, 0);
                     }
@@ -1278,7 +1355,7 @@ static void parseoptions(
                     }
                     break;
                 case 'X':
-                    i = atoi(option_value(ptr));
+                    i = atoi(option_value_ptr(ptr));
                     if (i > 64) {
                         sc_amxlimit = i; /* abstract machine size has minimum size */
                     }
@@ -1289,7 +1366,7 @@ static void parseoptions(
                 case '\\': /* use \ instead for escape characters */
                     sc_ctrlchar = '\\';
                     break;
-                case '^': /* use ^ instead for escape characters */
+                case '^':  /* use ^ instead for escape characters */
                     sc_ctrlchar = '^';
                     break;
                 case ';':
@@ -1308,15 +1385,36 @@ static void parseoptions(
 #endif
         }
         else if ((ptr = strchr(argv[arg], '=')) != NULL) {
+            char* endptr;
             i = ptr - argv[arg];
             if (i > sNAMEMAX) {
                 i = sNAMEMAX;
                 error(200, argv[arg], sNAMEMAX); /* symbol too long, truncated to sNAMEMAX chars */
-            } /* if */
+            }
             strncpy(str, argv[arg], i);
-            str[i] = '\0'; /* str holds symbol name */
-            i = atoi(ptr + 1);
-            add_constant(str, i, sGLOBAL, 0);
+            str[i] = '\0';                       /* str holds symbol name */
+            const char* value_str = ptr + 1;
+            if (*value_str == '\0') {
+                /* No value provided (e.g., "DEBUG="), define as 1 by convention */
+                add_constant(str, 1, sGLOBAL, 0);
+            }
+            else {
+                const long value_num = strtol(value_str, &endptr, 10);
+                if (*endptr == '\0' && endptr != value_str) {
+                    /* It's a valid integer */
+                    add_constant(str, (cell)value_num, sGLOBAL, 0);
+                }
+                else {
+                    /* Not a number, treat as a string substitution */
+                    if (strlen(value_str) > sNAMEMAX) {
+                        error(200, value_str, sNAMEMAX); /* symbol too long, truncated to sNAMEMAX chars */
+                    }
+                    else {
+                        /* Store for later substitution */
+                        add_cli_define(str, value_str);
+                    }
+                }
+            }
         }
         else {
             strncpy(str, argv[arg], sizeof(str) - 5); /* -5 because default extension is 4 characters */
@@ -1334,7 +1432,7 @@ static void parseoptions(
                     ptr = str;
                 }
                 assert(strlen(ptr) < _MAX_PATH);
-                strcpy(oname, ptr);
+                snprintf(oname, _MAX_PATH, "%s", ptr);
             } /* if */
             set_extension(oname, ".asm", TRUE);
 #if !defined SC_LIGHT
@@ -1346,7 +1444,7 @@ static void parseoptions(
                     ptr = str;
                 }
                 assert(strlen(ptr) < _MAX_PATH);
-                strcpy(rname, ptr);
+                snprintf(rname, _MAX_PATH, "%s", ptr);
                 set_extension(rname, ".xml", TRUE);
             } /* if */
 #endif
@@ -1357,10 +1455,10 @@ static void parseoptions(
 #if !defined SC_LIGHT
 static void parserespf(char* filename, char* oname, char* ename, char* pname, char* rname, char* codepage)
 {
-    #define MAX_OPTIONS 100
+    #define MAX_OPTIONS 200
     FILE* fp;
-    char *string, **argv;
-    int argc;
+    char *string, *ptr;
+    char** argv;
 
     if ((fp = fopen(filename, "r")) == NULL) {
         error(100, filename); /* error reading input file */
@@ -1370,7 +1468,7 @@ static void parserespf(char* filename, char* oname, char* ename, char* pname, ch
     const long size = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
     assert(size < INT_MAX);
-    if ((string = (char*)malloc((int)size + 1)) == NULL) {
+    if ((string = (char*)malloc(((int)size + 1) * sizeof(char))) == NULL) {
         error(103); /* insufficient memory */
     }
     /* fill with zeros; in MS-DOS, fread() may collapse CR/LF pairs to
@@ -1379,19 +1477,56 @@ static void parserespf(char* filename, char* oname, char* ename, char* pname, ch
     memset(string, 0, (int)size + 1);
     fread(string, 1, (int)size, fp);
     fclose(fp);
-    /* allocate table for option pointers */
-    if ((argv = (char**)malloc(MAX_OPTIONS * sizeof(char*))) == NULL) {
+    /* remove comments in the response file */
+    while ((ptr = strchr(string, '#')) != NULL) {
+        *ptr = ' '; /* pad with spaces up to \n */
+        while (*++ptr != '\n' && *ptr != '\r' && *ptr != '\0') {
+            *ptr = ' ';
+        }
+    } /* while */
+    /* allocate an initial table for option pointers */
+    int maxoptions = 2;
+    if ((argv = (char**)malloc(maxoptions * sizeof(char*))) == NULL) {
         error(103); /* insufficient memory */
     }
     /* fill the options table */
-    char* ptr = strtok(string, " \t\r\n");
-    for (argc = 1; argc < MAX_OPTIONS && ptr != NULL; argc++) {
-        /* note: the routine skips argv[0], for compatibility with main() */
-        argv[argc] = ptr;
-        ptr = strtok(NULL, " \t\r\n");
-    } /* for */
-    if (ptr != NULL) {
-        error(102, "option table"); /* table overflow */
+    int argc = 1; /* note: the routine skips argv[0], for compatibility with main() */
+    ptr = string;
+    while (*ptr) {
+        while (*ptr && isspace((unsigned char)*ptr)) {
+            ptr++;
+        }
+        if (*ptr == '\0') {
+            break;
+        }
+        if (argc >= maxoptions) {
+            maxoptions *= 2;
+            if ((argv = (char**)realloc(argv, maxoptions * sizeof(char*))) == NULL) {
+                error(103); /* insufficient memory */
+            }
+        }
+        argv[argc++] = ptr;
+        /* Find the end of the token */
+        while (*ptr && !isspace((unsigned char)*ptr)) {
+            if (*ptr == '"') {
+                /* We entered a quoted section. The token extends to the closing quote. */
+                ptr++; /* move past opening quote */
+                while (*ptr && *ptr != '"') {
+                    ptr++;
+                }
+                if (*ptr == '"') {
+                    ptr++; // move past closing quote */
+                }
+                /* The token is now complete, e.g., -i"foo bar" */
+                /* The loop should terminate to mark the end of the token. */
+                break;
+            }
+            ptr++;
+        }
+        if (*ptr) {
+            *ptr = '\0';
+            ptr++;
+        }
     }
     /* parse the option table */
     parseoptions(argc, argv, oname, ename, pname, rname, codepage);
@@ -1409,29 +1544,64 @@ static void setopt(const int argc, char** argv, char* oname, char* ename, char* 
     *pname = '\0';
     *rname = '\0';
     *codepage = '\0';
-    strcpy(pname, sDEF_PREFIX);
-
-#if 0 /* needed to test with BoundsChecker for DOS (it does not pass                                                   \
-       * through arguments) */
-    insert_sourcefile("test.p");
-    strcpy(oname,"test.asm");
-#endif
+    snprintf(pname, _MAX_PATH, "%s", sDEF_PREFIX);
 
 #if !defined SC_LIGHT
     /* first parse a "config" file with default options */
-    if (argv[0] != NULL) {
+    if (sc_rootpath[0] != '\0') {
         char cfgfile[_MAX_PATH];
-        char* ext;
-        strcpy(cfgfile, argv[0]);
-        if ((ext = strrchr(cfgfile, DIRSEP_CHAR)) != NULL) {
-            *(ext + 1) = '\0'; /* strip the program filename */
-            strcat(cfgfile, "pawn.cfg");
+        const char* ptr;
+        int isoption;
+        /* copy the default config file name, but keep a pointer to the location
+         * of the base name
+         */
+        assert(strlen(sc_rootpath) + 8 < sizeof cfgfile); /* +7 for "/target/" */
+        int chars_written =
+            snprintf(cfgfile, sizearray(cfgfile), "%s%ctarget%c", sc_rootpath, DIRSEP_CHAR, DIRSEP_CHAR);
+        if (chars_written < 0 || (unsigned)chars_written >= sizearray(cfgfile)) {
+            error(103); /* insufficient memory */
         }
-        else {
-            strcpy(cfgfile, "pawn.cfg");
-        } /* if */
+        char* base = strchr(cfgfile, '\0');
+        assert(base != NULL);
+        snprintf(base, _MAX_PATH - (base - cfgfile), "default.cfg");
+        /* run through the argument list to see whether a -T option is present */
+        int found = 0;
+        for (int i = 1; i < argc; i++) {
+    #if DIRSEP_CHAR == '/'
+            isoption = argv[i][0] == '-';
+    #else
+            isoption = argv[i][0] == '/' || argv[i][0] == '-';
+    #endif
+            if (isoption && argv[i][1] == 'T') {
+                found = 1;
+                ptr = option_value_ptr(&argv[i][1]);
+                if (strchr(ptr, DIRSEP_CHAR) != NULL) {
+                    snprintf(cfgfile, _MAX_PATH, "%s", ptr);                 /* assume full path */
+                }
+                else {
+                    snprintf(base, _MAX_PATH - (base - cfgfile), "%s", ptr); /* no path */
+                }
+                ptr = strrchr(cfgfile, '.');
+                if (ptr == NULL || strchr(ptr, DIRSEP_CHAR) != NULL) {
+                    strncat(cfgfile, ".cfg", _MAX_PATH - strlen(cfgfile) - 1);
+                }
+            } /* if */
+        } /* for */
         if (access(cfgfile, 4) == 0) {
             parserespf(cfgfile, oname, ename, pname, rname, codepage);
+        }
+        else if (found) {
+            error(100, cfgfile); /* config. file was explicitly specified, but cannot be read */
+        }
+        else if (sc_binpath[0] != '\0') {
+            /* for compatibility, try the old name */
+            chars_written = snprintf(cfgfile, sizearray(cfgfile), "%s%cpawn.cfg", sc_binpath, DIRSEP_CHAR);
+            if (chars_written < 0 || (unsigned)chars_written >= sizearray(cfgfile)) {
+                error(103); /* insufficient memory */
+            }
+            if (access(cfgfile, 4) == 0) {
+                parserespf(cfgfile, oname, ename, pname, rname, codepage);
+            }
         }
     } /* if */
 #endif
@@ -1444,77 +1614,87 @@ static void setopt(const int argc, char** argv, char* oname, char* ename, char* 
 #if defined __BORLANDC__ || defined __WATCOMC__
     #pragma argsused
 #endif
-static void setconfig(char* root)
+static void setconfig(const char* root)
 {
-#if defined macintosh
-    insert_path(":include:");
-#else
-    char path[_MAX_PATH];
-    char *ptr, *base;
-    int len;
+    char path[_MAX_PATH] = "";
+    char* ptr;
 
-    /* add the default "include" directory */
-    #if defined __WIN32__ || defined _WIN32
+#if defined macintosh
+    /* on OS X, use argv[0] */
+    getcwd(path, sizeof path);
+#elif defined __WIN32__ || defined _WIN32
     GetModuleFileName(NULL, path, _MAX_PATH);
-    #elif defined ENABLE_BINRELOC && (defined LINUX || defined __FreeBSD__ || defined __OpenBSD__ || defined __APPLE__)
-    /* see www.autopackage.org for the BinReloc module */
-    ptr = (char*)SELFPATH;
-    if (!ptr) {
-        ptr = root;
-    }
+#elif defined __LINUX__ || defined __FreeBSD__ || defined __OpenBSD__
+    /* see www.autopackage.org (now Listaller) for the BinReloc module */
+    br_init(NULL);
+    ptr = br_find_exe("/opt/Pawn/bin/pawncc");
     strncpy(path, ptr, sizeof path);
-    #else
+    free(ptr);
+#else
     if (root != NULL) {
         strncpy(path, root, sizeof path); /* path + filename (hopefully) */
     }
-    #endif
-    #if defined __MSDOS__
+    else {
+        if (getcwd(path, sizeof path) == NULL) {
+            *path = '\0';
+        }
+        /* add a final \ or / to the path (which is stripped of later) */
+        ptr = strchr(path, '\0');
+        assert(ptr != NULL);
+        assert((ptr - path) < sizeof path - 2);
+        *ptr = DIRSEP_CHAR;
+        *(ptr + 1) = '\0';
+    } /* if */
+#endif
+#if defined __MSDOS__
     /* strip the options (appended to the path + filename) */
     if ((ptr = strpbrk(path, " \t/")) != NULL) {
         *ptr = '\0';
     }
-    #endif
-    /* terminate just behind last \ or : */
+#endif
+#if defined macintosh
+    /* add a final ':' to the path */
+    ptr = strchr(path, '\0');
+    assert(ptr != NULL);
+    assert((ptr - path) < sizeof path - 1);
+    *ptr = DIRSEP_CHAR;
+    *(ptr + 1) = '\0';
+#else
+    /* "path" contains path + filename, terminate just behind last \, / or : */
     if ((ptr = strrchr(path, DIRSEP_CHAR)) != NULL || (ptr = strchr(path, ':')) != NULL) {
         /* If there is no "\" or ":", the string probably does not contain the
          * path; so we just don't add it to the list in that case
          */
         *(ptr + 1) = '\0';
-        base = ptr;
-        strcat(path, "include");
+    } /* if */
+#endif
+
+    if (strlen(path) > 0) {
+        size_t len;
+#if !defined SC_LIGHT
+        assert(sizeof sc_binpath == sizeof path);
+        snprintf(sc_binpath, sizeof(sc_binpath), "%s", path);
+#endif
+        strncat(path, "include", sizeof(path) - strlen(path) - 1);
         len = strlen(path);
         path[len] = DIRSEP_CHAR;
         path[len + 1] = '\0';
-        /* see if it exists */
-        if (access(path, 0) != 0 && *base == DIRSEP_CHAR) {
-            /* There is no "include" directory below the directory where the compiler
-             * is found. This typically means that the compiler is in a "bin" sub-directory
-             * and the "include" is below the *parent*. So find the parent...
-             */
-            *base = '\0';
-            if ((ptr = strrchr(path, DIRSEP_CHAR)) != NULL) {
-                *(ptr + 1) = '\0';
-                strcat(path, "include");
-                len = strlen(path);
-                path[len] = DIRSEP_CHAR;
-                path[len + 1] = '\0';
-            }
-            else {
-                *base = DIRSEP_CHAR;
-            } /* if */
-        } /* if */
         insert_path(path);
-    /* same for the codepage root */
-    #if !defined NO_CODEPAGE
-        if (ptr) {
+/* same for the codepage root */
+#if !defined PAWN_NO_CODEPAGE
+        if (ptr != NULL) {
             *ptr = '\0';
+            if (!cp_path(path, "codepage")) {
+                error(109, path); /* codepage path */
+            }
         }
-        if (!cp_path(path, "codepage")) {
-            error(109, path); /* codepage path */
-        }
-    #endif
+#endif
+/* also copy the root path (for the XML documentation and target host files) */
+#if !defined SC_LIGHT
+        *ptr = '\0';
+        strncpy(sc_rootpath, path, sizeof sc_rootpath);
+#endif
     } /* if */
-#endif /* macintosh */
 }
 
 static void setcaption(void)
@@ -1589,9 +1769,9 @@ static void setconstants(void)
     append_constval(&tagname_tab, "_", 0, 0); /* "untagged" */
     append_constval(&tagname_tab, "bool", 1, 0);
 
-    add_constant("true", 1, sGLOBAL, 1); /* boolean flags */
+    add_constant("true", 1, sGLOBAL, 1);      /* boolean flags */
     add_constant("false", 0, sGLOBAL, 1);
-    add_constant("EOS", 0, sGLOBAL, 0); /* End Of String, or '\0' */
+    add_constant("EOS", 0, sGLOBAL, 0);       /* End Of String, or '\0' */
 #if PAWN_CELL_SIZE == 16
     add_constant("cellbits", 16, sGLOBAL, 0);
     #if defined _I16_MAX
@@ -1813,7 +1993,6 @@ static void parse(void)
  */
 static void dumplits(void)
 {
-
     int k = 0;
     while (k < litidx) {
         /* should be in the data segment */
@@ -1842,7 +2021,6 @@ static void dumplits(void)
  */
 static void dumpzero(int count)
 {
-
     if (count <= 0) {
         return;
     }
@@ -1992,7 +2170,7 @@ static void declfuncvar(const int fpublic, const int fstatic, const int fstock, 
         return;
     } /* if */
     if (tok == tOPERATOR) {
-        lexpush(); /* push "operator" keyword back (for later analysis) */
+        lexpush();        /* push "operator" keyword back (for later analysis) */
         if (!newfunc(NULL, tag, fpublic, fstatic, fstock)) {
             error(10);    /* illegal function or declaration */
             lexclr(TRUE); /* drop the rest of the line */
@@ -2040,8 +2218,8 @@ static void declglb(
     insert_docstring_separator(); /* see comment in newfunc() */
     filenum = fcurrent;           /* save file number at the start of the declaration */
     do {
-        size = 1;   /* single size (no array) */
-        numdim = 0; /* no dimensions */
+        size = 1;                 /* single size (no array) */
+        numdim = 0;               /* no dimensions */
         ident = iVARIABLE;
         if (firstname != NULL) {
             assert(strlen(firstname) <= sNAMEMAX);
@@ -2055,7 +2233,7 @@ static void declglb(
                 error(20, str);               /* invalid symbol name */
             }
             assert(strlen(str) <= sNAMEMAX);
-            strcpy(name, str); /* save symbol name */
+            strcpy(name, str);                /* save symbol name */
         } /* if */
         sym = findglb(name);
         if (sym == NULL) {
@@ -2078,10 +2256,10 @@ static void declglb(
             size = needsub(&idxtag[numdim], &enumroot); /* get size; size==0 for "var[]" */
 #if INT_MAX < LONG_MAX
             if (size > INT_MAX) {
-                error(105); /* overflow, exceeding capacity */
+                error(105);                             /* overflow, exceeding capacity */
             }
 #endif
-#if 0 /* We don't actually care */
+#if 0                                                   /* We don't actually care */
       if (ispublic)
         error(56,name);                 /* arrays cannot be public */
 #endif
@@ -2113,13 +2291,13 @@ static void declglb(
         if (numdim == 1) {
             dim[0] = size;
         }
-        dumplits(); /* dump the literal queue */
+        dumplits();        /* dump the literal queue */
         dumpzero(size - litidx);
         litidx = 0;
         if (sym == NULL) { /* define only if not yet defined */
             sym = addvariable(name, sizeof(cell) * glb_declared, ident, sGLOBAL, tag, dim, numdim, idxtag);
         }
-        else { /* if declared but not yet defined, adjust the variable's address */
+        else {             /* if declared but not yet defined, adjust the variable's address */
             sym->addr = sizeof(cell) * glb_declared;
             sym->codeaddr = code_idx;
             sym->usage |= uDEFINE;
@@ -2177,15 +2355,15 @@ static int declloc(const int fstatic)
     do {
         ident = iVARIABLE;
         size = 1;
-        int numdim = 0; /* no dimensions */
+        int numdim = 0;                   /* no dimensions */
         const int tag = pc_addtag(NULL);
         if (lex(&val, &str) != tSYMBOL) { /* read in (new) token */
             error(20, str);               /* invalid symbol name */
         }
         assert(strlen(str) <= sNAMEMAX);
-        strcpy(name, str); /* save symbol name */
+        strcpy(name, str);                /* save symbol name */
         if (name[0] == PUBLIC_CHAR) {
-            error(56, name); /* local variables cannot be public */
+            error(56, name);              /* local variables cannot be public */
         }
         /* Note: block locals may be named identical to locals at higher
          * compound blocks (as with standard C); so we must check (and add)
@@ -2214,7 +2392,7 @@ static int declloc(const int fstatic)
             size = needsub(&idxtag[numdim], &enumroot); /* get size; size==0 for "var[]" */
 #if INT_MAX < LONG_MAX
             if (size > INT_MAX) {
-                error(105); /* overflow, exceeding capacity */
+                error(105);                             /* overflow, exceeding capacity */
             }
 #endif
             dim[numdim++] = size;
@@ -2537,7 +2715,6 @@ static cell initarray(const int ident, const int tag, int dim[], const int numdi
 {
     cell dsize;
     int idx, abortparse;
-    char disable = FALSE;
 
     assert(cur >= 0 && cur < numdim);
     assert(startlit >= 0);
@@ -2576,7 +2753,7 @@ static cell initarray(const int ident, const int tag, int dim[], const int numdi
         if (*errorfound || !matchtoken(',')) {
             abortparse = TRUE;
         }
-        disable = sLiteralQueueDisabled;
+        const char disable = sLiteralQueueDisabled;
         sLiteralQueueDisabled = TRUE;
         if (matchtoken('}')) {
             abortparse = TRUE;
@@ -2704,7 +2881,7 @@ static cell initvector(
         }
     } /* if */
     if (size == 0) {
-        size = litidx - curlit; /* number of elements defined */
+        size = litidx - curlit;        /* number of elements defined */
     }
     else if (litidx - curlit > size) { /* e.g. "myvar[3]={1,2,3,4};" */
         error(18);                     /* initialisation data exceeds declared size */
@@ -2753,15 +2930,15 @@ static cell needsub(int* tag, constvalue** enumroot)
     assert(tag != NULL);
     *tag = 0;
     if (enumroot != NULL) {
-        *enumroot = NULL; /* preset */
+        *enumroot = NULL;            /* preset */
     }
-    if (matchtoken(']')) { /* we have already seen "[" */
-        return 0;          /* zero size (like "char msg[]") */
+    if (matchtoken(']')) {           /* we have already seen "[" */
+        return 0;                    /* zero size (like "char msg[]") */
     }
 
     eval_constexpr(&val, tag, &sym); /* get value (must be constant expression) */
     if (val < 0) {
-        error(9); /* negative array size is invalid; assumed zero */
+        error(9);                    /* negative array size is invalid; assumed zero */
         val = 0;
     } /* if */
     needtoken(']');
@@ -2789,13 +2966,13 @@ static void decl_const(const int vclass)
     char* str;
     int exprtag;
 
-    insert_docstring_separator(); /* see comment in newfunc() */
+    insert_docstring_separator();         /* see comment in newfunc() */
     const int tag = pc_addtag(NULL);
-    if (lex(&val, &str) != tSYMBOL) { /* read in (new) token */
-        error(20, str);               /* invalid symbol name */
+    if (lex(&val, &str) != tSYMBOL) {     /* read in (new) token */
+        error(20, str);                   /* invalid symbol name */
     }
-    const int symbolline = fline; /* save line where symbol was found */
-    strcpy(constname, str);       /* save symbol name */
+    const int symbolline = fline;         /* save line where symbol was found */
+    strcpy(constname, str);               /* save symbol name */
     needtoken('=');
     eval_constexpr(&val, &exprtag, NULL); /* get value */
     needtoken(tTERM);
@@ -2890,20 +3067,20 @@ static void decl_enum(const int vclass)
 
     needtoken('{');
     /* go through all constants */
-    value = 0; /* default starting value */
+    value = 0;                 /* default starting value */
     do {
         int fieldtag = 0;
         if (matchtoken('}')) { /* quick exit if '}' follows ',' */
             lexpush();
             break;
         } /* if */
-        const int idxtag = pc_addtag(NULL); /* optional explicit item tag */
-        const int tok = lex(&val, &str);    /* read in (new) token */
+        const int idxtag = pc_addtag(NULL);         /* optional explicit item tag */
+        const int tok = lex(&val, &str);            /* read in (new) token */
         if (tok != tSYMBOL) {
-            error(20, str); /* invalid symbol name */
+            error(20, str);                         /* invalid symbol name */
         }
-        strcpy(constname, str); /* save symbol name */
-        size = increment;       /* default increment of 'val' */
+        strcpy(constname, str);                     /* save symbol name */
+        size = increment;                           /* default increment of 'val' */
         if (matchtoken('[')) {
             eval_constexpr(&size, &fieldtag, NULL); /* get size */
             needtoken(']');
@@ -3086,11 +3263,11 @@ SC_FUNC symbol* fetchfunc(char* name, const int tag)
 
     if ((sym = findglb(name)) != 0) { /* already in symbol table? */
         if (sym->ident != iFUNCTN) {
-            error(21, name); /* yes, but not as a function */
-            return NULL;     /* make sure the old symbol is not damaged */
+            error(21, name);          /* yes, but not as a function */
+            return NULL;              /* make sure the old symbol is not damaged */
         }
         if ((sym->usage & uNATIVE) != 0) {
-            error(21, name); /* yes, and it is a native */
+            error(21, name);          /* yes, and it is a native */
         }
         /* if */
         assert(sym->vclass == sGLOBAL);
@@ -3138,7 +3315,6 @@ SC_FUNC symbol* fetchfunc(char* name, const int tag)
  */
 static void define_args(void)
 {
-
     /* At this point, no local variables have been declared. All
      * local symbols are function arguments.
      */
@@ -3265,7 +3441,7 @@ static int operatoradjust(const int opertok, symbol* sym, char* opername, const 
             }
     } /* switch */
 
-    if (tags[0] == 0 && ((opertok != '=' && tags[1] == 0) || (opertok == '=' && resulttag == 0))) {
+    if (tags[0] == 0 && (opertok != '=' && tags[1] == 0 || opertok == '=' && resulttag == 0)) {
         error(64); /* cannot change predefined operators */
     }
 
@@ -3286,10 +3462,8 @@ static int operatoradjust(const int opertok, symbol* sym, char* opername, const 
         }
         delete_symbol(&glbtab, oldsym);
     } /* if */
-    RemoveFromHashTable(sp_Globals, sym);
     strcpy(sym->name, tmpname);
-    sym->hash = NameHash(sym->name); /* calculate new hash */
-    AddToHashTable(sp_Globals, sym);
+    sym->hash = namehash(sym->name); /* calculate new hash */
 
     /* operators should return a value, except the '~' operator */
     if (opertok != '~') {
@@ -3431,8 +3605,8 @@ static void funcstub(const int native)
 
     int opertok = 0;
     lastst = 0;
-    litidx = 0;                  /* clear the literal pool */
-    assert(loctab.next == NULL); /* local symbol table should be empty */
+    litidx = 0;                      /* clear the literal pool */
+    assert(loctab.next == NULL);     /* local symbol table should be empty */
 
     const int tag = pc_addtag(NULL); /* get the tag of the return value */
     int numdim = 0;
@@ -3446,7 +3620,7 @@ static void funcstub(const int native)
         } /* if */
         cell size = needsub(&idxtag[numdim], NULL); /* get size; size==0 for "var[]" */
         if (size == 0) {
-            error(9); /* invalid array size */
+            error(9);                               /* invalid array size */
         }
 #if INT_MAX < LONG_MAX
         if (size > INT_MAX) {
@@ -3482,7 +3656,7 @@ static void funcstub(const int native)
         } /* if */
         strcpy(symbolname, str);
     } /* if */
-    needtoken('('); /* only functions may be native/forward */
+    needtoken('(');                           /* only functions may be native/forward */
 
     symbol* sym = fetchfunc(symbolname, tag); /* get a pointer to the function entry */
     if (sym == NULL) {
@@ -3502,7 +3676,7 @@ static void funcstub(const int native)
 
     if (getstates(symbolname) != 0) {
         if (native || opertok != 0) {
-            error(82); /* native functions and operators may not have states */
+            error(82);  /* native functions and operators may not have states */
         }
         else {
             error(231); /* ignoring state specifications on forward declarations */
@@ -3568,11 +3742,11 @@ static int newfunc(const char* firstname, const int firsttag, int fpublic, const
     char* str;
     cell val;
 
-    assert(litidx == 0); /* literal queue should be empty */
-    litidx = 0;          /* clear the literal pool (should already be empty) */
+    assert(litidx == 0);            /* literal queue should be empty */
+    litidx = 0;                     /* clear the literal pool (should already be empty) */
     int opertok = 0;
-    lastst = 0;    /* no statement yet */
-    cell cidx = 0; /* just to avoid compiler warnings */
+    lastst = 0;                     /* no statement yet */
+    cell cidx = 0;                  /* just to avoid compiler warnings */
     cell glbdecl = 0;
     assert(loctab.next == NULL);    /* local symbol table should be empty */
     const short filenum = fcurrent; /* save file number at the start of the declaration */
@@ -3612,14 +3786,14 @@ static int newfunc(const char* firstname, const int firsttag, int fpublic, const
     /* so it is a function, proceed */
     const int funcline = fline; /* save line at which the function is defined */
     if (symbolname[0] == PUBLIC_CHAR) {
-        fpublic = TRUE; /* implicitly public function */
+        fpublic = TRUE;         /* implicitly public function */
         if (stock) {
-            error(42); /* invalid combination of class specifiers */
+            error(42);          /* invalid combination of class specifiers */
         }
     } /* if */
     symbol* sym = fetchfunc(symbolname, tag); /* get a pointer to the function entry */
     if (sym == NULL || (sym->usage & uNATIVE) != 0) {
-        return TRUE; /* it was recognized as a function declaration, but not as a valid one */
+        return TRUE;                          /* it was recognized as a function declaration, but not as a valid one */
     }
     if (fpublic) {
         sym->usage |= uPUBLIC;
@@ -3645,7 +3819,7 @@ static int newfunc(const char* firstname, const int firsttag, int fpublic, const
     const int opererror = !operatoradjust(opertok, sym, symbolname, tag);
     if (strcmp(symbolname, uMAINFUNC) == 0 || strcmp(symbolname, uENTRYFUNC) == 0) {
         if (argcnt > 0) {
-            error(5); /* "main()" and "entry()" functions may not have any arguments */
+            error(5);        /* "main()" and "entry()" functions may not have any arguments */
         }
         sym->usage |= uREAD; /* "main()" is the program's entry point: always used */
     } /* if */
@@ -3658,7 +3832,7 @@ static int newfunc(const char* firstname, const int firsttag, int fpublic, const
      * prototype */
     if (matchtoken(';')) {
         if (!sc_needsemicolon) {
-            error(218); /* old style prototypes used with optional semicolumns */
+            error(218);                         /* old style prototypes used with optional semicolumns */
         }
         delete_symbols(&loctab, 0, TRUE, TRUE); /* prototype is done; forget everything */
         return TRUE;
@@ -3676,7 +3850,7 @@ static int newfunc(const char* firstname, const int firsttag, int fpublic, const
         error(233, symbolname, ptr); /* deprecated (probably a public function) */
     } /* if */
     begcseg();
-    sym->usage |= uDEFINE; /* set the definition flag */
+    sym->usage |= uDEFINE;   /* set the definition flag */
     if (fpublic) {
         sym->usage |= uREAD; /* public functions are always "used" */
     }
@@ -3708,7 +3882,7 @@ static int newfunc(const char* firstname, const int firsttag, int fpublic, const
     declared = 0;                     /* number of local cells */
     rettype = sym->usage & uRETVALUE; /* set "return type" variable */
     curfunc = sym;
-    define_args(); /* add the symbolic info for the function arguments */
+    define_args();                    /* add the symbolic info for the function arguments */
 #if !defined SC_LIGHT
     if (matchtoken('{')) {
         lexpush();
@@ -3742,7 +3916,7 @@ static int newfunc(const char* firstname, const int firsttag, int fpublic, const
         if ((sym->usage & uRETVALUE) != 0) {
             char symname[2 * sNAMEMAX + 16]; /* allow space for user defined operators */
             funcdisplayname(symname, sym->name);
-            error(209, symname); /* function should return a value */
+            error(209, symname);             /* function should return a value */
         } /* if */
     } /* if */
     endfunc();
@@ -3750,8 +3924,8 @@ static int newfunc(const char* firstname, const int firsttag, int fpublic, const
     sc_attachdocumentation(sym); /* attach collected documenation to the function */
     if (litidx) {                /* if there are literals defined */
         glb_declared += litidx;
-        begdseg();  /* flip to DATA segment */
-        dumplits(); /* dump literal strings */
+        begdseg();               /* flip to DATA segment */
+        dumplits();              /* dump literal strings */
         litidx = 0;
     } /* if */
     testsymbols(&loctab, 0, TRUE, TRUE);    /* test for unused arguments and labels */
@@ -3771,10 +3945,10 @@ static int argcompare(const arginfo* a1, const arginfo* a2)
     int result = 1, level;
 
     if (result) {
-        result = a1->ident == a2->ident; /* type/class */
+        result = a1->ident == a2->ident;     /* type/class */
     }
     if (result) {
-        result = a1->usage == a2->usage; /* "const" flag */
+        result = a1->usage == a2->usage;     /* "const" flag */
     }
     if (result) {
         result = a1->numtags == a2->numtags; /* tags (number and names) */
@@ -3902,11 +4076,11 @@ static int declargs(symbol* sym)
                     break;
                 case tSYMBOL:
                     if (argcnt >= sMAXARGS) {
-                        error(45); /* too many function arguments */
+                        error(45);           /* too many function arguments */
                     }
-                    strcpy(name, ptr); /* save symbol name */
+                    strcpy(name, ptr);       /* save symbol name */
                     if (name[0] == PUBLIC_CHAR) {
-                        error(56, name); /* function arguments cannot be public */
+                        error(56, name);     /* function arguments cannot be public */
                     }
                     if (numtags == 0) {
                         tags[numtags++] = 0; /* default tag */
@@ -3924,7 +4098,7 @@ static int declargs(symbol* sym)
                     }
                     if ((sym->usage & uPROTOTYPED) == 0) {
                         /* redimension the argument list, add the entry */
-                        arginfo* temp_arglist = (arginfo*)realloc(sym->dim.arglist, (argcnt + 2) * sizeof(arginfo));
+                        arginfo* temp_arglist = realloc(sym->dim.arglist, (argcnt + 2) * sizeof(arginfo));
                         if (temp_arglist == NULL) {
                             error(103);    /* insufficient memory */
                             return argcnt; /* return current argument count to avoid further issues */
@@ -3955,14 +4129,14 @@ static int declargs(symbol* sym)
                     break;
                 case tELLIPS:
                     if (ident != iVARIABLE) {
-                        error(10); /* illegal function or declaration */
+                        error(10);           /* illegal function or declaration */
                     }
                     if (numtags == 0) {
                         tags[numtags++] = 0; /* default tag */
                     }
                     if ((sym->usage & uPROTOTYPED) == 0) {
                         /* redimension the argument list, add the entry iVARARGS */
-                        arginfo* temp_arglist = (arginfo*)realloc(sym->dim.arglist, (argcnt + 2) * sizeof(arginfo));
+                        arginfo* temp_arglist = realloc(sym->dim.arglist, (argcnt + 2) * sizeof(arginfo));
                         if (temp_arglist == NULL) {
                             error(103);    /* insufficient memory */
                             return argcnt; /* return current argument count to avoid further issues */
@@ -4072,14 +4246,14 @@ static void doarg(char* name, int ident, const int offset, int tags[], const int
             size = needsub(&arg->idxtag[arg->numdim], &enumroot); /* may be zero here, it is a pointer anyway */
 #if INT_MAX < LONG_MAX
             if (size > INT_MAX) {
-                error(105); /* overflow, exceeding capacity */
+                error(105);                                       /* overflow, exceeding capacity */
             }
 #endif
             arg->dim[arg->numdim] = size;
             arg->numdim += 1;
         }
         while (matchtoken('['));
-        ident = iREFARRAY; /* "reference to array" (is a pointer) */
+        ident = iREFARRAY;       /* "reference to array" (is a pointer) */
         if (matchtoken('=')) {
             assert(litidx == 0); /* at the start of a function, this is reset */
             assert(numtags > 0);
@@ -4090,7 +4264,7 @@ static void doarg(char* name, int ident, const int offset, int tags[], const int
                 cell val;
                 tokeninfo(&val, &name);
                 if ((sym = findglb(name)) == NULL) {
-                    error(17, name); /* undefined symbol */
+                    error(17, name);        /* undefined symbol */
                 }
                 else {
                     arg->hasdefault = TRUE; /* argument as a default value */
@@ -4208,7 +4382,6 @@ static void doarg(char* name, int ident, const int offset, int tags[], const int
 
 static int count_referrers(const symbol* entry)
 {
-
     int count = 0;
     for (int i = 0; i < entry->numrefers; i++) {
         if (entry->refer[i] != NULL) {
@@ -4222,7 +4395,6 @@ static int count_referrers(const symbol* entry)
 static int find_xmltag(char* source, const char* xmltag, const char* xmlparam, const char* xmlvalue, char** outer_start,
     int* outer_length, char** inner_start, int* inner_length)
 {
-
     assert(source != NULL);
     assert(xmltag != NULL);
     assert(outer_start != NULL);
@@ -4243,7 +4415,7 @@ static int find_xmltag(char* source, const char* xmltag, const char* xmlparam, c
         int match = FALSE;  /* ...and pessimistic at the same time */
         ptr++;              /* skip '<' */
         while (*ptr != '\0' && *ptr <= ' ') {
-            ptr++; /* skip white space */
+            ptr++;          /* skip white space */
         }
         if (strncmp(ptr, xmltag, xmltag_len) == 0 && (*(ptr + xmltag_len) <= ' ' || *(ptr + xmltag_len) == '>')) {
             /* xml tag found, optionally check the parameter */
@@ -4256,10 +4428,10 @@ static int find_xmltag(char* source, const char* xmltag, const char* xmlparam, c
                     (*(ptr + xmlparam_len) <= ' ' || *(ptr + xmlparam_len) == '=')) {
                     ptr += xmlparam_len;
                     while (*ptr != '\0' && *ptr <= ' ') {
-                        ptr++; /* skip white space */
+                        ptr++;     /* skip white space */
                     }
                     if (*ptr == '=') {
-                        ptr++; /* skip '=' */
+                        ptr++;     /* skip '=' */
                         while (*ptr != '\0' && *ptr <= ' ') {
                             ptr++; /* skip white space */
                         }
@@ -4294,12 +4466,12 @@ static int find_xmltag(char* source, const char* xmltag, const char* xmlparam, c
             /* find the start of the closing tag (assume no nesting) */
             while ((ptr = strchr(ptr, '<')) != NULL) {
                 const char* inner_end = ptr;
-                ptr++; /* skip '<' */
+                ptr++;         /* skip '<' */
                 while (*ptr != '\0' && *ptr <= ' ') {
-                    ptr++; /* skip white space */
+                    ptr++;     /* skip white space */
                 }
                 if (*ptr == '/') {
-                    ptr++; /* skip / */
+                    ptr++;     /* skip / */
                     while (*ptr != '\0' && *ptr <= ' ') {
                         ptr++; /* skip white space */
                     }
@@ -4576,7 +4748,7 @@ static void make_report(const symbol* root, FILE* log, char* sourcefile)
             }
             assert(stlist != NULL); /* state id should be found */
             i = state_getfsa(stlist->index);
-            assert(i >= 0); /* automaton 0 exists */
+            assert(i >= 0);         /* automaton 0 exists */
             stlist = automaton_findid(i);
             assert(stlist != NULL); /* automaton should be found */
             fprintf(log, "\t\t\t<automaton name=\"%s\"/>\n", strlen(stlist->name) > 0 ? stlist->name : "(anonymous)");
@@ -4818,7 +4990,6 @@ static int testsymbols(const symbol* root, const int level, const int testlabs, 
 
 static cell calc_array_datasize(const symbol* sym, cell* offset)
 {
-
     assert(sym != NULL);
     assert(sym->ident == iARRAY || sym->ident == iREFARRAY);
     cell length = sym->dim.array.length;
@@ -4878,13 +5049,13 @@ static void destructsymbols(const symbol* root, const int level)
                 pushval(elements);
                 /* call the '~' operator */
                 address(sym, sPRI);
-                addconst(offset); /* add offset to array data to the address */
+                addconst(offset);          /* add offset to array data to the address */
                 pushreg(sPRI);
                 pushval(2 * sizeof(cell)); /* 2 parameters */
                 assert(opsym->ident == iFUNCTN);
                 ffcall(opsym, NULL, 1);
                 if (sc_status != statSKIP) {
-                    markusage(opsym, uREAD); /* do not mark as "used" when this call itself is skipped */
+                    markusage(opsym, uREAD);  /* do not mark as "used" when this call itself is skipped */
                 }
                 if ((opsym->usage & uNATIVE) != 0 && opsym->x.lib != NULL) {
                     opsym->x.lib->value += 1; /* increment "usage count" of the library */
@@ -4992,7 +5163,6 @@ SC_FUNC void delete_consttable(constvalue* table)
  */
 SC_FUNC symbol* add_constant(char* name, const cell val, const int vclass, const int tag)
 {
-
     /* Test whether a global or local symbol with the same name exists. Since
      * constants are stored in the symbols table, this also finds previously
      * defind constants. */
@@ -5047,7 +5217,7 @@ static void statement(int* lastindent, const int allow_decl)
     /* lex() has set stmtindent */
     if (lastindent != NULL && tok != tLABEL) {
         if (*lastindent >= 0 && *lastindent != stmtindent && !indent_nowarn && sc_tabsize > 0) {
-            error(217); /* loose indentation */
+            error(217);        /* loose indentation */
         }
         *lastindent = stmtindent;
         indent_nowarn = FALSE; /* if warning was blocked, re-enable it */
@@ -5153,7 +5323,7 @@ static void statement(int* lastindent, const int allow_decl)
         case tENUM:
             decl_enum(sLOCAL);
             break;
-        default: /* non-empty expression */
+        default:       /* non-empty expression */
             sc_allowproccall = optproccall;
             lexpush(); /* analyze token later */
             doexpr(TRUE, TRUE, TRUE, TRUE, NULL, NULL, FALSE);
@@ -5196,14 +5366,14 @@ static void compound(const int stmt_sameline)
         }
     } /* if */
 
-    nestlevel += 1;                /* increase compound statement level */
-    while (matchtoken('}') == 0) { /* repeat until compound statement is closed */
+    nestlevel += 1;                 /* increase compound statement level */
+    while (matchtoken('}') == 0) {  /* repeat until compound statement is closed */
         if (!freading) {
             error(30, block_start); /* compound block not closed at end of file */
             break;
         } /* if */
         if (count_stmt > 0 && (lastst == tRETURN || lastst == tBREAK || lastst == tCONTINUE)) {
-            error(225); /* unreachable code */
+            error(225);           /* unreachable code */
         }
         statement(&indent, TRUE); /* do a statement */
         count_stmt++;
@@ -5214,12 +5384,12 @@ static void compound(const int stmt_sameline)
     if (lastst != tRETURN && lastst != tGOTO) {
         modstk((declared - save_decl) * sizeof(cell)); /* delete local variable space */
     }
-    testsymbols(&loctab, nestlevel, FALSE, TRUE); /* look for unused block locals */
+    testsymbols(&loctab, nestlevel, FALSE, TRUE);      /* look for unused block locals */
     declared = save_decl;
-    delete_symbols(&loctab, nestlevel, FALSE, TRUE); /* erase local symbols, but
-                                                      * retain block local labels
-                                                      * (within the function) */
-    nestlevel -= 1;                                  /* decrease compound statement level */
+    delete_symbols(&loctab, nestlevel, FALSE, TRUE);   /* erase local symbols, but
+                                                        * retain block local labels
+                                                        * (within the function) */
+    nestlevel -= 1;                                    /* decrease compound statement level */
 }
 
 /*  doexpr
@@ -5251,9 +5421,9 @@ static int doexpr(const int comma, const int chkeffect, const int allowarray, co
             error(33, "-unknown-"); /* array must be indexed */
         }
         if (chkeffect && !sideeffect) {
-            error(215); /* expression has no effect */
+            error(215);             /* expression has no effect */
         }
-        sc_allowproccall = FALSE; /* cannot use "procedure call" syntax anymore */
+        sc_allowproccall = FALSE;   /* cannot use "procedure call" syntax anymore */
     }
     while (comma && matchtoken(',')); /* more? */
     if (mark_endexpr) {
@@ -5278,10 +5448,10 @@ SC_FUNC int eval_constexpr(cell* val, int* tag, symbol** symptr)
     stgget(&index, &cidx); /* mark position in code generator */
     errorset(sEXPRMARK, 0);
     const int ident = expression(val, tag, symptr, FALSE);
-    stgdel(index, cidx); /* scratch generated code */
-    stgset(FALSE);       /* stop stage-buffering */
+    stgdel(index, cidx);   /* scratch generated code */
+    stgset(FALSE);         /* stop stage-buffering */
     if (ident != iCONSTEXPR) {
-        error(8); /* must be constant expression */
+        error(8);          /* must be constant expression */
         if (val != NULL) {
             *val = 0;
         }
@@ -5316,7 +5486,7 @@ static void test(const int label, const int parens, int invert)
     int localstaging = FALSE;
 
     if (!staging) {
-        stgset(TRUE); /* start staging */
+        stgset(TRUE);          /* start staging */
         localstaging = TRUE;
 #if !defined NDEBUG
         stgget(&index, &cidx); /* should start at zero if started locally */
@@ -5349,11 +5519,11 @@ static void test(const int label, const int parens, int invert)
     if (ident == iCONSTEXPR) {         /* constant expression */
         sc_intest = (short)POPSTK_I(); /* restore stack */
         stgdel(index, cidx);
-        if (constval) { /* code always executed */
-            error(206); /* redundant test: always non-zero */
+        if (constval) {                /* code always executed */
+            error(206);                /* redundant test: always non-zero */
         }
         else {
-            error(205); /* redundant code: never executed */
+            error(205);                /* redundant code: never executed */
             jumplabel(label);
         } /* if */
         if (localstaging) {
@@ -5368,23 +5538,22 @@ static void test(const int label, const int parens, int invert)
         }
     }
     if (invert) {
-        jmp_ne0(label); /* jump to label if true (different from 0) */
+        jmp_ne0(label);            /* jump to label if true (different from 0) */
     }
     else {
-        jmp_eq0(label); /* jump to label if false (equal to 0) */
+        jmp_eq0(label);            /* jump to label if false (equal to 0) */
     }
     markexpr(sEXPR, NULL, 0);      /* end expression (give optimizer a chance) */
     sc_intest = (short)POPSTK_I(); /* double typecast to avoid warning with Microsoft C */
     if (localstaging) {
-        stgout(0);     /* output queue from the very beginning (see
-                        * assert() when localstaging is set to TRUE) */
-        stgset(FALSE); /* stop staging */
+        stgout(0);                 /* output queue from the very beginning (see
+                                    * assert() when localstaging is set to TRUE) */
+        stgset(FALSE);             /* stop staging */
     } /* if */
 }
 
 static int doif(void)
 {
-
     const int ifindent = stmtindent; /* save the indent of the "if" instruction */
     const int flab1 = getlabel();    /* get label number for false branch */
     test(flab1, TRUE, FALSE);        /* get expression, branch to flab1 if false */
@@ -5419,7 +5588,7 @@ static int doif(void)
 
 static void dowhile(void)
 {
-    int wq[wqSIZE]; /* allocate local queue */
+    int wq[wqSIZE];       /* allocate local queue */
 
     addwhile(wq);         /* add entry to queue for "break" */
     setlabel(wq[wqLOOP]); /* loop label */
@@ -5448,7 +5617,7 @@ static void dodo(void)
     setlabel(top);              /* loop label */
     statement(NULL, FALSE);
     needtoken(tWHILE);
-    setlabel(wq[wqLOOP]); /* "continue" always jumps to WQLOOP. */
+    setlabel(wq[wqLOOP]);       /* "continue" always jumps to WQLOOP. */
     setline(TRUE);
     test(wq[wqEXIT], TRUE, FALSE);
     jumplabel(top);
@@ -5474,7 +5643,7 @@ static void dofor(void)
              * 'compound statement' level of it own.
              */
             nestlevel++;
-            declloc(FALSE); /* declare local variable */
+            declloc(FALSE);                                    /* declare local variable */
         }
         else {
             doexpr(TRUE, TRUE, TRUE, TRUE, NULL, NULL, FALSE); /* expression 1 */
@@ -5502,20 +5671,20 @@ static void dofor(void)
     assert(stgidx == 0);
     const int index = stgidx;
     stgmark(sSTARTREORDER);
-    stgmark((char)(sEXPRSTART + 0)); /* mark start of 2nd expression in stage */
-    setlabel(skiplab);               /* jump to this point after 1st expression */
+    stgmark((char)(sEXPRSTART + 0));    /* mark start of 2nd expression in stage */
+    setlabel(skiplab);                  /* jump to this point after 1st expression */
     if (matchtoken(';') == 0) {
         test(wq[wqEXIT], FALSE, FALSE); /* expression 2 (jump to wq[wqEXIT] if false) */
         needtoken(';');
     } /* if */
-    stgmark((char)(sEXPRSTART + 1)); /* mark start of 3th expression in stage */
+    stgmark((char)(sEXPRSTART + 1));                       /* mark start of 3th expression in stage */
     if (matchtoken(')') == 0) {
         doexpr(TRUE, TRUE, TRUE, TRUE, NULL, NULL, FALSE); /* expression 3 */
         needtoken(')');
     } /* if */
     stgmark(sENDREORDER); /* mark end of reversed evaluation */
     stgout(index);
-    stgset(FALSE); /* stop staging */
+    stgset(FALSE);        /* stop staging */
     statement(NULL, FALSE);
     jumplabel(wq[wqLOOP]);
     setlabel(wq[wqEXIT]);
@@ -5531,7 +5700,7 @@ static void dofor(void)
         testsymbols(&loctab, nestlevel, FALSE, TRUE); /* look for unused block locals */
         declared = save_decl;
         delete_symbols(&loctab, nestlevel, FALSE, TRUE);
-        nestlevel = save_nestlevel; /* reset 'compound statement' nesting level */
+        nestlevel = save_nestlevel;                   /* reset 'compound statement' nesting level */
     } /* if */
 }
 
@@ -5709,14 +5878,14 @@ static void doassert(void)
         setlabel(flab1);
     }
     else {
-        stgset(TRUE);          /* start staging */
-        stgget(&index, &cidx); /* mark position in code generator */
+        stgset(TRUE);            /* start staging */
+        stgget(&index, &cidx);   /* mark position in code generator */
         do {
             expression(NULL, NULL, NULL, FALSE);
             stgdel(index, cidx); /* just scrap the code */
         }
         while (matchtoken(','));
-        stgset(FALSE); /* stop staging */
+        stgset(FALSE);           /* stop staging */
     } /* if */
     needtoken(tTERM);
 }
@@ -5735,7 +5904,7 @@ static void dogoto(void)
                              //     if sym->compound < nestlevel, call the destructor operator
     }
     else {
-        error(20, st); /* illegal symbol name */
+        error(20, st);       /* illegal symbol name */
     } /* if */
     needtoken(tTERM);
 }
@@ -5747,7 +5916,7 @@ static void dolabel(void)
 
     tokeninfo(&val, &st); /* retrieve label name again */
     if (find_constval(&tagname_tab, st, 0) != NULL) {
-        error(221, st); /* label name shadows tagname */
+        error(221, st);   /* label name shadows tagname */
     }
     symbol* sym = fetchlab(st);
     setlabel(sym->addr);
@@ -5768,8 +5937,7 @@ static void dolabel(void)
  */
 static symbol* fetchlab(const char* name)
 {
-
-    symbol* sym = findloc(name); /* labels are local in scope */
+    symbol* sym = findloc(name);  /* labels are local in scope */
     if (sym) {
         if (sym->ident != iLABEL) {
             error(19, sym->name); /* not a label: ... */
@@ -5786,7 +5954,6 @@ static symbol* fetchlab(const char* name)
 
 static int is_variadic(const symbol* sym)
 {
-
     assert(sym->ident == iFUNCTN);
     for (const arginfo* arg = sym->dim.arglist; arg->ident; arg++) {
         if (arg->ident == iVARARGS) {
@@ -5922,7 +6089,7 @@ static void doreturn(void)
                 load_hidden_arg();
             }
             else {
-                address(sub, sALT); /* ALT = destination */
+                address(sub, sALT);            /* ALT = destination */
             }
             const cell arraysize = calc_arraysize(dim, numdim, 0);
             memcopy(arraysize * sizeof(cell)); /* source already in PRI */
@@ -5936,7 +6103,7 @@ static void doreturn(void)
             char symname[2 * sNAMEMAX + 16]; /* allow space for user defined operators */
             assert(curfunc != NULL);
             funcdisplayname(symname, curfunc->name);
-            error(209, symname); /* function should return a value */
+            error(209, symname);             /* function should return a value */
         } /* if */
         rettype |= uRETNONE; /* function does not return anything */
     } /* if */
@@ -5948,7 +6115,6 @@ static void doreturn(void)
 
 static void dobreak(void)
 {
-
     const int* ptr = readwhile(); /* readwhile() gives an error if not in loop */
     needtoken(tTERM);
     if (ptr == NULL) {
@@ -5961,7 +6127,6 @@ static void dobreak(void)
 
 static void docont(void)
 {
-
     const int* ptr = readwhile(); /* readwhile() gives an error if not in loop */
     needtoken(tTERM);
     if (ptr == NULL) {
@@ -6170,7 +6335,6 @@ static void dostate(void)
 
 static void addwhile(int* ptr)
 {
-
     ptr[wqBRK] = declared;  /* stack pointer (for "break") */
     ptr[wqCONT] = declared; /* for "continue", possibly adjusted later */
     ptr[wqLOOP] = getlabel();
@@ -6179,7 +6343,7 @@ static void addwhile(int* ptr)
         error(102, "loop table"); /* loop table overflow (too many active loops)*/
     }
     int k = 0;
-    while (k < wqSIZE) { /* copy "ptr" to while queue table */
+    while (k < wqSIZE) {          /* copy "ptr" to while queue table */
         *wqptr = *ptr;
         wqptr += 1;
         ptr += 1;
@@ -6226,7 +6390,7 @@ static long max_stacksize_recurse(
             for (stkpos = 0; sourcesym[stkpos] != NULL; stkpos++) {
                 if (sym->refer[i] == sourcesym[stkpos]) { /* recursion detection */
                     *recursion = 1;
-                    goto break_recursion; /* recursion was detected, quit loop */
+                    goto break_recursion;                 /* recursion was detected, quit loop */
                 } /* if */
             } /* for */
             /* add this symbol to the stack */

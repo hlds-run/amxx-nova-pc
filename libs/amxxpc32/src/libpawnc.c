@@ -29,51 +29,46 @@
 #include <string.h>
 
 #if defined PAWNC_DLL
+    #if defined _MSC_VER
+        #define AMXXPC_API __declspec(dllexport)
+    #else
+        #define AMXXPC_API __attribute__((visibility("default")))
+    #endif
 
     #if !defined(__linux__) && !defined(__APPLE__)
         #include "dllmain.c"
     #endif
+#else
+    #define AMXXPC_API
+#endif
 
-    #define MAX_ARGS 100
-    #if !defined UNUSED_PARAM
-        #define UNUSED_PARAM(p) ((void)(p))
-    #endif
-
-    #if PAWN_CELL_SIZE == 32
-        #define EXCOMPILER Compile32
-    #else
-        #define EXCOMPILER Compile64
-    #endif
-
-    #if defined __WIN32__ || defined _WIN32 || defined WIN32 || defined __NT__
-__declspec(dllexport) void EXCOMPILER(const int argc, char** argv)
-    #else
-void extern __attribute__((visibility("default"))) EXCOMPILER(const int argc, char** argv)
-    #endif
-{
-    pc_compile(argc, argv);
-}
-#endif /* PAWNC_DLL */
+#define MAX_ARGS 100
+#if !defined UNUSED_PARAM
+    #define UNUSED_PARAM(p) ((void)(p))
+#endif
 
 #if defined LINUX || defined __FreeBSD__ || defined __OpenBSD__ || defined __APPLE__
     #include <sys/stat.h>
     #include <sys/types.h>
 #endif
 
+#if PAWN_CELL_SIZE == 32
+    #define EXCOMPILER Compile32
+#else
+    #define EXCOMPILER Compile64
+#endif
+
+AMXXPC_API void EXCOMPILER(const int argc, char** argv)
+{
+    pc_compile(argc, argv);
+}
+
 /* pc_printf()
  * Called for general purpose "console" output. This function prints general
  * purpose messages; errors go through pc_error(). The function is modelled
  * after printf().
  */
-#if PAWN_CELL_SIZE == 32
-    #if defined __WIN32__ || defined _WIN32 || defined WIN32
-__declspec(dllexport) int pc_printf(const char* message, ...)
-    #else
-extern int __attribute__((visibility("default"))) pc_printf(const char* message, ...)
-    #endif
-#else
-int pc_printf(const char* message, ...)
-#endif
+AMXXPC_API int pc_printf(const char* message, ...)
 {
 #if PAWN_CELL_SIZE == 32
     va_list argptr;
@@ -132,6 +127,11 @@ int pc_error(const int number, const char* message, char* filename, const int fi
     vprintf(message, argptr);
 #endif
     return 0;
+}
+
+AMXXPC_API const char* pc_pop_first_source_file(void)
+{
+    return pop_first_source_file();
 }
 
 typedef struct src_file_s {

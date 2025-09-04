@@ -59,7 +59,6 @@ void mfclose(MEMFILE* mf)
 
 int mfdump(const MEMFILE* mf)
 {
-
     assert(mf != NULL);
     /* create the file */
     FILE* fp = fopen(mf->name, "wb");
@@ -81,7 +80,6 @@ long mflength(const MEMFILE* mf)
 
 long mfseek(MEMFILE* mf, long offset, const int whence)
 {
-
     assert(mf != NULL);
     if (mf->usedoffs == 0) {
         return 0L; /* early exit: not a single byte in the file */
@@ -128,7 +126,6 @@ unsigned int mfread(MEMFILE* mf, unsigned char* buffer, const unsigned int size)
 
 char* mfgets(MEMFILE* mf, char* string, const unsigned int size)
 {
-
     assert(mf != NULL);
 
     const unsigned int read = mfread(mf, (unsigned char*)string, size);
@@ -165,7 +162,6 @@ char* mfgets(MEMFILE* mf, char* string, const unsigned int size)
 
 int mfputs(MEMFILE* mf, char* string)
 {
-
     assert(mf != NULL);
 
     const unsigned int length = strlen(string);

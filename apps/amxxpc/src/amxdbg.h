@@ -25,6 +25,8 @@
 #ifndef AMXDBG_H_INCLUDED
 #define AMXDBG_H_INCLUDED
 
+#include <cstdio>
+
 #ifndef AMX_H_INCLUDED
     #include "amx.h"
 #endif
@@ -129,11 +131,11 @@ using AMX_DBG = struct tagAMX_DBG {
 };
 
 #if !defined iVARIABLE
-    #define iVARIABLE 1  /* cell that has an address and that can be fetched directly (lvalue) */
+    #define iVARIABLE  1 /* cell that has an address and that can be fetched directly (lvalue) */
     #define iREFERENCE 2 /* iVARIABLE, but must be dereferenced */
-    #define iARRAY 3
-    #define iREFARRAY 4 /* an array passed by reference (i.e. a pointer) */
-    #define iFUNCTN 9
+    #define iARRAY     3
+    #define iREFARRAY  4 /* an array passed by reference (i.e. a pointer) */
+    #define iFUNCTN    9
 #endif
 
 int AMXAPI dbg_FreeInfo(AMX_DBG* amxdbg);

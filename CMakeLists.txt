@@ -167,10 +167,6 @@ include("cmake/ClangTidy.cmake")
 include("cmake/Cppcheck.cmake")
 include("cmake/PvsStudio.cmake")
 
-if(UNIX)
-  find_package(Threads REQUIRED)
-endif()
-
 #-------------------------------------------------------------------------------
 # Subdirectories
 #-------------------------------------------------------------------------------
