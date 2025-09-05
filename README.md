@@ -39,7 +39,37 @@ amxxpc my_plugin.sma -oaddons/amxmodx/plugins/my_plugin.amxx
 amxxpc my_plugin.sma -i/path/to/scripting/include -i/path/to/custom/includes
 ```
 
-For a full list of options, please refer to the [official AMX Mod X documentation](https://wiki.alliedmods.net/Pawn_Compiler), as all standard flags are supported.
+Below is a complete list of supported command-line options. The full list of options can also be displayed in the terminal by running the compiler with the `--help` flag.
+
+```
+Options:
+        -A<num>       Alignment for the data segment and stack in bytes. Must be a power of two.
+        -a            Generate a human-readable assembler listing (.asm) instead of a binary (.amxx).
+                      Useful for low-level debugging.
+        -C[+/-]       Enable/disable (+/-) compact encoding to reduce the output file size.
+        -c<name>      Codepage name or number for the source file (e.g., 1252 for Windows Latin-1).
+        -D<path>      Set the compiler's working directory. Affects how relative paths are resolved.
+        
+        -d0           Disable debug info and checks. For maximum performance (release).
+        -d1           [Default] Enable run-time checks only (bounds checking, etc.).
+        -d2           Enable full debug info and checks. Recommended for development.
+        -d3           Same as -d2, but with optimizations disabled. Useful for step-by-step debugging.
+        
+        -e<name>      Redirect all errors and warnings to a specified file. Useful for IDE integration
+                      and automated build systems.
+        -H<hwnd>      Window handle (HWND) to send a notification message on compilation finish (Windows only).
+        -i<path>      Add a path to search for include files (#include <... A.I.>). Can be specified multiple times.
+                      Paths with spaces must be quoted.
+        -l            Create a listing file (.lst) showing the code after preprocessor handling
+                      (#include, #define). Compilation is not performed.
+        -o<name>      Set the base name/path for the output file. If not set, the name is derived
+                      from the source file.
+        -p<name>      Specify a "prefix" file that will be implicitly included at the top of every
+                      compiled script. Useful for global constants or macros.
+        -r[name]      Generate a cross-reference report (.xml) on symbol usage. If no filename is given,
+                      the report is written to the console.
+        -sui[+/-]     Show/hide (+/-) stack usage information after a successful compilation.
+```
 
 ## Building from Source
 
