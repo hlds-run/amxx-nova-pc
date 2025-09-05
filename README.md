@@ -23,7 +23,9 @@ The project has been refactored using C++23 and a modern CMake build system, ena
 
 ## Usage
 
-The compiler is a drop-in replacement for the standard `amxxpc`.
+The compiler is a drop-in replacement for the standard `amxxpc` and offers flexible configuration methods.
+
+### Basic Compilation
 
 **Simple Compilation:**
 ```bash
@@ -41,13 +43,14 @@ amxxpc my_plugin.sma -oaddons/amxmodx/plugins/my_plugin.amxx
 amxxpc my_plugin.sma -i/path/to/scripting/include -i/path/to/custom/includes
 ```
 
-Below is a complete list of supported command-line options. The full list of options can also be displayed in the terminal by running the compiler with the `--help` flag.
+### Full Command-Line Options List
+
+The full list of options can also be displayed in the terminal by running the compiler with the `--help` flag.
 
 ```
 Options:
         -A<num>       Alignment for the data segment and stack in bytes. Must be a power of two.
         -a            Generate a human-readable assembler listing (.asm) instead of a binary (.amxx).
-                      Useful for low-level debugging.
         -C[+/-]       Enable/disable (+/-) compact encoding to reduce the output file size.
         -c<name>      Codepage name or number for the source file (e.g., 1252 for Windows Latin-1).
         -D<path>      Set the compiler's working directory. Affects how relative paths are resolved.
@@ -57,20 +60,44 @@ Options:
         -d2           Enable full debug info and checks. Recommended for development.
         -d3           Same as -d2, but with optimizations disabled. Useful for step-by-step debugging.
         
-        -e<name>      Redirect all errors and warnings to a specified file. Useful for IDE integration
-                      and automated build systems.
+        -e<name>      Redirect all errors and warnings to a specified file.
         -H<hwnd>      Window handle (HWND) to send a notification message on compilation finish (Windows only).
         -i<path>      Add a path to search for include files (#include <... A.I.>). Can be specified multiple times.
-                      Paths with spaces must be quoted.
-        -l            Create a listing file (.lst) showing the code after preprocessor handling
-                      (#include, #define). Compilation is not performed.
-        -o<name>      Set the base name/path for the output file. If not set, the name is derived
-                      from the source file.
-        -p<name>      Specify a "prefix" file that will be implicitly included at the top of every
-                      compiled script. Useful for global constants or macros.
-        -r[name]      Generate a cross-reference report (.xml) on symbol usage. If no filename is given,
-                      the report is written to the console.
+        -l            Create a listing file (.lst) showing the code after preprocessor handling.
+        -o<name>      Set the base name/path for the output file.
+        -p<name>      Specify a "prefix" file that will be implicitly included at the top of every script.
+        -r[name]      Generate a cross-reference report (.xml) on symbol usage.
         -sui[+/-]     Show/hide (+/-) stack usage information after a successful compilation.
+        -T<file>      Load compilation options from the specified configuration file.
+```
+
+### Configuration Files (.cfg)
+
+To avoid long and repetitive commands, you can specify compiler options in `.cfg` files. This is particularly useful for managing different build profiles (e.g., `debug` and `release`).
+
+**Loading Configuration:**
+
+1.  **Explicitly (`-T`)**: Use the `-T` option to load a specific configuration file.
+    *   `amxxpc -T D:\configs\my_build.cfg ...` — loads the file from a full path.
+    *   `amxxpc -T release ...` — will look for the file `<compiler_dir>/target/release.cfg`.
+
+2.  **Default Loading** (if `-T` is not used):
+    *   The compiler searches for `<compiler_dir>/target/default.cfg`.
+    *   If not found, it looks for `pawn.cfg` next to the compiler's executable.
+
+**Option Precedence:** Options are applied in the following order: first from the `.cfg` file, and then from the command line. **Command-line arguments always have priority** and will override settings from the file.
+
+### Defining Constants and Macros
+
+You can define constants and macros directly from the command line, which is ideal for build scripts.
+
+*   **Integer Constant**: `BUILD_ID=512`
+*   **String Macro**: `VERSION_NAME="1.5.0 Release"` (equivalent to `#define VERSION_NAME "1.5.0 Release"`)
+*   **Flag for Conditional Compilation**: `DEBUG_MODE=` (defines `DEBUG_MODE` as the constant `1`)
+
+**Complex Command Example:**
+```bash
+amxxpc DEBUG_MODE= BUILD_ID=512 VERSION_NAME="1.5.0 Beta" my_plugin.sma
 ```
 
 ## Building from Source
