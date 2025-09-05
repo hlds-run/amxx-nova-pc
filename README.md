@@ -3,6 +3,8 @@
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Latest Release](https://img.shields.io/github/v/release/hlds-run/amxx-nova-pc)](https://github.com/hlds-run/amxx-nova-pc/releases/latest)
 
+**English** | **[Русский](https://github.com/hlds-run/amxx-nova-pc/blob/main/README.ru.md)**
+
 A modern, cross-platform Pawn language compiler for AMX Mod X. This is a command-line utility (`amxxpc`) that compiles Pawn source code (`.sma`) into executable plugins (`.amxx`).
 
 ## About The Project
