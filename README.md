@@ -17,8 +17,7 @@ The project has been refactored using C++23 and a modern CMake build system, ena
 
 *   **Full Compatibility**: Compiled plugins are 100% compatible with official AMX Mod X versions. Your existing code will work without any modifications.
 *   **Cross-Platform**: Natively build and run the compiler on both Windows and Linux.
-*   **Modern Codebase**: Transitioned from legacy C to modern C++23 for improved reliability, readability, and maintainability.
-*   **Advanced Build System**: Utilizes CMake with presets for a unified and predictable build experience on any platform.
+*   **Modern Architecture and Wrapper**: The command-line wrapper (`amxxpc`) and the project's build system have been completely rewritten in modern C++23 using CMake. This ensures cross-platform compatibility and ease of compilation while preserving the original, time-tested compiler core.
 *   **Code Quality**: Integrated static analyzers (Clang-Tidy, Cppcheck) and formatters (Clang-Format) to maintain code cleanliness and stability.
 
 ## Usage
