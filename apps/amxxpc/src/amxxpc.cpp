@@ -262,6 +262,7 @@ void ReadFileIntoPl(abl* pl, FILE* fp)
     }
     pl->size = size;
     pl->data = new char[size];
+    memset(pl->data, 0, size);
     rewind(fp);
     fread(pl->data, 1, size, fp);
 }

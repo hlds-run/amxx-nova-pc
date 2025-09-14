@@ -1994,6 +1994,10 @@ static void parse(void)
 static void dumplits(void)
 {
     int k = 0;
+
+    if (sc_status == statSKIP) {
+        return;
+    }
     while (k < litidx) {
         /* should be in the data segment */
         assert(curseg == 2);
@@ -2017,11 +2021,14 @@ static void dumplits(void)
 
 /*  dumpzero
  *
- *  Dump zero's for default initial values
+ *  Dump zero's for default initial values of elements of global arrays.
+ *  Elements of local arrays do not need to be dumped, because they are
+ *  allocated on the stack (and the stack is cleared when creating a new
+ *  variable).
  */
 static void dumpzero(int count)
 {
-    if (count <= 0) {
+    if (sc_status == statSKIP || count <= 0) {
         return;
     }
     assert(curseg == 2);

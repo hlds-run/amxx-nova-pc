@@ -1063,9 +1063,14 @@ static void append_dbginfo(FILE* fout)
         assert(str[0] != '\0' && str[1] == ':');
         if (str[0] == 'S') {
             dbghdr.symbols++;
-            name = strchr(str + 2, ':');
-            assert(name != NULL);
-            dbghdr.size += sizeof(AMX_DBG_SYMBOL) + strlen(skipwhitespace(name + 1));
+            str = strchr(str + 2, ':');
+            assert(str != NULL);
+            name = skipwhitespace(str + 1);
+            str = strchr(name, ' ');
+            assert(str != NULL);
+            assert((unsigned)(str - name) < sizeof symname);
+            const uint32_t namelen = str ? (str - name) : strlen(name);
+            dbghdr.size += (int32_t)(sizeof(AMX_DBG_SYMBOL) + namelen);
             if ((prevstr = strchr(name, '[')) != NULL) {
                 while ((prevstr = strchr(prevstr + 1, ':')) != NULL) {
                     dbghdr.size += sizeof(AMX_DBG_SYMDIM);
