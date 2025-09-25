@@ -194,6 +194,16 @@
       "hidden": true
     },
     {
+      "name": "unittest",
+      "description": "Enable unit tests",
+      "cacheVariables": {
+        "BUILD_UNIT_TESTS": "ON",
+        "ENABLE_EXCEPTIONS": "ON",
+        "ENABLE_RTTI": "ON"
+      },
+      "hidden": true
+    },
+    {
       "name": "ninja-gcc-linux",
       "inherits": [
         "base",
@@ -209,6 +219,22 @@
         "ninja-multi-config",
         "clang",
         "linux"
+      ]
+    },
+    {
+      "name": "unittest-ninja-gcc-linux",
+      "displayName": "Unittest Ninja GCC",
+      "inherits": [
+        "unittest",
+        "ninja-gcc-linux"
+      ]
+    },
+    {
+      "name": "unittest-ninja-clang-linux",
+      "displayName": "Unittest Ninja Clang",
+      "inherits": [
+        "unittest",
+        "ninja-clang-linux"
       ]
     },
     {
@@ -248,6 +274,19 @@
       ],
       "cacheVariables": {
         "ENABLE_PVS_STUDIO": "ON"
+      }
+    },
+    {
+      "name": "iwyu-ninja-clang-linux-reldebinfo",
+      "inherits": [
+        "base",
+        "ninja",
+        "clang",
+        "linux",
+        "reldebinfo"
+      ],
+      "cacheVariables": {
+        "ENABLE_IWYU": "ON"
       }
     },
     {
@@ -291,6 +330,22 @@
       }
     },
     {
+      "name": "unittest-ninja-msvc-windows",
+      "displayName": "Unittest Ninja MSVC",
+      "inherits": [
+        "unittest",
+        "ninja-msvc-windows"
+      ]
+    },
+    {
+      "name": "unittest-vs2022-msvc-windows",
+      "displayName": "Unittest VS 2022 MSVC",
+      "inherits": [
+        "unittest",
+        "vs2022-msvc-windows"
+      ]
+    },
+    {
       "name": "clang-tidy-ninja-clang-windows-reldebinfo",
       "inherits": [
         "base",
@@ -327,6 +382,19 @@
       ],
       "cacheVariables": {
         "ENABLE_PVS_STUDIO": "ON"
+      }
+    },
+    {
+      "name": "iwyu-ninja-clang-windows-reldebinfo",
+      "inherits": [
+        "base",
+        "ninja",
+        "clang",
+        "windows",
+        "reldebinfo"
+      ],
+      "cacheVariables": {
+        "ENABLE_IWYU": "ON"
       }
     }
   ],
@@ -424,6 +492,34 @@
       ]
     },
     {
+      "name": "unittest-ninja-gcc-linux-release",
+      "displayName": "Unittest Ninja GCC Release",
+      "description": "Build unit tests using Ninja Multi-Config generator and GCC compiler with Release configuration",
+      "configurePreset": "unittest-ninja-gcc-linux",
+      "configuration": "Release",
+      "inherits": [
+        "base",
+        "linux"
+      ],
+      "targets": [
+        "amxxpc.test"
+      ]
+    },
+    {
+      "name": "unittest-ninja-clang-linux-release",
+      "displayName": "Unittest Ninja Clang Release",
+      "description": "Build unit tests using Ninja Multi-Config generator and Clang compiler with Release configuration",
+      "configurePreset": "unittest-ninja-clang-linux",
+      "configuration": "Release",
+      "inherits": [
+        "base",
+        "linux"
+      ],
+      "targets": [
+        "amxxpc.test"
+      ]
+    },
+    {
       "name": "clang-tidy-ninja-clang-linux-reldebinfo",
       "displayName": "SA: Clang-Tidy Ninja Clang",
       "description": "Run Clang-Tidy using Ninja generator and Clang compiler",
@@ -454,6 +550,16 @@
       ],
       "targets": [
         "pvs_analysis"
+      ]
+    },
+    {
+      "name": "iwyu-ninja-clang-linux-reldebinfo",
+      "displayName": "SA: IWYU Ninja Clang",
+      "description": "Run IWYU using Ninja generator and Clang compiler",
+      "configurePreset": "iwyu-ninja-clang-linux-reldebinfo",
+      "inherits": [
+        "base",
+        "linux"
       ]
     },
     {
@@ -589,6 +695,34 @@
       ]
     },
     {
+      "name": "unittest-ninja-msvc-windows-release",
+      "displayName": "Unittest Ninja MSVC Release",
+      "description": "Build unit tests using Ninja Multi-Config generator and MSVC compiler with Release configuration",
+      "configurePreset": "unittest-ninja-msvc-windows",
+      "configuration": "Release",
+      "inherits": [
+        "base",
+        "windows"
+      ],
+      "targets": [
+        "amxxpc.test"
+      ]
+    },
+    {
+      "name": "unittest-vs2022-msvc-windows-release",
+      "displayName": "Unittest VS 2022 MSVC Release",
+      "description": "Build unit tests using Visual Studio 17 2022 generator and MSVC compiler with Release configuration",
+      "configurePreset": "unittest-vs2022-msvc-windows",
+      "configuration": "Release",
+      "inherits": [
+        "base",
+        "windows"
+      ],
+      "targets": [
+        "amxxpc.test"
+      ]
+    },
+    {
       "name": "clang-tidy-ninja-clang-windows-reldebinfo",
       "displayName": "SA: Clang-Tidy Ninja Clang",
       "description": "Run Clang-Tidy using Ninja generator and Clang compiler",
@@ -619,6 +753,85 @@
       ],
       "targets": [
         "pvs_analysis"
+      ]
+    },
+    {
+      "name": "iwyu-ninja-clang-windows-reldebinfo",
+      "displayName": "SA: IWYU Ninja Clang",
+      "description": "Run IWYU using Ninja generator and Clang compiler",
+      "configurePreset": "iwyu-ninja-clang-windows-reldebinfo",
+      "inherits": [
+        "base",
+        "windows"
+      ]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "base",
+      "description": "Base configuration with common settings and options",
+      "output": {
+        "verbosity": "default",
+        "shortProgress": true,
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true,
+        "timeout": 10
+      },
+      "hidden": true
+    },
+    {
+      "name": "linux",
+      "description": "Configuration for Linux",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "hidden": true
+    },
+    {
+      "name": "windows",
+      "description": "Configuration for Windows",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "hidden": true
+    },
+    {
+      "name": "ninja-gcc-linux",
+      "configurePreset": "unittest-ninja-gcc-linux",
+      "inherits": [
+        "base",
+        "linux"
+      ]
+    },
+    {
+      "name": "ninja-clang-linux",
+      "configurePreset": "unittest-ninja-clang-linux",
+      "inherits": [
+        "base",
+        "linux"
+      ]
+    },
+    {
+      "name": "ninja-msvc-windows",
+      "configurePreset": "unittest-ninja-msvc-windows",
+      "inherits": [
+        "base",
+        "windows"
+      ]
+    },
+    {
+      "name": "vs2022-msvc-windows",
+      "configurePreset": "unittest-vs2022-msvc-windows",
+      "inherits": [
+        "base",
+        "windows"
       ]
     }
   ]

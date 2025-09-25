@@ -17,12 +17,12 @@ add_executable("${TARGET_NAME}")
 
 target_sources("${TARGET_NAME}"
   PRIVATE
-    "src/amx.cpp"
-    "src/amxxpc.cpp"
-    "src/binary.cpp"
+    "src/application.cpp"
+    "src/application.hpp"
+    "src/main.cpp"
 )
 
-set(VERSION_FILENAME "version.h")
+set(VERSION_FILENAME "version.hpp")
 set(VERSION_FILEPATH "${PROJECT_BINARY_DIR}/${VERSION_FILENAME}")
 
 configure_file(
@@ -79,29 +79,6 @@ set_target_properties("${TARGET_NAME}"
 )
 
 #-------------------------------------------------------------------------------
-# Compile Definitions
-#-------------------------------------------------------------------------------
-
-target_compile_definitions("${TARGET_NAME}"
-  PRIVATE
-    AMX_ANSIONLY
-    HAVE_STDINT_H
-
-    $<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:
-      BUILD_STATIC_AMXXPC
-    >
-
-    $<$<PLATFORM_ID:Windows>:
-      _MBCS
-      _CRT_SECURE_NO_WARNINGS
-    >
-
-    $<$<NOT:$<PLATFORM_ID:Windows>>:
-      LINUX
-    >
-)
-
-#-------------------------------------------------------------------------------
 # Link Options
 #-------------------------------------------------------------------------------
 
@@ -118,10 +95,7 @@ target_link_options("${TARGET_NAME}"
 
 target_link_libraries("${TARGET_NAME}"
   PRIVATE
-    "ZLib::zlib"
-    "PCLib::amxxpc32"
-
-    $<$<NOT:$<PLATFORM_ID:Windows>>:
-      "${CMAKE_DL_LIBS}"
-    >
+    "AMXX::amxx"
+    "CLI::cli"
+    "UserInterface::ui"
 )

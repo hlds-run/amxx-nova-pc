@@ -165,7 +165,16 @@ function(setup_target_definitions tgt)
     return()
   endif()
 
+  # Skip interface libraries
+  get_target_property(type "${tgt}" TYPE)
+  if(type STREQUAL "INTERFACE_LIBRARY")
+    return()
+  endif()
+
   target_compile_definitions("${tgt}" PRIVATE
+    # Multi-byte character sets for Windows
+    $<$<PLATFORM_ID:Windows>:_MBCS>
+
     # Shared library definitions
     $<$<STREQUAL:$<TARGET_PROPERTY:${tgt},TYPE>,SHARED_LIBRARY>:_USRDLL>
     $<$<STREQUAL:$<TARGET_PROPERTY:${tgt},TYPE>,SHARED_LIBRARY>:_WINDLL>
