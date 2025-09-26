@@ -223,9 +223,7 @@ if(ENABLE_CPPCHECK)
 endif()
 
 if(ENABLE_PVS_STUDIO)
-  enable_pvs_studio(TARGETS ${PROJECT_TARGETS}
-    CXX_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/apps/amxxpc"
-  )
+  enable_pvs_studio(TARGETS ${PROJECT_TARGETS})
 endif()
 
 if(ENABLE_IWYU)
