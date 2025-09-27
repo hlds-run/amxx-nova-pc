@@ -30,7 +30,7 @@ namespace {
 
         for (const auto& [key, value] : options) {
             // Skip the 'help' options
-            if (key == "help" || key == "h" || key == "?") {
+            if (key == "help" || key == "?") {
                 continue;
             }
 

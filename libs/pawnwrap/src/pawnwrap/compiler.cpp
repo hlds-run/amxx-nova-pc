@@ -59,6 +59,9 @@ namespace {
             .description = "full debug information, dynamic checking, no optimization",
             .default_value = std::nullopt});
 
+        opts.emplace_back(
+            PawnWrap::Option{.flag = "-E", .description = "treat warnings as errors", .default_value = std::nullopt});
+
         opts.emplace_back(PawnWrap::Option{.flag = "-e<name>",
             .description = "set name of error file (quiet compile)",
             .default_value = std::nullopt});
@@ -68,6 +71,9 @@ namespace {
             .description = "window handle to send a notification message on finish",
             .default_value = std::nullopt});
 #endif
+        opts.emplace_back(
+            PawnWrap::Option{.flag = "-h", .description = "show included file paths", .default_value = std::nullopt});
+
         opts.emplace_back(PawnWrap::Option{
             .flag = "-i<name>", .description = "path for include files", .default_value = std::nullopt});
 
@@ -109,9 +115,6 @@ namespace {
         opts.emplace_back(PawnWrap::Option{.flag = "-w<num>",
             .description = "disable a specific warning by its number",
             .default_value = std::nullopt});
-
-        opts.emplace_back(
-            PawnWrap::Option{.flag = "-E", .description = "treat warnings as errors", .default_value = std::nullopt});
 
         opts.emplace_back(PawnWrap::Option{
             .flag = "-X<num>", .description = "abstract machine size limit in bytes", .default_value = std::nullopt});

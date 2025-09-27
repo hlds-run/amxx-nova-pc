@@ -187,7 +187,7 @@ namespace {
             std::ofstream(config_path) << "# dummy config\n";
         }
 
-        constexpr const char* argv[] = {"prog", "--help", "-h", "-?", "-Tval", "-x"};
+        constexpr const char* argv[] = {"prog", "--help", "-h", "-?", "-Tval"};
 
         // Act
         const Cli::Arguments args{std::size(argv), argv};
@@ -195,10 +195,9 @@ namespace {
 
         // Assert
         EXPECT_FALSE(std::ranges::any_of(norm_args, [](const std::string& s) { return s == "--help"; }));
-        EXPECT_FALSE(std::ranges::any_of(norm_args, [](const std::string& s) { return s == "-h"; }));
         EXPECT_FALSE(std::ranges::any_of(norm_args, [](const std::string& s) { return s == "-?"; }));
         EXPECT_FALSE(std::ranges::any_of(norm_args, [](const std::string& s) { return s == "-Tval"; }));
-        EXPECT_TRUE(std::ranges::any_of(norm_args, [](const std::string& s) { return s == "-x"; }));
+        EXPECT_TRUE(std::ranges::any_of(norm_args, [](const std::string& s) { return s == "-h"; }));
 
         // Cleanup
         std::filesystem::remove(config_path);

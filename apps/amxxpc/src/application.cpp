@@ -77,7 +77,7 @@ namespace AmxxPc {
     {
         ui_->show_header(app_version);
 
-        if (arguments_->has_option("help") || arguments_->has_option("h") || arguments_->has_option("?")) {
+        if (arguments_->has_option("help") || arguments_->has_option("?")) {
             ui_->show_usage();
             ui_->show_help(PawnWrap::get_options());
 
