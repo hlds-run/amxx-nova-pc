@@ -19,6 +19,9 @@
  *  3.  This notice may not be removed or altered from any source distribution.
  */
 
+#include "amxdbg.h"
+#include "lstring.h"
+#include "sc.h"
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -27,8 +30,6 @@
 #if defined FORTIFY
     #include "fortify.h"
 #endif
-#include "amxdbg.h"
-#include "sc.h"
 #if defined LINUX || defined __FreeBSD__ || defined __OpenBSD__ || defined __APPLE__
     #include <sclinux.h>
 #endif
@@ -562,8 +563,7 @@ static int findopcode(const char* instr, const int maxlen)
     if (maxlen >= MAX_INSTR_LEN) {
         return 0;
     }
-    strncpy(str, instr, maxlen);
-    str[maxlen] = '\0'; /* make sure the string is zero terminated */
+    strlcpy(str, instr, maxlen + 1);
     /* look up the instruction with a binary search
      * the assembler is case insensitive to instructions (but case sensitive
      * to symbols)
@@ -1069,8 +1069,8 @@ static void append_dbginfo(FILE* fout)
             str = strchr(name, ' ');
             assert(str != NULL);
             assert((unsigned)(str - name) < sizeof symname);
-            const uint32_t namelen = str ? (str - name) : strlen(name);
-            dbghdr.size += (int32_t)(sizeof(AMX_DBG_SYMBOL) + namelen);
+            strlcpy(symname, name, str - name + 1);
+            dbghdr.size += (int32_t)(sizeof(AMX_DBG_SYMBOL) + strlen(symname));
             if ((prevstr = strchr(name, '[')) != NULL) {
                 while ((prevstr = strchr(prevstr + 1, ':')) != NULL) {
                     dbghdr.size += sizeof(AMX_DBG_SYMDIM);
@@ -1155,8 +1155,7 @@ static void append_dbginfo(FILE* fout)
             str = strchr(name, ' ');
             assert(str != NULL);
             assert(str - name < sizeof symname);
-            strncpy(symname, name, str - name);
-            symname[(str - name)] = '\0';
+            strlcpy(symname, name, str - name + 1);
             dbgsym.codestart = hex2long(str, &str);
             dbgsym.codeend = hex2long(str, &str);
             dbgsym.ident = (char)hex2long(str, &str);

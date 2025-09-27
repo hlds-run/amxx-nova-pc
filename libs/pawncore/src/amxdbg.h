@@ -33,6 +33,8 @@
 extern "C" {
 #endif
 
+#include <stdio.h>
+
 /* Some compilers do not support the #pragma align, which should be fine. Some
  * compilers give a warning on unknown #pragmas, which is not so fine...
  */

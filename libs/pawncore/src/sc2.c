@@ -19,6 +19,7 @@
  *  3.  This notice may not be removed or altered from any source distribution.
  */
 
+#include "lstring.h"
 #include "sc.h"
 #include <assert.h>
 #include <ctype.h>
@@ -39,6 +40,7 @@
 #define UTF8MODE 0x2
 #define ISPACKED 0x4
 static cell litchar(const unsigned char** lptr, int flags);
+static symbol* find_symbol(const symbol* root, const char* name, int fnumber, int includechildren);
 
 static void substallpatterns(unsigned char* line, int buffersize);
 static int match(const char* st, int end);
@@ -176,19 +178,21 @@ SC_FUNC int plungefile(char* name, const int try_currentpath, const int try_incl
     int result = FALSE;
 
     if (try_currentpath) {
+        /* try to open the file from the active directory.
+         */
         result = plungequalifiedfile(name);
+
         if (!result) {
-            /* failed to open the file in the active directory, try to open the file
-             * in the same directory as the current file --but first check whether
-             * there is a (relative) path for the current file
+            /* try to open the file in the same directory as the current file --but
+             * first check whether there is a (relative) path for the current file
              */
-            char* ptr;
+            const char* ptr;
             if ((ptr = strrchr(inpfname, DIRSEP_CHAR)) != 0) {
                 const int len = ptr - inpfname + 1;
                 if (len + strlen(name) < _MAX_PATH) {
                     char path[_MAX_PATH];
-                    strncpy(path, inpfname, len);
-                    strcpy(path + len, name);
+                    strlcpy(path, inpfname, len + 1);
+                    strlcat(path, name, sizearray(path));
                     result = plungequalifiedfile(path);
                 } /* if */
             } /* if */
@@ -196,16 +200,15 @@ SC_FUNC int plungefile(char* name, const int try_currentpath, const int try_incl
     } /* if */
 
     if (try_includepaths && name[0] != DIRSEP_CHAR) {
-        char* ptr;
+        const char* ptr;
         for (int i = 0; !result && (ptr = get_path(i)) != NULL; i++) {
             char path[_MAX_PATH];
-            strncpy(path, ptr, sizeof path);
-            path[sizeof path - 1] = '\0'; /* force '\0' termination */
-            strncat(path, name, sizeof(path) - strlen(path) - 1);
-            path[sizeof path - 1] = '\0';
+            strlcpy(path, ptr, sizearray(path));
+            strlcat(path, name, sizearray(path));
             result = plungequalifiedfile(path);
         } /* while */
     } /* if */
+
     return result;
 }
 
@@ -233,7 +236,10 @@ static void check_empty(const unsigned char* lptr)
  */
 static void doinclude(const int silent)
 {
-    char name[_MAX_PATH], c;
+    char name[_MAX_PATH];
+    char symname[sNAMEMAX];
+    char* ptr;
+    unsigned char c;
 
     while (*lptr <= ' ' && *lptr != '\0') { /* skip leading whitespace */
         lptr++;
@@ -250,13 +256,13 @@ static void doinclude(const int silent)
     } /* if */
 
     int i = 0;
-    while (*lptr != c && *lptr != '\0' && i < sizeof name - 1) { /* find the end of the string */
-        name[i++] = *lptr++;
+    while (*lptr != c && *lptr != '\0' && i < sizearray(name) - 1) { /* find the end of the string */
+        name[i++] = (char)*lptr++;
     }
     while (i > 0 && name[i - 1] <= ' ') {
         i--;          /* strip trailing whitespace */
     }
-    assert(i >= 0 && i < sizeof name);
+    assert(i >= 0 && i < sizearray(name));
     name[i] = '\0';   /* zero-terminate the string */
 
     if (*lptr != c) { /* verify correct string termination */
@@ -267,19 +273,46 @@ static void doinclude(const int silent)
         check_empty(lptr + 1); /* verify that the rest of the line is whitespace */
     }
 
-    /* Include files between "..." or without quotes are read from the current
-     * directory, or from a list of "include directories". Include files
-     * between <...> are only read from the list of include directories.
+    /* create a symbol from the name of the include file; this allows the system
+     * to test for multiple inclusions
      */
-    const int result = plungefile(name, c != '>', TRUE);
-    if (!result && !silent) {
-        error(100, name); /* cannot read from ... (fatal error) */
+    strcpy(symname, "_inc_");
+    if ((ptr = strrchr(name, DIRSEP_CHAR)) != NULL) {
+        strlcat(symname, ptr + 1, sizearray(symname));
     }
-#if !defined NO_DEFINE
-    if (result) {
-        inst_file_name(name, FALSE);
+    else {
+        strlcat(symname, name, sizearray(symname));
     }
+    /* replace invalid characters by '_' (anything not a digit, character or
+     * underscore)
+     */
+    for (i = 0; symname[i] != '\0'; i++) {
+        if (!alphanum(symname[i])) {
+            symname[i] = '_';
+        }
+    }
+#if defined __WIN32__ || defined _WIN32 || defined _Windows || defined __MSDOS__
+    /* on systems with case-insentive filenames, force the symbol for the file
+     * to lower case
+     */
+    strlwr(symname);
 #endif
+    if (find_symbol(&glbtab, symname, fcurrent, -1) == NULL) {
+        /* constant is not present, so this file has not been included yet */
+
+        /* Include files between "..." or without quotes are read from the same
+         * relative path as the current file, from the active directory, or from
+         * a list of "include directories". Include files between <...> are only
+         * read from the list of include directories.
+         */
+        const int result = plungefile(name, (c != '>'), TRUE);
+        if (result) {
+            add_constant(symname, 1, sGLOBAL, 0);
+        }
+        else if (!silent) {
+            error(100, name); /* cannot read from ... (fatal error) */
+        }
+    } /* if */
 }
 
 /*  readline
@@ -1719,8 +1752,7 @@ static int substpattern(unsigned char* line, const size_t buffersize, char* patt
                     }
                     return FALSE;
                 }
-                memcpy(args[arg], s, len); /* NOLINT */
-                args[arg][len] = '\0';
+                strlcpy((char*)args[arg], (const char*)s, len + 1);
                 /* character behind the pattern was matched too */
                 if (*e == *p) {
                     s = e + 1;
@@ -2014,7 +2046,7 @@ SC_FUNC void preprocess(void)
     }
     do {
         readline(pline);
-        stripcom(pline);         /* ??? no need for this when reading back from list file (in the second pass) */
+        stripcom(pline);
         lptr = pline;            /* set "line pointer" to start of the parsing buffer */
         iscommand = command();
         if (iscommand != CMD_NONE) {
@@ -2400,7 +2432,7 @@ SC_FUNC int lex(cell* lexvalue, char** lexsym)
     if (pc_docexpr) { /* optionally concatenate to documentation string */
         char* docstr = malloc((lptr - starttoken + 1) * sizeof(char));
         if (docstr != NULL) {
-            strncpy(docstr, (char*)starttoken, lptr - starttoken);
+            strlcpy(docstr, (char*)starttoken, lptr - starttoken + 1);
             docstr[(lptr - starttoken)] = '\0';
             insert_autolist(docstr);
             free(docstr);

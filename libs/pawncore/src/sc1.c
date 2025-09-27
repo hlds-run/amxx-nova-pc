@@ -21,6 +21,7 @@
  *  3.  This notice may not be removed or altered from any source distribution.
  */
 
+#include "lstring.h"
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
@@ -1381,8 +1382,7 @@ static void parseoptions(
                 i = sNAMEMAX;
                 error(200, argv[arg], sNAMEMAX); /* symbol too long, truncated to sNAMEMAX chars */
             }
-            strncpy(str, argv[arg], i);
-            str[i] = '\0';                       /* str holds symbol name */
+            strlcpy(str, argv[arg], i + 1);      /* str holds symbol name */
             const char* value_str = ptr + 1;
             if (*value_str == '\0') {
                 /* No value provided (e.g., "DEBUG="), define as 1 by convention */
@@ -1407,8 +1407,7 @@ static void parseoptions(
             }
         }
         else {
-            strncpy(str, argv[arg], sizeof(str) - 5); /* -5 because default extension is 4 characters */
-            str[sizeof(str) - 5] = '\0';
+            strlcpy(str, argv[arg], sizeof(str) - 5); /* -5 because default extension is 4 characters */
             set_extension(str, ".p", FALSE);
             insert_sourcefile(str);
             /* The output name is the first input name with a different extension,
@@ -1619,16 +1618,14 @@ static void setconfig(const char* root)
     /* see www.autopackage.org (now Listaller) for the BinReloc module */
     br_init(NULL);
     ptr = br_find_exe("/opt/Pawn/bin/pawncc");
-    strncpy(path, ptr, sizeof path);
+    strlcpy(path, ptr, sizeof path);
     free(ptr);
 #else
     if (root != NULL) {
-        strncpy(path, root, sizeof path); /* path + filename (hopefully) */
+        strlcpy(path, root, sizeof path); /* path + filename (hopefully) */
     }
     else {
-        if (getcwd(path, sizeof path) == NULL) {
-            *path = '\0';
-        }
+        getcwd(path, sizeof path);
         /* add a final \ or / to the path (which is stripped of later) */
         ptr = strchr(path, '\0');
         assert(ptr != NULL);
@@ -1683,7 +1680,7 @@ static void setconfig(const char* root)
 /* also copy the root path (for the XML documentation and target host files) */
 #if !defined SC_LIGHT
         *ptr = '\0';
-        strncpy(sc_rootpath, path, sizeof sc_rootpath);
+        strlcpy(sc_rootpath, path, sizeof sc_rootpath);
 #endif
     } /* if */
 }

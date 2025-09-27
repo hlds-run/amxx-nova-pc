@@ -21,6 +21,7 @@ add_library("${TARGET_ALIAS}" ALIAS "${TARGET_NAME}")
 target_sources("${TARGET_NAME}"
   PRIVATE
     "src/libpawnc.c"
+    "src/lstring.c"
     "src/memfile.c"
     "src/prefix.c"
     "src/sc1.c"
