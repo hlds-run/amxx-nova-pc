@@ -49,8 +49,6 @@ namespace AmxxPc {
         /**
          * @brief Executes the application workflow.
          *
-         * @param app_version Structured version metadata of the application.
-         *
          * @return \c EXIT_SUCCESS if execution completes successfully,
          *         \c EXIT_FAILURE if an error occurs.
          *
@@ -59,7 +57,7 @@ namespace AmxxPc {
          * @note Application must be properly configured with arguments,
          *       UI, and builder before invoking this function.
          */
-        [[nodiscard]] int run(const Ui::AppVersion& app_version) const;
+        [[nodiscard]] int run() const;
 
       private:
         /// Interface for displaying output and errors to the user.

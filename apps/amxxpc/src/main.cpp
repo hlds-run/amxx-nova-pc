@@ -77,21 +77,22 @@ namespace {
  */
 int main(const int argc, const char* const argv[])
 {
+    const Ui::AppVersion app_version{.major = AMXXPC_BUILD_MAJOR,
+        .minor = AMXXPC_BUILD_MINOR,
+        .patch = AMXXPC_BUILD_PATCH,
+        .year = CURRENT_YEAR,
+        .string = AMXXPC_VERSION};
+
     const auto ui = make_ui();
+    ui->show_header(app_version);
 
     try {
-        const Ui::AppVersion app_version{.major = AMXXPC_BUILD_MAJOR,
-            .minor = AMXXPC_BUILD_MINOR,
-            .patch = AMXXPC_BUILD_PATCH,
-            .year = CURRENT_YEAR,
-            .string = AMXXPC_VERSION};
-
         AmxxPc::Application application{};
         application.set_user_interface(ui);
         application.set_arguments(make_arguments(argc, argv));
         application.set_amxx_builder(make_amxx_builder());
 
-        return application.run(app_version);
+        return application.run();
     }
     catch (const std::runtime_error& ex) {
         ui->show_error(ex.what());

@@ -331,7 +331,7 @@ namespace {
     {
         // Arrange
         Cli::Parser parser{};
-        const std::vector<std::string> args = {"-A8", "/A16", "-A=32", "-B"};
+        const std::vector<std::string> args = {"-A8", "/A16", "-A=32", "-E"};
 
         // Act
         parser.parse(args, false);
@@ -344,10 +344,10 @@ namespace {
         EXPECT_EQ(a_values[1].value(), "16");
         EXPECT_EQ(a_values[2].value(), "32");
 
-        ASSERT_TRUE(parser.options().contains("B"));
-        const auto& b_values = parser.options().at("B");
-        ASSERT_EQ(b_values.size(), 1u);
-        EXPECT_FALSE(b_values[0].has_value());
+        ASSERT_TRUE(parser.options().contains("E"));
+        const auto& e_values = parser.options().at("E");
+        ASSERT_EQ(e_values.size(), 1u);
+        EXPECT_FALSE(e_values[0].has_value());
     }
 
     TEST(ParserTest, OverrideClearsPreviousValues)

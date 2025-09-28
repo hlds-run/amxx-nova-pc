@@ -1,5 +1,8 @@
 #include "cli/parser.hpp"
 #include "cli/exceptions/cli_error.hpp"
+#include "pawnwrap/compiler.hpp"
+#include "pawnwrap/option.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <ranges>
@@ -124,6 +127,35 @@ namespace {
 
         return std::make_pair(std::move(symbol), std::move(value));
     }
+
+    /**
+     * @brief Validates whether a given option key matches any of the declared compiler options.
+     *
+     * @param option Normalized option key without prefix characters.
+     *
+     * @return \c true if the key matches any known flag prefix, otherwise \c false.
+     *
+     * @note Does not validate the semantic correctness of a numeric or symbolic value.
+     *
+     * @see \c Cli::Parser::add_option
+     * @see \c PawnWrap::get_options
+     */
+    [[nodiscard]] bool is_valid_option(const std::string& option)
+    {
+        if (option.empty()) {
+            return false;
+        }
+
+        if (option == "help" || option == "?") {
+            return true;
+        }
+
+        const auto check_prefix = [&](const auto& opt) {
+            return opt.flag.starts_with("-" + option);
+        };
+
+        return std::ranges::any_of(PawnWrap::get_options(), check_prefix);
+    }
 }
 
 namespace Cli {
@@ -157,6 +189,10 @@ namespace Cli {
 
         if (key.empty()) {
             return;
+        }
+
+        if (!is_valid_option(key)) {
+            throw Exceptions::CliError("Unknown option: -" + key);
         }
 
         if (override) {

@@ -40,3 +40,12 @@ target_include_directories("${TARGET_NAME}"
   PUBLIC
     "${PROJECT_SOURCE_DIR}/include"
 )
+
+#-------------------------------------------------------------------------------
+# Link Libraries
+#-------------------------------------------------------------------------------
+
+target_link_libraries("${TARGET_NAME}"
+  PRIVATE
+    "PawnCompiler::pawnwrap"
+)

@@ -73,10 +73,8 @@ namespace AmxxPc {
         amxx_builder_ = std::move(amxx_builder);
     }
 
-    int Application::run(const Ui::AppVersion& app_version) const
+    int Application::run() const
     {
-        ui_->show_header(app_version);
-
         if (arguments_->has_option("help") || arguments_->has_option("?")) {
             ui_->show_usage();
             ui_->show_help(PawnWrap::get_options());

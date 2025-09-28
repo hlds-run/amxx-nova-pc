@@ -19,7 +19,7 @@ namespace {
     {
         // Arrange
         const auto plugin_file = create_temp_file("plugin.sma");
-        constexpr const char* argv[] = {"prog", "-a", "-bvalue", "def=42", "plugin.sma"};
+        constexpr const char* argv[] = {"prog", "-a", "-evalue", "def=42", "plugin.sma"};
         const std::span span{argv, std::size(argv)};
 
         // Act
@@ -28,8 +28,8 @@ namespace {
         // Assert
         EXPECT_EQ(args.get_executable_path().string(), "prog");
         EXPECT_TRUE(args.has_option("a"));
-        EXPECT_TRUE(args.has_option("b"));
-        EXPECT_EQ(args.get_option_values("b").value()[0], "value");
+        EXPECT_TRUE(args.has_option("e"));
+        EXPECT_EQ(args.get_option_values("e").value()[0], "value");
         EXPECT_EQ(args.get_arguments().front(), "prog");
         ASSERT_EQ(args.get_input_files().size(), 1u);
         EXPECT_EQ(args.get_input_files()[0].string(), "plugin.sma");
@@ -42,7 +42,7 @@ namespace {
     {
         // Arrange
         const auto file = create_temp_file("file.sma");
-        constexpr const char* argv[] = {"prog", "-x", "foo=bar", "file.sma"};
+        constexpr const char* argv[] = {"prog", "-E", "foo=bar", "file.sma"};
         constexpr int argc = std::size(argv);
 
         // Act
@@ -50,8 +50,8 @@ namespace {
 
         // Assert
         EXPECT_EQ(args.get_executable_path().string(), "prog");
-        EXPECT_TRUE(args.has_option("x"));
-        EXPECT_EQ(args.get_option_values("x").value()[0], std::nullopt);
+        EXPECT_TRUE(args.has_option("E"));
+        EXPECT_EQ(args.get_option_values("E").value()[0], std::nullopt);
         EXPECT_EQ(args.get_arguments().front(), "prog");
         ASSERT_EQ(args.get_input_files().size(), 1u);
         EXPECT_EQ(args.get_input_files()[0].string(), "file.sma");
@@ -91,18 +91,18 @@ namespace {
     TEST(ArgumentsTest, Options_ParsesBothValueAndNonValueOptions)
     {
         // Arrange
-        constexpr const char* argv[] = {"prog", "-a", "-bval", "-c"};
+        constexpr const char* argv[] = {"prog", "-a", "-eval", "-E"};
 
         // Act
         const Cli::Arguments args{std::size(argv), argv};
 
         // Assert
         EXPECT_TRUE(args.has_option("a"));
-        EXPECT_TRUE(args.has_option("b"));
-        EXPECT_TRUE(args.has_option("c"));
+        EXPECT_TRUE(args.has_option("e"));
+        EXPECT_TRUE(args.has_option("E"));
         EXPECT_EQ(args.get_option_values("a").value()[0], std::nullopt);
-        EXPECT_EQ(args.get_option_values("b").value()[0], "val");
-        EXPECT_EQ(args.get_option_values("c").value()[0], std::nullopt);
+        EXPECT_EQ(args.get_option_values("e").value()[0], "val");
+        EXPECT_EQ(args.get_option_values("E").value()[0], std::nullopt);
     }
 
     TEST(ArgumentsTest, MultipleInputFiles_CorrectlyIdentified)
@@ -132,7 +132,7 @@ namespace {
     TEST(ArgumentsTest, NonExistingOption_ReturnsNullopt)
     {
         // Arrange
-        constexpr const char* argv[] = {"prog", "-x", "-yval"};
+        constexpr const char* argv[] = {"prog", "-E", "-eval"};
 
         // Act
         const Cli::Arguments args{std::size(argv), argv};
@@ -161,7 +161,7 @@ namespace {
     TEST(ArgumentsTest, OptionsWithEmptyValue_CorrectlyParsesValue)
     {
         // Arrange
-        constexpr const char* argv[] = {"prog", "-a=", "-bval"};
+        constexpr const char* argv[] = {"prog", "-a=", "-eval"};
 
         // Act
         const Cli::Arguments args{std::size(argv), argv};
@@ -169,8 +169,8 @@ namespace {
         // Assert
         EXPECT_TRUE(args.has_option("a"));
         EXPECT_EQ(args.get_option_values("a").value()[0], std::nullopt);
-        EXPECT_TRUE(args.has_option("b"));
-        EXPECT_EQ(args.get_option_values("b").value()[0], "val");
+        EXPECT_TRUE(args.has_option("e"));
+        EXPECT_EQ(args.get_option_values("e").value()[0], "val");
     }
 
     TEST(ArgumentsTest, HelpAndTOptions_ExcludedFromNormalizedArgs)
@@ -207,7 +207,7 @@ namespace {
         const auto file1 = create_temp_file("file1.txt");
         const auto file2 = create_temp_file("file2.txt");
         const auto file3 = create_temp_file("file3.txt");
-        constexpr const char* argv[] = {"prog", "file1.txt", "-a", "file2.txt", "foo=bar", "-bval", "file3.txt"};
+        constexpr const char* argv[] = {"prog", "file1.txt", "-a", "file2.txt", "foo=bar", "-eval", "file3.txt"};
 
         // Act
         const Cli::Arguments args{std::size(argv), argv};
@@ -221,7 +221,7 @@ namespace {
         EXPECT_EQ(inputs[2].string(), "file3.txt");
 
         EXPECT_TRUE(std::ranges::any_of(normalized, [](const std::string& s) { return s == "-a"; }));
-        EXPECT_TRUE(std::ranges::any_of(normalized, [](const std::string& s) { return s == "-bval"; }));
+        EXPECT_TRUE(std::ranges::any_of(normalized, [](const std::string& s) { return s == "-eval"; }));
         EXPECT_TRUE(std::ranges::any_of(normalized, [](const std::string& s) { return s == "foo=bar"; }));
         EXPECT_EQ(normalized.front(), "prog");
 
@@ -278,12 +278,12 @@ namespace {
     TEST(ArgumentsTest, MixedValuesAndFlags_ReturnedCorrectly)
     {
         // Arrange
-        constexpr const char* argv[] = {"prog", "-A8", "-A16", "-A=32", "-B"};
+        constexpr const char* argv[] = {"prog", "-A8", "-A16", "-A=32", "-E"};
         const Cli::Arguments args{std::size(argv), argv};
 
         // Act
         const auto a_values_opt = args.get_option_values("A");
-        const auto b_values_opt = args.get_option_values("B");
+        const auto e_values_opt = args.get_option_values("E");
 
         // Assert
         ASSERT_TRUE(a_values_opt.has_value());
@@ -293,10 +293,10 @@ namespace {
         EXPECT_EQ(a_values[1].value(), "16");
         EXPECT_EQ(a_values[2].value(), "32");
 
-        ASSERT_TRUE(b_values_opt.has_value());
-        const auto& b_values = *b_values_opt;
-        ASSERT_EQ(b_values.size(), 1u);
-        EXPECT_FALSE(b_values[0].has_value());
+        ASSERT_TRUE(e_values_opt.has_value());
+        const auto& e_values = *e_values_opt;
+        ASSERT_EQ(e_values.size(), 1u);
+        EXPECT_FALSE(e_values[0].has_value());
     }
 
     TEST(ArgumentsTest, OptionWithEmptyValue_ReturnedAsNullopt)
@@ -318,11 +318,11 @@ namespace {
     TEST(ArgumentsTest, OptionWithSingleValue_ReturnedCorrectly)
     {
         // Arrange
-        constexpr const char* argv[] = {"prog", "-Bvalue"};
+        constexpr const char* argv[] = {"prog", "-evalue"};
         const Cli::Arguments args{std::size(argv), argv};
 
         // Act
-        const auto values_opt = args.get_option_values("B");
+        const auto values_opt = args.get_option_values("e");
 
         // Assert
         ASSERT_TRUE(values_opt.has_value());
