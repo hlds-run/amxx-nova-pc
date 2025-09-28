@@ -159,9 +159,11 @@ namespace Cli {
             return;
         }
 
-        if (override || !options_.contains(key)) {
-            options_[key] = value;
+        if (override) {
+            options_[key].clear();
         }
+
+        options_[key].emplace_back(value);
     }
 
     void Parser::add_definition(const std::pair<std::string, std::string>& definition, const bool override)

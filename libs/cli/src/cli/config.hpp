@@ -7,21 +7,24 @@
 
 namespace Cli {
     /**
-     * @brief Resolves the path to the configuration file.
+     * @brief Resolves paths to configuration files.
      *
-     * Determines the effective configuration file path based on
+     * Determines the effective configuration file paths based on
      * command-line arguments and default search locations.
+     * Supports multiple "-T" options, each representing a separate configuration file.
      *
      * @param arguments Parsed command-line arguments.
      *
-     * @return Absolute path to the configuration file if found,
-     *         or \c std::nullopt if no applicable configuration exists.
+     * @return Optional vector of absolute paths to configuration files:
+     *         - Each element corresponds to one resolved configuration file.
+     *         - Returns \c std::nullopt if no user-specified option "-T" is provided.
      *
-     * @throw \c Exceptions::CliError
-     *        - If option \c -T is specified without a value.
-     *        - If a user-specified configuration path does not exist.
+     * @throw Cli::Exceptions::CliError
+     *        - If any "-T" option is specified without a value.
+     *        - If a user-specified configuration file does not exist.
      */
-    [[nodiscard]] std::optional<std::filesystem::path> resolve_config_path(const class Arguments& arguments);
+    [[nodiscard]] std::optional<std::vector<std::filesystem::path>> resolve_config_paths(
+        const class Arguments& arguments);
 
     /**
      * @brief Loads configuration arguments from a file.

@@ -10,8 +10,6 @@ namespace {
     {
         std::filesystem::path path{name};
         std::ofstream file{path};
-
-        file.put('x');
         file.close();
 
         return path;
@@ -31,7 +29,7 @@ namespace {
         EXPECT_EQ(args.get_executable_path().string(), "prog");
         EXPECT_TRUE(args.has_option("a"));
         EXPECT_TRUE(args.has_option("b"));
-        EXPECT_EQ(args.get_option_value("b").value(), "value");
+        EXPECT_EQ(args.get_option_values("b").value()[0], "value");
         EXPECT_EQ(args.get_arguments().front(), "prog");
         ASSERT_EQ(args.get_input_files().size(), 1u);
         EXPECT_EQ(args.get_input_files()[0].string(), "plugin.sma");
@@ -53,7 +51,7 @@ namespace {
         // Assert
         EXPECT_EQ(args.get_executable_path().string(), "prog");
         EXPECT_TRUE(args.has_option("x"));
-        EXPECT_EQ(args.get_option_value("x"), std::nullopt);
+        EXPECT_EQ(args.get_option_values("x").value()[0], std::nullopt);
         EXPECT_EQ(args.get_arguments().front(), "prog");
         ASSERT_EQ(args.get_input_files().size(), 1u);
         EXPECT_EQ(args.get_input_files()[0].string(), "file.sma");
@@ -102,9 +100,9 @@ namespace {
         EXPECT_TRUE(args.has_option("a"));
         EXPECT_TRUE(args.has_option("b"));
         EXPECT_TRUE(args.has_option("c"));
-        EXPECT_EQ(args.get_option_value("a"), std::nullopt);
-        EXPECT_EQ(args.get_option_value("b").value(), "val");
-        EXPECT_EQ(args.get_option_value("c"), std::nullopt);
+        EXPECT_EQ(args.get_option_values("a").value()[0], std::nullopt);
+        EXPECT_EQ(args.get_option_values("b").value()[0], "val");
+        EXPECT_EQ(args.get_option_values("c").value()[0], std::nullopt);
     }
 
     TEST(ArgumentsTest, MultipleInputFiles_CorrectlyIdentified)
@@ -140,7 +138,7 @@ namespace {
         const Cli::Arguments args{std::size(argv), argv};
 
         // Assert
-        EXPECT_EQ(args.get_option_value("z"), std::nullopt);
+        EXPECT_EQ(args.get_option_values("z"), std::nullopt);
         EXPECT_FALSE(args.has_option("z"));
     }
 
@@ -170,9 +168,9 @@ namespace {
 
         // Assert
         EXPECT_TRUE(args.has_option("a"));
-        EXPECT_EQ(args.get_option_value("a"), std::nullopt);
+        EXPECT_EQ(args.get_option_values("a").value()[0], std::nullopt);
         EXPECT_TRUE(args.has_option("b"));
-        EXPECT_EQ(args.get_option_value("b").value(), "val");
+        EXPECT_EQ(args.get_option_values("b").value()[0], "val");
     }
 
     TEST(ArgumentsTest, HelpAndTOptions_ExcludedFromNormalizedArgs)
@@ -231,5 +229,105 @@ namespace {
         std::filesystem::remove(file1);
         std::filesystem::remove(file2);
         std::filesystem::remove(file3);
+    }
+
+    TEST(ArgumentsTest, MultipleValuesForSingleOption_ReturnedCorrectly)
+    {
+        // Arrange
+        const auto config1 = create_temp_file("target/config1.cfg");
+        const auto config2 = create_temp_file("target/config2.cfg");
+        const auto config3 = create_temp_file("target/config3.cfg");
+        constexpr const char* argv[] = {"prog", "-Tconfig1", "-Tconfig2", "-T:config3"};
+        const Cli::Arguments args{std::size(argv), argv};
+
+        // Act
+        const auto values_opt = args.get_option_values("T");
+
+        // Assert
+        ASSERT_TRUE(values_opt.has_value());
+        const auto& values = *values_opt;
+        ASSERT_EQ(values.size(), 3u);
+        EXPECT_EQ(values[0].value(), "config1");
+        EXPECT_EQ(values[1].value(), "config2");
+        EXPECT_EQ(values[2].value(), "config3");
+
+        // Cleanup
+        std::filesystem::remove(config1);
+        std::filesystem::remove(config2);
+        std::filesystem::remove(config3);
+    }
+
+    TEST(ArgumentsTest, MultipleFlagsWithoutValue_ReturnedAsNullopt)
+    {
+        // Arrange
+        constexpr const char* argv[] = {"prog", "-E", "-E", "-E"};
+        const Cli::Arguments args{std::size(argv), argv};
+
+        // Act
+        const auto values_opt = args.get_option_values("E");
+
+        // Assert
+        ASSERT_TRUE(values_opt.has_value());
+        const auto& values = *values_opt;
+        ASSERT_EQ(values.size(), 3u);
+        EXPECT_FALSE(values[0].has_value());
+        EXPECT_FALSE(values[1].has_value());
+        EXPECT_FALSE(values[2].has_value());
+    }
+
+    TEST(ArgumentsTest, MixedValuesAndFlags_ReturnedCorrectly)
+    {
+        // Arrange
+        constexpr const char* argv[] = {"prog", "-A8", "-A16", "-A=32", "-B"};
+        const Cli::Arguments args{std::size(argv), argv};
+
+        // Act
+        const auto a_values_opt = args.get_option_values("A");
+        const auto b_values_opt = args.get_option_values("B");
+
+        // Assert
+        ASSERT_TRUE(a_values_opt.has_value());
+        const auto& a_values = *a_values_opt;
+        ASSERT_EQ(a_values.size(), 3u);
+        EXPECT_EQ(a_values[0].value(), "8");
+        EXPECT_EQ(a_values[1].value(), "16");
+        EXPECT_EQ(a_values[2].value(), "32");
+
+        ASSERT_TRUE(b_values_opt.has_value());
+        const auto& b_values = *b_values_opt;
+        ASSERT_EQ(b_values.size(), 1u);
+        EXPECT_FALSE(b_values[0].has_value());
+    }
+
+    TEST(ArgumentsTest, OptionWithEmptyValue_ReturnedAsNullopt)
+    {
+        // Arrange
+        constexpr const char* argv[] = {"prog", "-A="};
+        const Cli::Arguments args{std::size(argv), argv};
+
+        // Act
+        const auto values_opt = args.get_option_values("A");
+
+        // Assert
+        ASSERT_TRUE(values_opt.has_value());
+        const auto& values = *values_opt;
+        ASSERT_EQ(values.size(), 1u);
+        EXPECT_FALSE(values[0].has_value());
+    }
+
+    TEST(ArgumentsTest, OptionWithSingleValue_ReturnedCorrectly)
+    {
+        // Arrange
+        constexpr const char* argv[] = {"prog", "-Bvalue"};
+        const Cli::Arguments args{std::size(argv), argv};
+
+        // Act
+        const auto values_opt = args.get_option_values("B");
+
+        // Assert
+        ASSERT_TRUE(values_opt.has_value());
+        const auto& values = *values_opt;
+        ASSERT_EQ(values.size(), 1u);
+        EXPECT_EQ(values[0].value(), "value");
     }
 }

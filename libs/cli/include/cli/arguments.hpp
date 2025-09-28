@@ -46,7 +46,19 @@ namespace Cli {
          *
          * @return Option value if present, otherwise empty.
          */
-        [[nodiscard]] std::optional<std::string> get_option_value(std::string_view option) const;
+
+        /**
+         * @brief Retrieves all values associated with a given option.
+         *
+         * @param option Option name without prefix characters.
+         *
+         * @return An optional vector of values for the specified option.
+         *         Each element represents one occurrence of the option:
+         *         - If the option was not provided, returns \c std::nullopt.
+         *         - If an occurrence had no explicit value, the corresponding element is \c std::nullopt.
+         */
+        [[nodiscard]] std::optional<std::vector<std::optional<std::string>>> get_option_values(
+            std::string_view option) const;
 
         /**
          * @brief Retrieves input files.

@@ -24,7 +24,7 @@ namespace Cli {
         /**
          * @brief Mapping of recognized options.
          */
-        using OptionsMap = std::unordered_map<std::string, std::optional<std::string>>;
+        using OptionsMap = std::unordered_map<std::string, std::vector<std::optional<std::string>>>;
 
         /**
          * @brief Mapping of symbol definitions.

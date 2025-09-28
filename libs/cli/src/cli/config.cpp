@@ -17,14 +17,14 @@ namespace {
      */
     [[nodiscard]] std::string trim(const std::string_view str)
     {
-        auto is_space = [](const auto ch) {
+        auto is_whitespace = [](const auto ch) {
             return std::isspace(static_cast<unsigned char>(ch));
         };
 
-        auto view = str | std::views::drop_while(is_space) | std::views::reverse | std::views::drop_while(is_space) |
-                    std::views::reverse;
+        auto trimmed_view = str | std::views::drop_while(is_whitespace) | std::views::reverse |
+                            std::views::drop_while(is_whitespace) | std::views::reverse;
 
-        return std::string{view.begin(), view.end()};
+        return std::string{trimmed_view.cbegin(), trimmed_view.cend()};
     }
 
     /**
@@ -77,37 +77,93 @@ namespace {
 
         return std::nullopt;
     }
+
+    /**
+     * @brief Collects all user-specified configuration file paths from the command line.
+     *
+     * Extracts all values for the "-T" option and returns them as a vector of strings.
+     *
+     * @param arguments Reference to the parsed command-line arguments.
+     *
+     * @return Optional vector of user-specified configuration file paths.
+     *         Returns \c std::nullopt if the option "-T" was not provided.
+     *
+     * @throw \c Cli::Exceptions::CliError If any "-T" occurrence does not have a value.
+     */
+    std::optional<std::vector<std::string>> collect_user_configs(const Cli::Arguments& arguments)
+    {
+        if (!arguments.has_option("T")) {
+            return std::nullopt;
+        }
+
+        const auto user_config_values = arguments.get_option_values("T");
+
+        if (!user_config_values || user_config_values->empty()) {
+            throw Cli::Exceptions::CliError("Option -T requires a configuration file name");
+        }
+
+        std::vector<std::string> user_configs{};
+        user_configs.reserve(user_config_values->size());
+
+        for (const auto& config_value : *user_config_values) {
+            if (!config_value) {
+                throw Cli::Exceptions::CliError("Option -T requires a configuration file name");
+            }
+
+            user_configs.emplace_back(*config_value);
+        }
+
+        return user_configs;
+    }
+
+    /**
+     * @brief Resolves a single configuration path to an existing file.
+     *
+     * @param raw_path   Raw configuration path or name.
+     * @param target_dir Path to the "target" directory where configs are located.
+     *
+     * @return Resolved filesystem path to an existing configuration file.
+     *
+     * @throw \c Cli::Exceptions::CliError If the file does not exist.
+     */
+    std::filesystem::path resolve_config_path(
+        const std::filesystem::path& raw_path, const std::filesystem::path& target_dir)
+    {
+        if (raw_path.has_parent_path()) {
+            if (!std::filesystem::exists(raw_path)) {
+                throw Cli::Exceptions::CliError("Specified configuration file does not exist: " + raw_path.string());
+            }
+
+            return raw_path;
+        }
+
+        return find_config_in_target(target_dir, raw_path.string());
+    }
 }
 
 namespace Cli {
-    std::optional<std::filesystem::path> resolve_config_path(const Arguments& arguments)
+    std::optional<std::vector<std::filesystem::path>> resolve_config_paths(const Arguments& arguments)
     {
-        std::filesystem::path config_path{};
-
-        if (arguments.has_option("T")) {
-            const auto user_config = arguments.get_option_value("T");
-
-            if (!user_config) {
-                throw Exceptions::CliError("Option -T requires a configuration file name");
-            }
-
-            if (config_path = *user_config; config_path.has_parent_path()) {
-                if (std::filesystem::exists(config_path)) {
-                    return config_path;
-                }
-
-                throw Exceptions::CliError("Specified configuration file does not exist: " + config_path.string());
-            }
-        }
-
+        const auto user_configs = collect_user_configs(arguments);
         const auto exe_dir = arguments.get_executable_path().parent_path();
         const auto target_dir = exe_dir / "target";
 
-        if (config_path.empty()) {
-            return find_default_config(exe_dir, target_dir);
+        if (user_configs) {
+            std::vector<std::filesystem::path> config_paths{};
+            config_paths.reserve(user_configs->size());
+
+            for (const auto& user_config : *user_configs) {
+                config_paths.emplace_back(resolve_config_path(user_config, target_dir));
+            }
+
+            return config_paths;
         }
 
-        return find_config_in_target(target_dir, config_path.string());
+        if (const auto config_path = find_default_config(exe_dir, target_dir)) {
+            return std::vector{*config_path};
+        }
+
+        return std::nullopt;
     }
 
     std::vector<std::string> load_config(const std::filesystem::path& config_path)

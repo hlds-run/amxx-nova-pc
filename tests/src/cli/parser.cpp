@@ -35,7 +35,7 @@ namespace {
     TEST(ParserTest, SimpleOptionWithoutValue_CorrectlyParsed)
     {
         // Arrange
-        Cli::Parser parser;
+        Cli::Parser parser{};
         const std::vector<std::string> args = {"-l"};
 
         // Act
@@ -44,7 +44,7 @@ namespace {
         // Assert
         ASSERT_EQ(parser.options().size(), 1);
         ASSERT_TRUE(parser.options().contains("l"));
-        EXPECT_FALSE(parser.options().at("l").has_value());
+        EXPECT_FALSE(parser.options().at("l")[0].has_value());
         EXPECT_TRUE(parser.definitions().empty());
         EXPECT_TRUE(parser.input_files().empty());
     }
@@ -61,8 +61,8 @@ namespace {
         // Assert
         ASSERT_EQ(parser.options().size(), 1);
         ASSERT_TRUE(parser.options().contains("o"));
-        ASSERT_TRUE(parser.options().at("o").has_value());
-        EXPECT_EQ(parser.options().at("o").value(), "output.amxx");
+        ASSERT_TRUE(parser.options().at("o")[0].has_value());
+        EXPECT_EQ(parser.options().at("o")[0].value(), "output.amxx");
     }
 
     TEST(ParserTest, OptionWithEmptyValueAfterSeparator_CorrectlyParsed)
@@ -77,7 +77,7 @@ namespace {
         // Assert
         ASSERT_EQ(parser.options().size(), 1);
         ASSERT_TRUE(parser.options().contains("o"));
-        EXPECT_FALSE(parser.options().at("o").has_value());
+        EXPECT_FALSE(parser.options().at("o")[0].has_value());
     }
 
     TEST(ParserTest, OptionWithValueEqualSeparator_CorrectlyParsed)
@@ -92,8 +92,8 @@ namespace {
         // Assert
         ASSERT_EQ(parser.options().size(), 1);
         ASSERT_TRUE(parser.options().contains("S"));
-        ASSERT_TRUE(parser.options().at("S").has_value());
-        EXPECT_EQ(parser.options().at("S").value(), "8192");
+        ASSERT_TRUE(parser.options().at("S")[0].has_value());
+        EXPECT_EQ(parser.options().at("S")[0].value(), "8192");
     }
 
     TEST(ParserTest, OptionSeparatorsColonEqualsAndPlain_AreEquivalent)
@@ -108,7 +108,7 @@ namespace {
 
             // Assert
             EXPECT_TRUE(parser.options().contains("d"));
-            EXPECT_EQ(parser.options().at("d").value(), "2");
+            EXPECT_EQ(parser.options().at("d")[0].value(), "2");
         }
         {
             // Arrange
@@ -120,7 +120,7 @@ namespace {
 
             // Assert
             EXPECT_TRUE(parser.options().contains("d"));
-            EXPECT_EQ(parser.options().at("d").value(), "2");
+            EXPECT_EQ(parser.options().at("d")[0].value(), "2");
         }
         {
             // Arrange
@@ -132,7 +132,7 @@ namespace {
 
             // Assert
             EXPECT_TRUE(parser.options().contains("d"));
-            EXPECT_EQ(parser.options().at("d").value(), "2");
+            EXPECT_EQ(parser.options().at("d")[0].value(), "2");
         }
     }
 
@@ -148,8 +148,8 @@ namespace {
         // Assert
         ASSERT_EQ(parser.options().size(), 1);
         ASSERT_TRUE(parser.options().contains("sui"));
-        ASSERT_TRUE(parser.options().at("sui").has_value());
-        EXPECT_EQ(parser.options().at("sui").value(), "+");
+        ASSERT_TRUE(parser.options().at("sui")[0].has_value());
+        EXPECT_EQ(parser.options().at("sui")[0].value(), "+");
     }
 
     TEST(ParserTest, SpecialHelpOption_CorrectlyParsed)
@@ -166,9 +166,9 @@ namespace {
         ASSERT_TRUE(parser.options().contains("help"));
         ASSERT_TRUE(parser.options().contains("h"));
         ASSERT_TRUE(parser.options().contains("?"));
-        ASSERT_FALSE(parser.options().at("help").has_value());
-        ASSERT_FALSE(parser.options().at("h").has_value());
-        ASSERT_FALSE(parser.options().at("?").has_value());
+        ASSERT_FALSE(parser.options().at("help")[0].has_value());
+        ASSERT_FALSE(parser.options().at("h")[0].has_value());
+        ASSERT_FALSE(parser.options().at("?")[0].has_value());
     }
 
     TEST(ParserTest, DuplicateOptionWithoutOverride_DoesNotUpdateValue)
@@ -183,7 +183,7 @@ namespace {
         // Assert
         ASSERT_EQ(parser.options().size(), 1);
         ASSERT_TRUE(parser.options().contains("A"));
-        EXPECT_EQ(parser.options().at("A"), "8");
+        EXPECT_EQ(parser.options().at("A")[0], "8");
     }
 
     TEST(ParserTest, DuplicateOptionWithOverride_DoesUpdateValue)
@@ -198,7 +198,7 @@ namespace {
         // Assert
         ASSERT_EQ(parser.options().size(), 1);
         ASSERT_TRUE(parser.options().contains("A"));
-        EXPECT_EQ(parser.options().at("A"), "16");
+        EXPECT_EQ(parser.options().at("A")[0], "16");
     }
 
     TEST(ParserTest, DuplicateInputFiles_Ignored)
@@ -270,15 +270,15 @@ namespace {
         EXPECT_TRUE(opts.contains("("));
 
         // Values
-        EXPECT_EQ(opts.at("C").value(), "+");
-        EXPECT_EQ(opts.at("D").value(), "C:\\");
-        EXPECT_EQ(opts.at("d").value(), "2");
-        EXPECT_EQ(opts.at("sui").value(), "+");
-        EXPECT_FALSE(opts.at("E").has_value());
-        EXPECT_FALSE(opts.at("\\").has_value());
-        EXPECT_EQ(opts.at("T").value(), "C:\\config.cfg");
-        EXPECT_EQ(opts.at(";").value(), "+");
-        EXPECT_EQ(opts.at("(").value(), "-");
+        EXPECT_EQ(opts.at("C")[0].value(), "+");
+        EXPECT_EQ(opts.at("D")[0].value(), "C:\\");
+        EXPECT_EQ(opts.at("d")[0].value(), "2");
+        EXPECT_EQ(opts.at("sui")[0].value(), "+");
+        EXPECT_FALSE(opts.at("E")[0].has_value());
+        EXPECT_FALSE(opts.at("\\")[0].has_value());
+        EXPECT_EQ(opts.at("T")[0].value(), "C:\\config.cfg");
+        EXPECT_EQ(opts.at(";")[0].value(), "+");
+        EXPECT_EQ(opts.at("(")[0].value(), "-");
 
         // Definitions
         const auto& defs = parser.definitions();
@@ -289,5 +289,80 @@ namespace {
 
         // Cleanup
         EXPECT_NO_THROW(std::filesystem::remove(plugin_path));
+    }
+
+    TEST(ParserTest, MultipleValuesForSingleOption_ParsedCorrectly)
+    {
+        // Arrange
+        Cli::Parser parser{};
+        const std::vector<std::string> args = {"-Tconfig1.cfg", "/T=config2.cfg", "-T:config3.cfg"};
+
+        // Act
+        parser.parse(args, false);
+
+        // Assert
+        ASSERT_TRUE(parser.options().contains("T"));
+        const auto& values = parser.options().at("T");
+        ASSERT_EQ(values.size(), 3u);
+        EXPECT_EQ(values[0].value(), "config1.cfg");
+        EXPECT_EQ(values[1].value(), "config2.cfg");
+        EXPECT_EQ(values[2].value(), "config3.cfg");
+    }
+
+    TEST(ParserTest, MultipleFlagsWithoutValue_ParsedCorrectly)
+    {
+        // Arrange
+        Cli::Parser parser{};
+        const std::vector<std::string> args = {"-E", "-E", "-E"};
+
+        // Act
+        parser.parse(args, false);
+
+        // Assert
+        ASSERT_TRUE(parser.options().contains("E"));
+        const auto& values = parser.options().at("E");
+        ASSERT_EQ(values.size(), 3u);
+        EXPECT_FALSE(values[0].has_value());
+        EXPECT_FALSE(values[1].has_value());
+        EXPECT_FALSE(values[2].has_value());
+    }
+
+    TEST(ParserTest, MixedValuesAndFlags_ParsedCorrectly)
+    {
+        // Arrange
+        Cli::Parser parser{};
+        const std::vector<std::string> args = {"-A8", "/A16", "-A=32", "-B"};
+
+        // Act
+        parser.parse(args, false);
+
+        // Assert
+        ASSERT_TRUE(parser.options().contains("A"));
+        const auto& a_values = parser.options().at("A");
+        ASSERT_EQ(a_values.size(), 3u);
+        EXPECT_EQ(a_values[0].value(), "8");
+        EXPECT_EQ(a_values[1].value(), "16");
+        EXPECT_EQ(a_values[2].value(), "32");
+
+        ASSERT_TRUE(parser.options().contains("B"));
+        const auto& b_values = parser.options().at("B");
+        ASSERT_EQ(b_values.size(), 1u);
+        EXPECT_FALSE(b_values[0].has_value());
+    }
+
+    TEST(ParserTest, OverrideClearsPreviousValues)
+    {
+        // Arrange
+        Cli::Parser parser{};
+        parser.parse({"-X1", "-X2"}, false);
+
+        // Act
+        parser.parse({"-X3"}, true); // override previous X values
+
+        // Assert
+        ASSERT_TRUE(parser.options().contains("X"));
+        const auto& values = parser.options().at("X");
+        ASSERT_EQ(values.size(), 1u);
+        EXPECT_EQ(values[0].value(), "3");
     }
 }
