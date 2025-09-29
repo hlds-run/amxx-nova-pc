@@ -30,6 +30,36 @@ namespace {
     }
 
     /**
+     * @brief Resolves the expected `.amx` output path for a given `.sma` input file.
+     *
+     * Determines the final output directory and base filename produced by the Pawn compiler.
+     *
+     * @param arguments Parsed command-line arguments wrapper.
+     * @param sma_file  Path to the original `.sma` source file.
+     *
+     * @return Full filesystem path to the expected `.amx` file.
+     */
+    std::filesystem::path resolve_amx_path(const Cli::Arguments& arguments, const std::filesystem::path& sma_file)
+    {
+        auto output_dir = std::filesystem::current_path();
+        auto output_name = sma_file.stem();
+
+        if (arguments.has_option("D")) {
+            if (const auto dir = arguments.get_last_option_value("D"); dir) {
+                output_dir = std::filesystem::path(*dir);
+            }
+        }
+
+        if (arguments.has_option("o")) {
+            if (const auto name = arguments.get_last_option_value("o"); name) {
+                output_name = *name;
+            }
+        }
+
+        return output_dir / output_name.replace_extension(".amx");
+    }
+
+    /**
      * @brief Builds an AMXX file from a given SMA input file.
      *
      * Converts a source `.sma` file to `.amx`,
@@ -37,15 +67,12 @@ namespace {
      * Intermediate `.amx` file is removed after packaging.
      *
      * @param amxx_builder Initialized \c Amxx::Builder.
-     * @param sma_file     Path to the input `.sma` source file.
+     * @param amx_file     Path to the already compiled `.amx` bytecode file.
      *
      * @throw \c std::runtime_error On errors during building or file handling.
      */
-    void build_amxx_file(Amxx::Builder& amxx_builder, const std::filesystem::path& sma_file)
+    void build_amxx_file(Amxx::Builder& amxx_builder, const std::filesystem::path& amx_file)
     {
-        auto amx_file = sma_file;
-        amx_file.replace_extension(".amx");
-
         auto amxx_file = amx_file;
         amxx_file.replace_extension(".amxx");
 
@@ -96,7 +123,8 @@ namespace AmxxPc {
 
         if (!arguments_->has_option("a") && !arguments_->has_option("l")) {
             for (const auto& input_file : input_files) {
-                build_amxx_file(*amxx_builder_, input_file);
+                const auto amx_file = resolve_amx_path(*arguments_, input_file);
+                build_amxx_file(*amxx_builder_, amx_file);
             }
         }
 

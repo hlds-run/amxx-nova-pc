@@ -40,14 +40,6 @@ namespace Cli {
         [[nodiscard]] bool has_option(std::string_view option) const;
 
         /**
-         * @brief Retrieves the value of an option.
-         *
-         * @param option Option name without prefix characters.
-         *
-         * @return Option value if present, otherwise empty.
-         */
-
-        /**
          * @brief Retrieves all values associated with a given option.
          *
          * @param option Option name without prefix characters.
@@ -59,6 +51,18 @@ namespace Cli {
          */
         [[nodiscard]] std::optional<std::vector<std::optional<std::string>>> get_option_values(
             std::string_view option) const;
+
+        /**
+         * @brief Retrieves the last specified value for an option.
+         *
+         * Iterates through all occurrences of the option and returns the last one,
+         * including empty (\c std::nullopt) values.
+         *
+         * @param option Option name without prefix characters.
+         *
+         * @return The last specified value of the option, or \c std::nullopt if the option does not exist.
+         */
+        [[nodiscard]] std::optional<std::string> get_last_option_value(std::string_view option) const;
 
         /**
          * @brief Retrieves input files.

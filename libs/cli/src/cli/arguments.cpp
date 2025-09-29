@@ -102,4 +102,15 @@ namespace Cli {
 
         return std::nullopt;
     }
+
+    std::optional<std::string> Arguments::get_last_option_value(const std::string_view option) const
+    {
+        const auto values = get_option_values(option);
+
+        if (!values) {
+            return std::nullopt;
+        }
+
+        return values->empty() ? std::nullopt : values->back();
+    }
 }

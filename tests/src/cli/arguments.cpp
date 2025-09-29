@@ -15,7 +15,7 @@ namespace {
         return path;
     }
 
-    TEST(ArgumentsTest, ConstructorSpan_CorrectlyParsesArguments)
+    TEST(ArgumentsTest, ConstructorFromSpan_CorrectlyParsesArguments)
     {
         // Arrange
         const auto plugin_file = create_temp_file("plugin.sma");
@@ -38,7 +38,7 @@ namespace {
         std::filesystem::remove(plugin_file);
     }
 
-    TEST(ArgumentsTest, ConstructorArgcArgv_CorrectlyParsesArguments)
+    TEST(ArgumentsTest, ConstructorFromArgcArgv_CorrectlyParsesArguments)
     {
         // Arrange
         const auto file = create_temp_file("file.sma");
@@ -74,7 +74,7 @@ namespace {
         EXPECT_TRUE(args.get_input_files().empty());
     }
 
-    TEST(ArgumentsTest, Definitions_IncludedInNormalizedArgs)
+    TEST(ArgumentsTest, Definitions_IncludedInNormalizedArguments)
     {
         // Arrange
         constexpr const char* argv[] = {"prog", "foo=bar", "baz=qux"};
@@ -88,7 +88,7 @@ namespace {
         EXPECT_TRUE(std::ranges::any_of(normalized, [](const std::string& s) { return s == "baz=qux"; }));
     }
 
-    TEST(ArgumentsTest, Options_ParsesBothValueAndNonValueOptions)
+    TEST(ArgumentsTest, MixedOptions_ParsesValueAndNonValueOptionsCorrectly)
     {
         // Arrange
         constexpr const char* argv[] = {"prog", "-a", "-eval", "-E"};
@@ -173,7 +173,7 @@ namespace {
         EXPECT_EQ(args.get_option_values("e").value()[0], "val");
     }
 
-    TEST(ArgumentsTest, HelpAndTOptions_ExcludedFromNormalizedArgs)
+    TEST(ArgumentsTest, HelpAndTOptions_ExcludedFromNormalizedArguments)
     {
         // Arrange
         const std::filesystem::path exe_dir = std::filesystem::current_path();
@@ -201,7 +201,7 @@ namespace {
         std::filesystem::remove(config_path);
     }
 
-    TEST(ArgumentsTest, MixedArguments_CorrectlyIdentifiesInputFilesAndOptions)
+    TEST(ArgumentsTest, MixedInputFilesAndOptions_CorrectlyIdentifiedAndSeparated)
     {
         // Arrange
         const auto file1 = create_temp_file("file1.txt");
@@ -231,7 +231,7 @@ namespace {
         std::filesystem::remove(file3);
     }
 
-    TEST(ArgumentsTest, MultipleValuesForSingleOption_ReturnedCorrectly)
+    TEST(ArgumentsTest, MultipleValuesForSameOption_AllValuesReturnedCorrectly)
     {
         // Arrange
         const auto config1 = create_temp_file("target/config1.cfg");
@@ -257,7 +257,7 @@ namespace {
         std::filesystem::remove(config3);
     }
 
-    TEST(ArgumentsTest, MultipleFlagsWithoutValue_ReturnedAsNullopt)
+    TEST(ArgumentsTest, MultipleFlagsWithoutValue_AllValuesAreNullopt)
     {
         // Arrange
         constexpr const char* argv[] = {"prog", "-E", "-E", "-E"};
@@ -275,7 +275,7 @@ namespace {
         EXPECT_FALSE(values[2].has_value());
     }
 
-    TEST(ArgumentsTest, MixedValuesAndFlags_ReturnedCorrectly)
+    TEST(ArgumentsTest, MixedFlagsAndValues_AllValuesReturnedCorrectly)
     {
         // Arrange
         constexpr const char* argv[] = {"prog", "-A8", "-A16", "-A=32", "-E"};
@@ -299,7 +299,7 @@ namespace {
         EXPECT_FALSE(e_values[0].has_value());
     }
 
-    TEST(ArgumentsTest, OptionWithEmptyValue_ReturnedAsNullopt)
+    TEST(ArgumentsTest, OptionWithEmptyValue_ValueIsParsedAsNullopt)
     {
         // Arrange
         constexpr const char* argv[] = {"prog", "-A="};
@@ -315,7 +315,7 @@ namespace {
         EXPECT_FALSE(values[0].has_value());
     }
 
-    TEST(ArgumentsTest, OptionWithSingleValue_ReturnedCorrectly)
+    TEST(ArgumentsTest, OptionWithSingleValue_ValueIsReturnedCorrectly)
     {
         // Arrange
         constexpr const char* argv[] = {"prog", "-evalue"};
@@ -329,5 +329,54 @@ namespace {
         const auto& values = *values_opt;
         ASSERT_EQ(values.size(), 1u);
         EXPECT_EQ(values[0].value(), "value");
+    }
+
+    TEST(ArgumentsTest, LastValue_ReturnsNulloptWhenOptionNotPresent)
+    {
+        // Arrange
+        constexpr const char* argv[] = {"prog", "-A8"};
+
+        // Act
+        const Cli::Arguments args{std::size(argv), argv};
+
+        // Assert
+        EXPECT_EQ(args.get_last_option_value("E"), std::nullopt);
+    }
+
+    TEST(ArgumentsTest, LastValue_ReturnsNulloptIfLastValueIsNullopt)
+    {
+        // Arrange
+        constexpr const char* argv[] = {"prog", "-A8", "-A16", "-A"};
+
+        // Act
+        const Cli::Arguments args{std::size(argv), argv};
+
+        // Assert
+        EXPECT_EQ(args.get_last_option_value("A"), std::nullopt);
+    }
+
+    TEST(ArgumentsTest, LastValue_ReturnsLastValueIfPresent)
+    {
+        // Arrange
+        constexpr const char* argv[] = {"prog", "-E", "-E", "-Eval"};
+
+        // Act
+        const Cli::Arguments args{std::size(argv), argv};
+
+        // Assert
+        EXPECT_EQ(args.get_last_option_value("E"), "val");
+    }
+
+    TEST(ArgumentsTest, LastValue_ReturnsSingleValueWhenOnlyOnePresent)
+    {
+        // Arrange
+        constexpr const char* argv[] = {"prog", "-opath"};
+
+        // Act
+        const Cli::Arguments args{std::size(argv), argv};
+
+        // Assert
+        ASSERT_TRUE(args.get_last_option_value("o").has_value());
+        EXPECT_EQ(args.get_last_option_value("o").value(), "path");
     }
 }
