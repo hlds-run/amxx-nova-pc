@@ -42,7 +42,7 @@ namespace {
     std::filesystem::path resolve_amx_path(const Cli::Arguments& arguments, const std::filesystem::path& sma_file)
     {
         auto output_dir = std::filesystem::current_path();
-        auto output_name = sma_file.stem();
+        auto output_name = sma_file.filename();
 
         if (arguments.has_option("D")) {
             if (const auto dir = arguments.get_last_option_value("D"); dir) {
