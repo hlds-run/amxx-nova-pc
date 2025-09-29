@@ -5073,15 +5073,17 @@ static constvalue* insert_constval(
     if ((cur = (constvalue*)malloc(sizeof(constvalue))) == NULL) {
         error(103); /* insufficient memory (fatal error) */
     }
-    memset(cur, 0, sizeof(constvalue));
-    if (name != NULL) {
-        assert(strlen(name) <= sNAMEMAX);
-        strcpy(cur->name, name);
+    else {
+        memset(cur, 0, sizeof(constvalue));
+        if (name != NULL) {
+            assert(strlen(name) <= sNAMEMAX);
+            strcpy(cur->name, name);
+        } /* if */
+        cur->value = val;
+        cur->index = index;
+        cur->next = next;
+        prev->next = cur;
     } /* if */
-    cur->value = val;
-    cur->index = index;
-    cur->next = next;
-    prev->next = cur;
     return cur;
 }
 
