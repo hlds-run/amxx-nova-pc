@@ -1,0 +1,4 @@
+build/*
+external/*
+libs/sourcepawn/*
+out/*

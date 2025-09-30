@@ -182,6 +182,7 @@ CMakeLists.txt          eol=lf
 .gitattributes          eol=lf
 .gitignore              eol=lf
 *.clang-format          eol=lf
+*.clang-format-ignore   eol=lf
 *.clang-tidy            eol=lf
 *.cppcheck              eol=lf
 *.json                  eol=lf
