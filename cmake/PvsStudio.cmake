@@ -29,6 +29,7 @@ FetchContent_Declare(
 #
 # @param PREPROCESSOR
 #   [optional] The preprocessor to use for PVS-Studio.
+#
 # @param CONFIG
 #   [optional] The configuration file to use for PVS-Studio.
 #
@@ -144,6 +145,23 @@ function(enable_pvs_studio)
   foreach(target_name IN LISTS ARG_TARGETS)
     message(STATUS "Enabling PVS-Studio for target \"${target_name}\"")
   endforeach()
+
+  # Automatically collect include directories from targets
+  set(target_include_dirs "")
+  foreach(target_name IN LISTS ARG_TARGETS)
+    get_target_property(include_dirs ${target_name} INCLUDE_DIRECTORIES)
+    if(include_dirs)
+      list(APPEND target_include_dirs ${include_dirs})
+    endif()
+  endforeach()
+
+  # Add unique include directories to CXX_FLAGS
+  if(target_include_dirs)
+    list(REMOVE_DUPLICATES target_include_dirs)
+    foreach(include_dir ${target_include_dirs})
+      list(APPEND ARG_CXX_FLAGS "-I${include_dir}")
+    endforeach()
+  endif()
 
   pvs_studio_add_target(
     # Target options:

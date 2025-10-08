@@ -28,7 +28,9 @@ option(ENABLE_UBSAN         "Enable UndefinedBehaviorSanitizer"                 
 option(ENABLE_CLANG_TIDY    "Enable static analysis with Clang-Tidy"                            OFF)
 option(ENABLE_CPPCHECK      "Enable static analysis with Cppcheck"                              OFF)
 option(ENABLE_PVS_STUDIO    "Enable static analysis with PVS-Studio"                            OFF)
+option(ENABLE_IWYU          "Enable static analysis with Include What You Use"                  OFF)
 option(ENABLE_LINK_TRACE    "Enable linker trace flag (detailed output of the linking process)" OFF)
+option(BUILD_UNIT_TESTS     "Build the unit tests"                                              OFF)
 
 #-------------------------------------------------------------------------------
 # Output Directories
@@ -156,24 +158,47 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_ERROR_DEPRECATED ON)
 
 #-------------------------------------------------------------------------------
+# Compile Definitions
+#-------------------------------------------------------------------------------
+
+add_compile_definitions(
+  PAWN_CELL_SIZE=32
+)
+
+#-------------------------------------------------------------------------------
 # CMake Modules and Dependencies
 #-------------------------------------------------------------------------------
 
 include("FetchContent")
 include("cmake/CMakeUtilities.cmake")
 include("cmake/CompileOptions.cmake")
-include("cmake/SetupGitHooks.cmake")
 include("cmake/ClangTidy.cmake")
 include("cmake/Cppcheck.cmake")
 include("cmake/PvsStudio.cmake")
+include("cmake/IncludeWhatYouUse.cmake")
+include("cmake/GoogleTest.cmake")
+include("cmake/SetupGitHooks.cmake")
 
 #-------------------------------------------------------------------------------
 # Subdirectories
 #-------------------------------------------------------------------------------
 
 add_subdirectory("external/zlib")
-add_subdirectory("libs/amxxpc32")
+add_subdirectory("libs/pawncore")
+add_subdirectory("libs/pawnwrap")
+add_subdirectory("libs/concepts")
+add_subdirectory("libs/compress")
+add_subdirectory("libs/binary")
+add_subdirectory("libs/amx")
+add_subdirectory("libs/amxx")
+add_subdirectory("libs/cli")
+add_subdirectory("libs/ui")
 add_subdirectory("apps/amxxpc")
+
+if(BUILD_UNIT_TESTS)
+  enable_testing()
+  add_subdirectory("tests")
+endif()
 
 #-------------------------------------------------------------------------------
 # Static Analysis Tools
@@ -198,7 +223,14 @@ if(ENABLE_CPPCHECK)
 endif()
 
 if(ENABLE_PVS_STUDIO)
-  enable_pvs_studio(TARGETS ${PROJECT_TARGETS}
-    CXX_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/apps/amxxpc"
+  enable_pvs_studio(TARGETS ${PROJECT_TARGETS})
+endif()
+
+if(ENABLE_IWYU)
+  enable_include_what_you_use(TARGETS ${PROJECT_TARGETS}
+    CXX17NS
+    NO_COMMENTS
+    QUOTED_INCLUDES_FIRST
+    TRANSITIVE_INCLUDES_ONLY
   )
 endif()

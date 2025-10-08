@@ -19,8 +19,8 @@
    memory, Z_BUF_ERROR if there was not enough room in the output buffer,
    Z_STREAM_ERROR if the level parameter is invalid.
 */
-int ZEXPORT compress2(Bytef* dest, uLongf* destLen, const Bytef* source, uLong sourceLen, int level)
-{
+int ZEXPORT compress2(Bytef *dest, uLongf *destLen, const Bytef *source,
+                      uLong sourceLen, int level) {
     z_stream stream;
     int err;
     const uInt max = (uInt)-1;
@@ -34,13 +34,11 @@ int ZEXPORT compress2(Bytef* dest, uLongf* destLen, const Bytef* source, uLong s
     stream.opaque = (voidpf)0;
 
     err = deflateInit(&stream, level);
-    if (err != Z_OK) {
-        return err;
-    }
+    if (err != Z_OK) return err;
 
     stream.next_out = dest;
     stream.avail_out = 0;
-    stream.next_in = (z_const Bytef*)source;
+    stream.next_in = (z_const Bytef *)source;
     stream.avail_in = 0;
 
     do {
@@ -53,8 +51,7 @@ int ZEXPORT compress2(Bytef* dest, uLongf* destLen, const Bytef* source, uLong s
             sourceLen -= stream.avail_in;
         }
         err = deflate(&stream, sourceLen ? Z_NO_FLUSH : Z_FINISH);
-    }
-    while (err == Z_OK);
+    } while (err == Z_OK);
 
     *destLen = stream.total_out;
     deflateEnd(&stream);
@@ -63,8 +60,8 @@ int ZEXPORT compress2(Bytef* dest, uLongf* destLen, const Bytef* source, uLong s
 
 /* ===========================================================================
  */
-int ZEXPORT compress(Bytef* dest, uLongf* destLen, const Bytef* source, uLong sourceLen)
-{
+int ZEXPORT compress(Bytef *dest, uLongf *destLen, const Bytef *source,
+                     uLong sourceLen) {
     return compress2(dest, destLen, source, sourceLen, Z_DEFAULT_COMPRESSION);
 }
 
@@ -72,7 +69,7 @@ int ZEXPORT compress(Bytef* dest, uLongf* destLen, const Bytef* source, uLong so
      If the default memLevel or windowBits for deflateInit() is changed, then
    this function needs to be updated.
  */
-uLong ZEXPORT compressBound(uLong sourceLen)
-{
-    return sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13;
+uLong ZEXPORT compressBound(uLong sourceLen) {
+    return sourceLen + (sourceLen >> 12) + (sourceLen >> 14) +
+           (sourceLen >> 25) + 13;
 }

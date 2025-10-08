@@ -1,0 +1,448 @@
+/*  LIBPAWNC.C
+ *
+ *  A "glue file" for building the Pawn compiler as a DLL or shared library.
+ *
+ *  Copyright (c) ITB CompuPhase, 2000-2005
+ *
+ *  This software is provided "as-is", without any express or implied warranty.
+ *  In no event will the authors be held liable for any damages arising from
+ *  the use of this software.
+ *
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *
+ *  1.  The origin of this software must not be misrepresented; you must not
+ *      claim that you wrote the original software. If you use this software in
+ *      a product, an acknowledgment in the product documentation would be
+ *      appreciated but is not required.
+ *  2.  Altered source versions must be plainly marked as such, and must not be
+ *      misrepresented as being the original software.
+ *  3.  This notice may not be removed or altered from any source distribution.
+ */
+
+#include "sc.h"
+#include <assert.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#if defined PAWNC_DLL
+    #if defined _MSC_VER
+        #define AMXXPC_API __declspec(dllexport)
+    #else
+        #define AMXXPC_API __attribute__((visibility("default")))
+    #endif
+
+    #if !defined(__linux__) && !defined(__APPLE__)
+        #include "dllmain.c"
+    #endif
+#else
+    #define AMXXPC_API
+#endif
+
+#define MAX_ARGS 100
+#if !defined UNUSED_PARAM
+    #define UNUSED_PARAM(p) ((void)(p))
+#endif
+
+#if defined LINUX || defined __FreeBSD__ || defined __OpenBSD__ || defined __APPLE__
+    #include <sys/stat.h>
+    #include <sys/types.h>
+#endif
+
+/* pc_printf()
+ * Called for general purpose "console" output. This function prints general
+ * purpose messages; errors go through pc_error(). The function is modelled
+ * after printf().
+ */
+AMXXPC_API int pc_printf(const char* message, ...)
+{
+#if PAWN_CELL_SIZE == 32
+    va_list argptr;
+
+    va_start(argptr, message);
+    const int ret = vprintf(message, argptr);
+    va_end(argptr);
+
+    return ret;
+#else
+    return 1;
+#endif
+}
+
+/* pc_error()
+ * Called for producing error output.
+ *    number      the error number (as documented in the manual)
+ *    message     a string describing the error with embedded %d and %s tokens
+ *    filename    the name of the file currently being parsed
+ *    firstline   the line number at which the expression started on which
+ *                the error was found, or -1 if there is no "starting line"
+ *    lastline    the line number at which the error was detected
+ *    argptr      a pointer to the first of a series of arguments (for macro
+ *                "va_arg")
+ * Return:
+ *    If the function returns 0, the parser attempts to continue compilation.
+ *    On a non-zero return value, the parser aborts.
+ */
+int pc_error(const int number, const char* message, char* filename, const int firstline, const int lastline,
+    const va_list argptr)
+{
+#if PAWN_CELL_SIZE == 32
+    static char* prefix[3] = {"error", "fatal error", "warning"};
+
+    if (number != 0) {
+        int idx;
+
+        if (number < 100 || (number >= 200 && sc_warnings_are_errors)) {
+            idx = 0;
+        }
+        else if (number < 200) {
+            idx = 1;
+        }
+        else {
+            idx = 2;
+        }
+
+        char* pre = prefix[idx];
+        if (firstline >= 0) {
+            pc_printf("%s(%d -- %d) : %s %03d: ", filename, firstline, lastline, pre, number);
+        }
+        else {
+            pc_printf("%s(%d) : %s %03d: ", filename, lastline, pre, number);
+        }
+    } /* if */
+    vprintf(message, argptr);
+#endif
+    return 0;
+}
+
+typedef struct src_file_s {
+    FILE* fp;         // Set if writing.
+    char* buffer;     // IO buffer.
+    char* pos;        // IO position.
+    char* end;        // End of buffer.
+    size_t maxlength; // Maximum length of the writable buffer.
+} src_file_t;
+
+/* pc_opensrc()
+ * Opens a source file (or include file) for reading. The "file" does not have
+ * to be a physical file, one might compile from memory.
+ *    filename    the name of the "file" to read from
+ * Return:
+ *    The function must return a pointer, which is used as a "magic cookie" to
+ *    all I/O functions. When failing to open the file for reading, the
+ *    function must return NULL.
+ * Note:
+ *    Several "source files" may be open at the same time. Specifically, one
+ *    file can be open for reading and another for writing.
+ */
+void* pc_opensrc(const char* filename)
+{
+    FILE* fp = NULL;
+    long length;
+    src_file_t* src = NULL;
+
+#if defined LINUX || defined __FreeBSD__ || defined __OpenBSD__ || defined DARWIN
+    struct stat fileInfo;
+    if (stat(filename, &fileInfo) != 0) {
+        return NULL;
+    }
+
+    if (S_ISDIR(fileInfo.st_mode)) {
+        return NULL;
+    }
+#endif
+
+    if ((fp = fopen(filename, "rb")) == NULL) {
+        return NULL;
+    }
+    if (fseek(fp, 0, SEEK_END) == -1) {
+        goto err;
+    }
+    if ((length = ftell(fp)) == -1) {
+        goto err;
+    }
+    if (fseek(fp, 0, SEEK_SET) == -1) {
+        goto err;
+    }
+
+    if ((src = (src_file_t*)calloc(1, sizeof(src_file_t))) == NULL) {
+        goto err;
+    }
+    if ((src->buffer = (char*)calloc(length, sizeof(char))) == NULL) {
+        goto err;
+    }
+    if (fread(src->buffer, length, 1, fp) != 1) {
+        goto err;
+    }
+
+    src->pos = src->buffer;
+    src->end = src->buffer + length;
+    fclose(fp);
+    return src;
+
+err:
+    pc_closesrc(src);
+    fclose(fp);
+    return NULL;
+}
+
+/* pc_createsrc()
+ * Creates/overwrites a source file for writing. The "file" does not have
+ * to be a physical file, one might compile from memory.
+ *    filename    the name of the "file" to create
+ * Return:
+ *    The function must return a pointer, which is used as a "magic cookie" to
+ *    all I/O functions. When failing to open the file for reading, the
+ *    function must return NULL.
+ * Note:
+ *    Several "source files" may be open at the same time. Specifically, one
+ *    file can be open for reading and another for writing.
+ */
+void* pc_createsrc(const char* filename)
+{
+    src_file_t* src = calloc(1, sizeof(src_file_t));
+    if (!src) {
+        return NULL;
+    }
+    if ((src->fp = fopen(filename, "wt")) == NULL) {
+        pc_closesrc(src);
+        return NULL;
+    }
+
+    src->maxlength = 1024;
+    if ((src->buffer = (char*)calloc(1, src->maxlength)) == NULL) {
+        pc_closesrc(src);
+        return NULL;
+    }
+
+    src->pos = src->buffer;
+    src->end = src->buffer;
+    return src;
+}
+
+/* pc_closesrc()
+ * Closes a source file (or include file). The "handle" parameter has the
+ * value that pc_opensrc() returned in an earlier call.
+ */
+void pc_closesrc(void* handle)
+{
+    src_file_t* src = handle;
+    if (!src) {
+        return;
+    }
+    if (src->fp) {
+        fwrite(src->buffer, src->pos - src->buffer, 1, src->fp);
+        fclose(src->fp);
+    }
+    free(src->buffer);
+    free(src);
+}
+
+/* pc_resetsrc()
+ * "position" may only hold a pointer that was previously obtained from
+ * pc_getpossrc()
+ */
+void pc_resetsrc(void* handle, void* position)
+{
+    src_file_t* src = handle;
+    const ptrdiff_t pos = (ptrdiff_t)position;
+
+    assert(!src->fp);
+    assert(pos >= 0 && src->buffer + pos <= src->end);
+    src->pos = src->buffer + pos;
+}
+
+/* pc_readsrc()
+ * Reads a single line from the source file (or up to a maximum number of
+ * characters if the line in the input file is too long).
+ */
+char* pc_readsrc(void* handle, unsigned char* target, const int maxchars)
+{
+    src_file_t* src = handle;
+    char* outptr = (char*)target;
+    const char* outend = outptr + maxchars;
+
+    assert(!src->fp);
+
+    if (src->pos == src->end) {
+        return NULL;
+    }
+
+    while (outptr < outend && src->pos < src->end) {
+        const char c = *src->pos++;
+        *outptr++ = c;
+
+        if (c == '\n') {
+            break;
+        }
+        if (c == '\r') {
+            // Handle CRLF.
+            if (src->pos < src->end && *src->pos == '\n') {
+                src->pos++;
+                if (outptr < outend) {
+                    *outptr++ = '\n';
+                }
+            }
+            break;
+        }
+    }
+
+    // Caller passes in a buffer of size >= maxchars+1.
+    *outptr = '\0';
+    return (char*)target;
+}
+
+/* pc_writesrc()
+ * Writes to to the source file. There is no automatic line ending; to end a
+ * line, write a "\n".
+ */
+int pc_writesrc(void* handle, unsigned char* source)
+{
+    const char* str = (char*)source;
+    const size_t len = strlen(str);
+    src_file_t* src = handle;
+
+    assert(src->fp && src->maxlength);
+
+    if (src->pos + len > src->end) {
+        size_t newmax = src->maxlength;
+        const size_t newlen = src->pos - src->buffer + len;
+        while (newmax < newlen) {
+            // Grow by 1.5X
+            newmax += newmax + newmax / 2;
+            if (newmax < src->maxlength) {
+                abort();
+            }
+        }
+
+        // Store src->pos offset relative to src->buffer before reallocating
+        const ptrdiff_t pos_offset = src->pos - src->buffer;
+        char* newbuf = realloc(src->buffer, newmax);
+        if (!newbuf) {
+            abort();
+        }
+        src->pos = newbuf + pos_offset;
+        src->end = newbuf + newmax;
+        src->buffer = newbuf;
+        src->maxlength = newmax;
+    }
+
+    strcpy(src->pos, str);
+    src->pos += len;
+    return 0;
+}
+
+void* pc_getpossrc(const void* handle)
+{
+    const src_file_t* src = handle;
+
+    assert(!src->fp);
+    return (void*)(src->pos - src->buffer);
+}
+
+int pc_eofsrc(const void* handle)
+{
+    const src_file_t* src = handle;
+
+    assert(!src->fp);
+    return src->pos == src->end;
+}
+
+/* should return a pointer, which is used as a "magic cookie" to all I/O
+ * functions; return NULL for failure
+ */
+void* pc_openasm(const char* filename)
+{
+#if defined __MSDOS__ || defined SC_LIGHT
+    return fopen(filename, "w+t");
+#else
+    return mfcreate(filename);
+#endif
+}
+
+void pc_closeasm(void* handle, const int deletefile)
+{
+#if defined __MSDOS__ || defined SC_LIGHT
+    if (handle != NULL) {
+        fclose((FILE*)handle);
+    }
+    if (deletefile) {
+        remove(outfname);
+    }
+#else
+    if (handle != NULL) {
+        if (!deletefile) {
+            mfdump(handle);
+        }
+        mfclose(handle);
+    } /* if */
+#endif
+}
+
+void pc_resetasm(void* handle)
+{
+    assert(handle != NULL);
+#if defined __MSDOS__ || defined SC_LIGHT
+    fflush((FILE*)handle);
+    fseek((FILE*)handle, 0, SEEK_SET);
+#else
+    mfseek(handle, 0, SEEK_SET);
+#endif
+}
+
+int pc_writeasm(void* handle, char* string)
+{
+#if defined __MSDOS__ || defined SC_LIGHT
+    return fputs(string, (FILE*)handle) >= 0;
+#else
+    return mfputs(handle, string);
+#endif
+}
+
+char* pc_readasm(void* handle, char* string, const int maxchars)
+{
+#if defined __MSDOS__ || defined SC_LIGHT
+    return fgets(string, maxchars, (FILE*)handle);
+#else
+    return mfgets(handle, string, maxchars);
+#endif
+}
+
+/* Should return a pointer, which is used as a "magic cookie" to all I/O
+ * functions; return NULL for failure.
+ */
+void* pc_openbin(const char* filename)
+{
+    return fopen(filename, "wb");
+}
+
+void pc_closebin(void* handle, const int deletefile)
+{
+    fclose(handle);
+    if (deletefile) {
+        remove(binfname);
+    }
+}
+
+/* pc_resetbin()
+ * Can seek to any location in the file.
+ * The offset is always from the start of the file.
+ */
+void pc_resetbin(void* handle, const long offset)
+{
+    fflush(handle);
+    fseek(handle, offset, SEEK_SET);
+}
+
+int pc_writebin(void* handle, const void* buffer, const int size)
+{
+    return (int)fwrite(buffer, 1, size, handle) == size;
+}
+
+long pc_lengthbin(void* handle)
+{
+    return ftell(handle);
+}
