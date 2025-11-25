@@ -36,4 +36,4 @@ BEGIN
 END
 
 #define IDI_ICONEXE 101
-IDI_ICONEXE ICON "@CMAKE_SOURCE_DIR@\\data\\icons\\amxxpc.ico"
+IDI_ICONEXE ICON "@CMAKE_SOURCE_DIR@\\data\\icons\\novapc.ico"
