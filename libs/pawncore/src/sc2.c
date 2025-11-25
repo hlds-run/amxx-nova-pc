@@ -1306,9 +1306,9 @@ static int command(void)
                             }
                             name[i] = '\0';
                             /* get the symbol */
-                            sym = findloc(name);
+                            sym = findloc_all(name);
                             if (sym == NULL) {
-                                sym = findglb(name);
+                                sym = findglb_all(name);
                             }
                             if (sym != NULL) {
                                 sym->usage |= uREAD;
@@ -3121,6 +3121,16 @@ SC_FUNC symbol* findglb(const char* name)
     return find_symbol(&glbtab, name, fcurrent, FALSE);
 }
 
+/*  findglb_all
+ *
+ *  Returns a pointer to the global symbol (if found) or NULL (if not found).
+ *  Includes children (like enum members).
+ */
+SC_FUNC symbol* findglb_all(const char* name)
+{
+    return find_symbol(&glbtab, name, fcurrent, TRUE);
+}
+
 /*  findloc
  *
  *  Returns a pointer to the local symbol (if found) or NULL (if not found).
@@ -3129,6 +3139,16 @@ SC_FUNC symbol* findglb(const char* name)
 SC_FUNC symbol* findloc(const char* name)
 {
     return find_symbol(&loctab, name, -1, FALSE);
+}
+
+/*  findloc_all
+ *
+ *  Returns a pointer to the local symbol (if found) or NULL (if not found).
+ *  Includes children (like enum members).
+ */
+SC_FUNC symbol* findloc_all(const char* name)
+{
+    return find_symbol(&loctab, name, -1, TRUE);
 }
 
 SC_FUNC symbol* findconst(const char* name)
