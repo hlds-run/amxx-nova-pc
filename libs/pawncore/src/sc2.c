@@ -41,6 +41,7 @@
 #define ISPACKED 0x4
 static cell litchar(const unsigned char** lptr, int flags);
 static symbol* find_symbol(const symbol* root, const char* name, int fnumber, int includechildren);
+static symbol* find_symbol_child(const symbol* root, const symbol* sym);
 
 static void substallpatterns(unsigned char* line, int buffersize);
 static int match(const char* st, int end);
@@ -2942,7 +2943,7 @@ SC_FUNC void delete_symbols(symbol* root, const int level, const int delete_labe
         if (mustdelete) {
             /* first delete children, if any */
             int count = 0;
-            while ((child_sym = finddepend(sym)) != NULL) {
+            while ((child_sym = find_symbol_child(root, sym)) != NULL) {
                 delete_symbol(root, child_sym);
                 count++;
             } /* while */
