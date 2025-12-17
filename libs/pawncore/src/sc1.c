@@ -100,7 +100,7 @@ static int doexpr(
     int comma, int chkeffect, int allowarray, int mark_endexpr, int* tag, symbol** symptr, int chkfuncresult);
 static void doassert(void);
 static void doexit(void);
-static void test(int label, int parens, int invert);
+static int test(int label, int parens, int invert);
 static int doif(void);
 static void dowhile(void);
 static void dodo(void);
@@ -5473,7 +5473,7 @@ SC_FUNC int eval_constexpr(cell* val, int* tag, symbol** symptr)
  *
  *  Global references: sc_intest (altered, but restored upon termination)
  */
-static void test(const int label, const int parens, int invert)
+static int test(const int label, const int parens, int invert)
 {
     int index, tok;
     cell cidx;
@@ -5514,10 +5514,11 @@ static void test(const int label, const int parens, int invert)
         error(33, ptr); /* array must be indexed */
     } /* if */
     if (ident == iCONSTEXPR) {         /* constant expression */
+        int testtype = 0;
         sc_intest = (short)POPSTK_I(); /* restore stack */
         stgdel(index, cidx);
         if (constval) {                /* code always executed */
-            error(206);                /* redundant test: always non-zero */
+            testtype = tENDLESS;       /* endless loop detected */
         }
         else {
             error(205);                /* redundant code: never executed */
@@ -5527,7 +5528,7 @@ static void test(const int label, const int parens, int invert)
             stgout(0);     /* write "jumplabel" code */
             stgset(FALSE); /* stop staging */
         } /* if */
-        return;
+        return testtype;
     } /* if */
     if (tag != 0 && tag != pc_addtag("bool")) {
         if (check_userop(lneg, tag, 0, 1, NULL, &tag)) {
@@ -5547,16 +5548,20 @@ static void test(const int label, const int parens, int invert)
                                     * assert() when localstaging is set to TRUE) */
         stgset(FALSE);             /* stop staging */
     } /* if */
+    return 0;
 }
 
 static int doif(void)
 {
-    const int ifindent = stmtindent; /* save the indent of the "if" instruction */
-    const int flab1 = getlabel();    /* get label number for false branch */
-    test(flab1, TRUE, FALSE);        /* get expression, branch to flab1 if false */
-    statement(NULL, FALSE);          /* if true, do a statement */
-    if (matchtoken(tELSE) == 0) {    /* if...else ? */
-        setlabel(flab1);             /* no, simple if..., print false label */
+    const int ifindent = stmtindent;               /* save the indent of the "if" instruction */
+    const int flab1 = getlabel();                  /* get label number for false branch */
+    const int testtype = test(flab1, TRUE, FALSE); /* get expression, branch to flab1 if false */
+    if (testtype == tENDLESS) {
+        error(206);                                /* redundant test: always non-zero */
+    }
+    statement(NULL, FALSE);                        /* if true, do a statement */
+    if (matchtoken(tELSE) == 0) {                  /* if...else ? */
+        setlabel(flab1);                           /* no, simple if..., print false label */
     }
     else {
         const int lastst_true = lastst;
@@ -5868,9 +5873,12 @@ static void doassert(void)
     cell cidx;
 
     if ((sc_debug & sCHKBOUNDS) != 0) {
-        const int flab1 = getlabel(); /* get label number for "OK" branch */
-        test(flab1, FALSE, TRUE);     /* get expression and branch to flab1 if true */
-        insert_dbgline(fline);        /* make sure we can find the correct line number */
+        const int flab1 = getlabel();                     /* get label number for "OK" branch */
+        const int endlessloop = test(flab1, FALSE, TRUE); /* get expression and branch to flab1 if true */
+        if (endlessloop == tENDLESS) {
+            error(206);                                   /* redundant test: always non-zero */
+        }
+        insert_dbgline(fline);                            /* make sure we can find the correct line number */
         ffabort(xASSERTION);
         setlabel(flab1);
     }

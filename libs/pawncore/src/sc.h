@@ -396,6 +396,7 @@ typedef struct s_valuepair {
 #define tPENDING_STRING 333
 #define tEXPR           334 /* for assigment to "lastst" only */
 #define tEMPTYBLOCK     335 /* empty blocks for AM bug 4825 */
+#define tENDLESS        337 /* endless loop, for assigment to "lastst" only */
 
 /* (reversed) evaluation of staging buffer */
 #define sSTARTREORDER   0x01
