@@ -5163,25 +5163,25 @@ SC_FUNC symbol* add_constant(char* name, const cell val, const int vclass, const
     /* Test whether a global or local symbol with the same name exists. Since
      * constants are stored in the symbols table, this also finds previously
      * defind constants. */
-    symbol* sym = findglb(name);
-    if (!sym) {
-        sym = findloc(name);
-    }
+    symbol* sym = (vclass == sLOCAL) ? findloc(name) : findglb(name);
+
     if (sym) {
-        /* silently ignore redefinitions of constants with the same value */
-        if (sym->ident == iCONSTEXPR) {
-            if (sym->addr != val) {
-                error(201, name); /* redefinition of constant (different value) */
-            }
-        }
-        else {
+        if (sym->ident != iCONSTEXPR || sym->tag != tag) {
+            /* redefinition a function/variable to a constant is not allowed;
+             * redefinition of a constant to a different tag is not allowed
+             */
             error(21, name); /* symbol already defined */
             return NULL;
+        }
+        if (sym->addr != val) {
+            error(201, name); /* redefinition of constant (different value) */
+            sym->addr = val;  /* set new value */
         } /* if */
+        /* silently ignore redefinitions of constants with the same value & tag */
         return sym;
     } /* if */
 
-    /* constant doesn't exist yet, an entry must be created */
+    /* constant doesn't exist yet */
     sym = addsym(name, val, iCONSTEXPR, vclass, tag, uDEFINE);
     assert(sym != NULL); /* fatal error 103 must be given on error */
     if (sc_status == statIDLE) {
