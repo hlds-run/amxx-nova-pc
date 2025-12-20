@@ -396,6 +396,7 @@ typedef struct s_valuepair {
 #define tPENDING_STRING 333
 #define tEXPR           334 /* for assigment to "lastst" only */
 #define tEMPTYBLOCK     335 /* empty blocks for AM bug 4825 */
+#define tENDLESS        337 /* endless loop, for assigment to "lastst" only */
 
 /* (reversed) evaluation of staging buffer */
 #define sSTARTREORDER   0x01
@@ -581,7 +582,9 @@ SC_FUNC int refer_symbol(symbol* entry, symbol* bywhom);
 SC_FUNC void markusage(symbol* sym, int usage);
 SC_FUNC uint32_t namehash(const char* name);
 SC_FUNC symbol* findglb(const char* name);
+SC_FUNC symbol* findglb_all(const char* name);
 SC_FUNC symbol* findloc(const char* name);
+SC_FUNC symbol* findloc_all(const char* name);
 SC_FUNC symbol* findconst(const char* name);
 SC_FUNC symbol* finddepend(const symbol* parent);
 SC_FUNC symbol* addsym(const char* name, cell addr, int ident, int vclass, int tag, int usage);
