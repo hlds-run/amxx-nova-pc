@@ -184,7 +184,6 @@ include("cmake/SetupGitHooks.cmake")
 #-------------------------------------------------------------------------------
 
 add_subdirectory("external/zlib")
-add_subdirectory("libs/pawnwrap")
 add_subdirectory("libs/core")
 add_subdirectory("libs/pawn")
 add_subdirectory("libs/cli")

@@ -2,14 +2,14 @@
 # Project Definition
 #-------------------------------------------------------------------------------
 
-project("Pawn Compiler Wrapper" LANGUAGES "CXX")
+project("Pawn Legacy Adapter" LANGUAGES "CXX")
 
 #-------------------------------------------------------------------------------
 # Target Definition
 #-------------------------------------------------------------------------------
 
-set(TARGET_NAME "pawnwrap")
-set(TARGET_ALIAS "PawnCompiler::${TARGET_NAME}")
+set(TARGET_NAME "pawnadapter")
+set(TARGET_ALIAS "PawnAdapter::${TARGET_NAME}")
 
 add_library("${TARGET_NAME}" STATIC)
 add_library("${TARGET_ALIAS}" ALIAS "${TARGET_NAME}")
@@ -20,11 +20,11 @@ add_library("${TARGET_ALIAS}" ALIAS "${TARGET_NAME}")
 
 target_sources("${TARGET_NAME}"
   PUBLIC
-    "include/pawnwrap/compiler.hpp"
-    "include/pawnwrap/option.hpp"
+    "include/pawn/compiler/legacy/adapter/compiler.hpp"
+    "include/pawn/compiler/legacy/adapter/option.hpp"
 
   PRIVATE
-    "src/pawnwrap/compiler.cpp"
+    "src/compiler.cpp"
 )
 
 #-------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 #include "ui/console_user_interface.hpp"
-#include "pawnwrap/option.hpp"
+#include "pawn/compiler/legacy/adapter/option.hpp"
 #include "ui/app_version.hpp"
 #include <algorithm>
 #include <cstddef>

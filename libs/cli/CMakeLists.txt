@@ -47,5 +47,5 @@ target_include_directories("${TARGET_NAME}"
 
 target_link_libraries("${TARGET_NAME}"
   PRIVATE
-    "PawnCompiler::pawnwrap"
+    "PawnAdapter::pawnadapter"
 )

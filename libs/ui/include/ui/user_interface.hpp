@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pawnwrap/option.hpp"
+#include "pawn/compiler/legacy/adapter/option.hpp"
 #include "ui/app_version.hpp"
 #include <string_view>
 #include <vector>

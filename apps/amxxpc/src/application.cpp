@@ -1,7 +1,7 @@
 #include "application.hpp"
+#include "pawn/compiler/legacy/adapter/compiler.hpp"
 #include "pawn/image/amx/reader.hpp"
 #include "pawn/image/amxx/writer.hpp"
-#include "pawnwrap/compiler.hpp"
 #include "ui/user_interface.hpp"
 #include <cstdlib>
 #include <filesystem>

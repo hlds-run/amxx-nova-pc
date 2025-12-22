@@ -18,6 +18,7 @@ add_library("${TARGET_ALIAS}" ALIAS "${TARGET_NAME}")
 # Subdirectories
 #-------------------------------------------------------------------------------
 
+add_subdirectory("legacy/adapter")
 add_subdirectory("legacy/core")
 
 #-------------------------------------------------------------------------------
@@ -26,5 +27,6 @@ add_subdirectory("legacy/core")
 
 target_link_libraries("${TARGET_NAME}"
   INTERFACE
+    PawnAdapter::pawnadapter
     PawnLegacy::pawnlegacy
 )

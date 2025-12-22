@@ -1,7 +1,7 @@
 #include "cli/parser.hpp"
 #include "cli/exceptions/cli_error.hpp"
-#include "pawnwrap/compiler.hpp"
-#include "pawnwrap/option.hpp"
+#include "pawn/compiler/legacy/adapter/compiler.hpp"
+#include "pawn/compiler/legacy/adapter/option.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>

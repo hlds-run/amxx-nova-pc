@@ -1,6 +1,6 @@
-#include "pawnwrap/compiler.hpp"
+#include "pawn/compiler/legacy/adapter/compiler.hpp"
 #include "amx.h"
-#include "pawnwrap/option.hpp"
+#include "pawn/compiler/legacy/adapter/option.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <optional>
