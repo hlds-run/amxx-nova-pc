@@ -18,6 +18,7 @@ add_library("${TARGET_ALIAS}" ALIAS "${TARGET_NAME}")
 # Subdirectories
 #-------------------------------------------------------------------------------
 
+add_subdirectory("compiler")
 add_subdirectory("image")
 
 #-------------------------------------------------------------------------------
@@ -26,5 +27,6 @@ add_subdirectory("image")
 
 target_link_libraries("${TARGET_NAME}"
   INTERFACE
+    PawnCompiler::pawncompiler
     PawnImage::pawnimage
 )

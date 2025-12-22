@@ -2,14 +2,14 @@
 # Project Definition
 #-------------------------------------------------------------------------------
 
-project("Pawn Compiler Core" LANGUAGES "C")
+project("Pawn Legacy" LANGUAGES "C")
 
 #-------------------------------------------------------------------------------
 # Target Definition
 #-------------------------------------------------------------------------------
 
-set(TARGET_NAME "pawncore")
-set(TARGET_ALIAS "PawnCompiler::${TARGET_NAME}")
+set(TARGET_NAME "pawnlegacy")
+set(TARGET_ALIAS "PawnLegacy::${TARGET_NAME}")
 
 add_library("${TARGET_NAME}")
 add_library("${TARGET_ALIAS}" ALIAS "${TARGET_NAME}")
