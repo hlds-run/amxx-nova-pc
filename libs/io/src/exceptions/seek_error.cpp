@@ -1,5 +1,5 @@
-#include "binary/exceptions/stream_error.hpp"
-#include "binary/exceptions/stream_exception.hpp"
+#include "io/exceptions/stream_error.hpp"
+#include "io/exceptions/stream_exception.hpp"
 #include <ios>
 #include <string>
 
@@ -51,7 +51,7 @@ namespace {
     }
 }
 
-namespace Binary::Exceptions {
+namespace Io::Exceptions {
     SeekError::SeekError(const std::streamoff offset, const std::ios::seekdir direction, const std::string& context)
         : StreamException(format_message(offset, direction, context))
     {

@@ -1,7 +1,7 @@
 #include "amx/reader.hpp"
 #include "amx/consts.hpp"
 #include "amx/exceptions/reader_error.hpp"
-#include "binary/exceptions/stream_error.hpp"
+#include "io/exceptions/stream_error.hpp"
 #include <expected>
 #include <utility>
 #include <vector>
@@ -21,7 +21,7 @@ namespace Amx {
         is_closed_ = !stream_.is_open();
 
         if (!is_open()) {
-            throw Binary::Exceptions::FileOpenError{file_path().string(), "reading"};
+            throw Io::Exceptions::FileOpenError{file_path().string(), "reading"};
         }
     }
 
@@ -34,7 +34,7 @@ namespace Amx {
     Header Reader::read_header(const std::streamoff offset, const std::ios::seekdir dir)
     {
         if (!bin_reader_.seek(offset, dir)) {
-            throw Binary::Exceptions::SeekError{offset, dir, "AMX file header"};
+            throw Io::Exceptions::SeekError{offset, dir, "AMX file header"};
         }
 
         auto result = bin_reader_.read<Header>();
@@ -65,7 +65,7 @@ namespace Amx {
     HeaderDebug Reader::read_header_debug(const std::streamoff offset, const std::ios::seekdir dir)
     {
         if (!bin_reader_.seek(offset, dir)) {
-            throw Binary::Exceptions::SeekError{offset, dir, "AMX file debug header"};
+            throw Io::Exceptions::SeekError{offset, dir, "AMX file debug header"};
         }
 
         const auto result = bin_reader_.read<HeaderDebug>();
@@ -97,16 +97,16 @@ namespace Amx {
         is_closed_ = true;
 
         if (stream_.fail()) {
-            throw Binary::Exceptions::FileCloseError{file_path().string()};
+            throw Io::Exceptions::FileCloseError{file_path().string()};
         }
     }
 
-    void Reader::throw_stream_exception(const Binary::Reader::Error error, const std::string& context)
+    void Reader::throw_stream_exception(const Io::BinaryReader::Error error, const std::string& context)
     {
-        if (error == Binary::Reader::Error::end_of_file) {
-            throw Binary::Exceptions::EndOfFileError{context};
+        if (error == Io::BinaryReader::Error::end_of_file) {
+            throw Io::Exceptions::EndOfFileError{context};
         }
 
-        throw Binary::Exceptions::StreamFailureError{context};
+        throw Io::Exceptions::StreamFailureError{context};
     }
 }

@@ -1,11 +1,11 @@
-#include "binary/reader.hpp"
+#include "io/binary_reader.hpp"
 
-namespace Binary {
-    Reader::Reader(std::istream& stream) : stream_(stream)
+namespace Io {
+    BinaryReader::BinaryReader(std::istream& stream) : stream_(stream)
     {
     }
 
-    std::size_t Reader::size() const
+    std::size_t BinaryReader::size() const
     {
         const auto cur_pos = position();
         stream_.seekg(0, std::ios::end);
@@ -15,7 +15,7 @@ namespace Binary {
         return static_cast<std::size_t>(end_pos);
     }
 
-    bool Reader::seek(const std::streamoff offset, const std::ios::seekdir dir) const
+    bool BinaryReader::seek(const std::streamoff offset, const std::ios::seekdir dir) const
     {
         stream_.clear();
         stream_.seekg(offset, dir);
@@ -23,7 +23,7 @@ namespace Binary {
         return static_cast<bool>(stream_);
     }
 
-    std::size_t Reader::remaining() const
+    std::size_t BinaryReader::remaining() const
     {
         const auto pos = position();
         const auto total = size();
@@ -31,7 +31,7 @@ namespace Binary {
         return static_cast<std::size_t>(total - pos);
     }
 
-    std::expected<void, Reader::Error> Reader::read_bytes(std::span<std::byte> buffer) const
+    std::expected<void, BinaryReader::Error> BinaryReader::read_bytes(std::span<std::byte> buffer) const
     {
         stream_.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
 

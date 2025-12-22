@@ -1,9 +1,9 @@
 #pragma once
 
-#include "binary/exceptions/stream_exception.hpp"
+#include "io/exceptions/stream_exception.hpp"
 #include <ios>
 
-namespace Binary::Exceptions {
+namespace Io::Exceptions {
     /**
      * @brief Signals failure when attempting to open a file.
      *

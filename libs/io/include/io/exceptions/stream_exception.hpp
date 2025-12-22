@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace Binary::Exceptions {
+namespace Io::Exceptions {
     /**
      * @brief Base class for all stream-related exceptions.
      *

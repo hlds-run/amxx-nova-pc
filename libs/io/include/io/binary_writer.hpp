@@ -8,13 +8,13 @@
 #include <ranges>
 #include <span>
 
-namespace Binary {
+namespace Io {
     /**
      * @brief Provides binary data writing capabilities to an output stream.
      *
      * Encapsulates low-level write operations to provide type safety and error reporting.
      */
-    class Writer {
+    class BinaryWriter {
       public:
         /**
          * @brief Represents error conditions during writing operations.
@@ -30,22 +30,22 @@ namespace Binary {
          * @param stream Output stream that must remain valid
          *               for the entire lifetime of the writer.
          */
-        explicit Writer(std::ostream& stream);
+        explicit BinaryWriter(std::ostream& stream);
 
         /// Deleted copy constructor.
-        Writer(const Writer&) = delete;
+        BinaryWriter(const BinaryWriter&) = delete;
 
         /// Deleted move constructor.
-        Writer(Writer&&) noexcept = delete;
+        BinaryWriter(BinaryWriter&&) noexcept = delete;
 
         /// Default destructor.
-        ~Writer() = default;
+        ~BinaryWriter() = default;
 
         /// Deleted copy assignment operator.
-        Writer& operator=(const Writer&) = delete;
+        BinaryWriter& operator=(const BinaryWriter&) = delete;
 
         /// Deleted move assignment operator.
-        Writer& operator=(Writer&&) noexcept = delete;
+        BinaryWriter& operator=(BinaryWriter&&) noexcept = delete;
 
         /**
          * @brief Moves the write position within the stream.
@@ -112,25 +112,25 @@ namespace Binary {
         std::ostream& stream_;
     };
 
-    inline std::streampos Writer::position() const
+    inline std::streampos BinaryWriter::position() const
     {
         return stream_.tellp();
     }
 
-    inline bool Writer::good() const
+    inline bool BinaryWriter::good() const
     {
         return stream_.good();
     }
 
     template <Concepts::ByteSafe T>
-    std::expected<void, Writer::Error> Writer::write(const T& value) const
+    std::expected<void, BinaryWriter::Error> BinaryWriter::write(const T& value) const
     {
         auto bytes = std::as_bytes(std::span{&value, 1});
         return write_bytes(bytes);
     }
 
     template <Concepts::ContiguousByteSafeContainer T>
-    std::expected<void, Writer::Error> Writer::write_from(const T& data) const
+    std::expected<void, BinaryWriter::Error> BinaryWriter::write_from(const T& data) const
     {
         auto bytes = std::as_bytes(std::span{std::ranges::data(data), std::ranges::size(data)});
         return write_bytes(bytes);

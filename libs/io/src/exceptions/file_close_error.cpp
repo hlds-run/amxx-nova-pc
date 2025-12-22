@@ -1,5 +1,5 @@
-#include "binary/exceptions/stream_error.hpp"
-#include "binary/exceptions/stream_exception.hpp"
+#include "io/exceptions/stream_error.hpp"
+#include "io/exceptions/stream_exception.hpp"
 #include <string>
 
 namespace {
@@ -27,7 +27,7 @@ namespace {
     }
 }
 
-namespace Binary::Exceptions {
+namespace Io::Exceptions {
     FileCloseError::FileCloseError(const std::string& filename, const std::string& details)
         : StreamException(format_message(filename, details))
     {

@@ -8,14 +8,14 @@
 #include <ranges>
 #include <span>
 
-namespace Binary {
+namespace Io {
     /**
      * @brief Provides binary stream reading utilities.
      *
      * Wraps an input stream to support reading arbitrary
      * byte-oriented values, containers, and buffers.
      */
-    class Reader {
+    class BinaryReader {
       public:
         /**
          * @brief Represents possible error states during reading.
@@ -34,22 +34,22 @@ namespace Binary {
          * @param stream Input stream that must remain valid
          *               for the entire lifetime of the reader.
          */
-        explicit Reader(std::istream& stream);
+        explicit BinaryReader(std::istream& stream);
 
         /// Deleted copy constructor.
-        Reader(const Reader&) = delete;
+        BinaryReader(const BinaryReader&) = delete;
 
         /// Deleted move constructor.
-        Reader(Reader&&) noexcept = delete;
+        BinaryReader(BinaryReader&&) noexcept = delete;
 
         /// Default destructor.
-        ~Reader() = default;
+        ~BinaryReader() = default;
 
         /// Deleted copy assignment operator.
-        Reader& operator=(const Reader&) = delete;
+        BinaryReader& operator=(const BinaryReader&) = delete;
 
         /// Deleted move assignment operator.
-        Reader& operator=(Reader&&) noexcept = delete;
+        BinaryReader& operator=(BinaryReader&&) noexcept = delete;
 
         /**
          * @brief Returns the total size of the stream in bytes.
@@ -177,23 +177,23 @@ namespace Binary {
         [[nodiscard]] T make_bytes_container(std::size_t size);
     };
 
-    inline std::streampos Reader::position() const
+    inline std::streampos BinaryReader::position() const
     {
         return stream_.tellg();
     }
 
-    inline bool Reader::good() const
+    inline bool BinaryReader::good() const
     {
         return stream_.good();
     }
 
-    inline bool Reader::eof() const
+    inline bool BinaryReader::eof() const
     {
         return stream_.eof();
     }
 
     template <Concepts::ByteSafe T>
-    std::expected<T, Reader::Error> Reader::read()
+    std::expected<T, BinaryReader::Error> BinaryReader::read()
     {
         T value{};
         const auto bytes = std::as_writable_bytes(std::span{&value, 1});
@@ -206,14 +206,14 @@ namespace Binary {
     }
 
     template <Concepts::ContiguousByteSafeContainer T>
-    std::expected<void, Reader::Error> Reader::read_into(T& buffer)
+    std::expected<void, BinaryReader::Error> BinaryReader::read_into(T& buffer)
     {
         const auto bytes = std::as_writable_bytes(std::span{std::ranges::data(buffer), std::ranges::size(buffer)});
         return read_bytes(bytes);
     }
 
     template <Concepts::ResizableContiguousByteSafeContainer T>
-    std::expected<T, Reader::Error> Reader::read_remaining()
+    std::expected<T, BinaryReader::Error> BinaryReader::read_remaining()
     {
         const auto bytes_left = remaining();
 
@@ -235,7 +235,7 @@ namespace Binary {
     }
 
     template <Concepts::ResizableContiguousByteSafeContainer T>
-    std::expected<T, Reader::Error> Reader::read_all()
+    std::expected<T, BinaryReader::Error> BinaryReader::read_all()
     {
         if (const auto cur_pos = position(); seek(0)) {
             if (auto result = read_remaining<T>(); seek(cur_pos) && result.has_value()) {
@@ -247,7 +247,7 @@ namespace Binary {
     }
 
     template <Concepts::ResizableContiguousByteSafeContainer T>
-    T Reader::make_bytes_container(const std::size_t size)
+    T BinaryReader::make_bytes_container(const std::size_t size)
     {
         if constexpr (requires { T{size}; }) {
             return T{size};

@@ -48,7 +48,7 @@ target_include_directories("${TARGET_NAME}"
 target_link_libraries("${TARGET_NAME}"
   PUBLIC
     "AMX::amx"
-    "Binary::binary"
     "Compress::compress"
     "Concepts::concepts"
+    "IO::io"
 )

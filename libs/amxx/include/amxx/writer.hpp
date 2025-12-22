@@ -2,9 +2,9 @@
 
 #include "amxx/entry.hpp"
 #include "amxx/header.hpp"
-#include "binary/exceptions/stream_error.hpp"
-#include "binary/writer.hpp"
 #include "concepts/concepts.hpp"
+#include "io/binary_writer.hpp"
+#include "io/exceptions/stream_error.hpp"
 #include <concepts>
 #include <filesystem>
 #include <fstream>
@@ -38,7 +38,7 @@ namespace Amxx {
          * Truncates the target file if it already exists.
          * Subsequent write operations require the stream to be open.
          *
-         * @throw \c Binary::Exceptions::FileOpenError If the file cannot be opened.
+         * @throw \c Io::Exceptions::FileOpenError If the file cannot be opened.
          */
         void open();
 
@@ -171,7 +171,7 @@ namespace Amxx {
         /**
          * @brief Closes the underlying file stream.
          *
-         * @throw \c Binary::Exceptions::FileCloseError If closing the file fails.
+         * @throw \c Io::Exceptions::FileCloseError If closing the file fails.
          */
         void close();
 
@@ -186,7 +186,7 @@ namespace Amxx {
         std::ofstream stream_{};
 
         /// Binary writer wrapping the output stream.
-        Binary::Writer bin_writer_{stream_};
+        Io::BinaryWriter bin_writer_{stream_};
 
         /**
          * @brief Translates low-level stream errors into domain-specific exceptions.
@@ -194,7 +194,7 @@ namespace Amxx {
          * @param error   Error code returned from binary reader.
          * @param context Additional context about the operation that failed.
          */
-        [[noreturn]] static void throw_stream_exception(Binary::Writer::Error error, const std::string& context = "");
+        [[noreturn]] static void throw_stream_exception(Io::BinaryWriter::Error error, const std::string& context = "");
     };
 
     inline const std::filesystem::path& Writer::file_path() const noexcept
@@ -223,7 +223,7 @@ namespace Amxx {
     void Writer::write_entries(const T& entries, const std::streamoff offset, const std::ios::seekdir dir) const
     {
         if (!bin_writer_.seek(offset, dir)) {
-            throw Binary::Exceptions::SeekError{offset, dir, "AMXX file entries"};
+            throw Io::Exceptions::SeekError{offset, dir, "AMXX file entries"};
         }
 
         for (const auto& entry : entries) {
@@ -244,7 +244,7 @@ namespace Amxx {
     void Writer::write_body(const T& body, const std::streamoff offset, const std::ios::seekdir dir) const
     {
         if (!bin_writer_.seek(offset, dir)) {
-            throw Binary::Exceptions::SeekError{offset, dir, "AMXX file body"};
+            throw Io::Exceptions::SeekError{offset, dir, "AMXX file body"};
         }
 
         if (const auto result = bin_writer_.write_from(body); !result) {
@@ -263,7 +263,7 @@ namespace Amxx {
     void Writer::write_bodies(const T& bodies, const std::streamoff offset, const std::ios::seekdir dir) const
     {
         if (!bin_writer_.seek(offset, dir)) {
-            throw Binary::Exceptions::SeekError{offset, dir, "AMXX file bodies"};
+            throw Io::Exceptions::SeekError{offset, dir, "AMXX file bodies"};
         }
 
         for (const auto& body : bodies) {

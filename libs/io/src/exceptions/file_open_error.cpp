@@ -1,5 +1,5 @@
-#include "binary/exceptions/stream_error.hpp"
-#include "binary/exceptions/stream_exception.hpp"
+#include "io/exceptions/stream_error.hpp"
+#include "io/exceptions/stream_exception.hpp"
 #include <string>
 
 namespace {
@@ -33,7 +33,7 @@ namespace {
     }
 }
 
-namespace Binary::Exceptions {
+namespace Io::Exceptions {
     FileOpenError::FileOpenError(const std::string& filename, const std::string& mode, const std::string& details)
         : StreamException(format_message(filename, mode, details))
     {

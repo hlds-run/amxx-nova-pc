@@ -1,5 +1,5 @@
-#include "binary/exceptions/stream_error.hpp"
-#include "binary/exceptions/stream_exception.hpp"
+#include "io/exceptions/stream_error.hpp"
+#include "io/exceptions/stream_exception.hpp"
 #include <string>
 
 namespace {
@@ -22,7 +22,7 @@ namespace {
     }
 }
 
-namespace Binary::Exceptions {
+namespace Io::Exceptions {
     EndOfFileError::EndOfFileError(const std::string& context) : StreamException(format_message(context))
     {
     }
