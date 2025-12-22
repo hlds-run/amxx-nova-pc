@@ -18,7 +18,7 @@ namespace Amxx {
         is_closed_ = !stream_.is_open();
 
         if (!is_open()) {
-            throw Io::Exceptions::FileOpenError{file_path().string(), "writing"};
+            throw Core::Io::Exceptions::FileOpenError{file_path().string(), "writing"};
         }
     }
 
@@ -30,7 +30,7 @@ namespace Amxx {
     void Writer::write_header(const Header& header, const std::streamoff offset, const std::ios::seekdir dir) const
     {
         if (!bin_writer_.seek(offset, dir)) {
-            throw Io::Exceptions::SeekError{offset, dir, "AMXX file header"};
+            throw Core::Io::Exceptions::SeekError{offset, dir, "AMXX file header"};
         }
 
         if (const auto result = bin_writer_.write(header); !result) {
@@ -47,7 +47,7 @@ namespace Amxx {
     void Writer::write_entry(const Entry& entry, const std::streamoff offset, const std::ios::seekdir dir) const
     {
         if (!bin_writer_.seek(offset, dir)) {
-            throw Io::Exceptions::SeekError{offset, dir, "AMXX file entry"};
+            throw Core::Io::Exceptions::SeekError{offset, dir, "AMXX file entry"};
         }
 
         if (const auto result = bin_writer_.write(entry); !result) {
@@ -72,12 +72,13 @@ namespace Amxx {
         is_closed_ = true;
 
         if (stream_.fail()) {
-            throw Io::Exceptions::FileCloseError{file_path().string()};
+            throw Core::Io::Exceptions::FileCloseError{file_path().string()};
         }
     }
 
-    void Writer::throw_stream_exception([[maybe_unused]] Io::BinaryWriter::Error error, const std::string& context)
+    void Writer::throw_stream_exception(
+        [[maybe_unused]] Core::Io::BinaryWriter::Error error, const std::string& context)
     {
-        throw Io::Exceptions::StreamFailureError{context};
+        throw Core::Io::Exceptions::StreamFailureError{context};
     }
 }

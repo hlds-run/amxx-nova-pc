@@ -91,7 +91,7 @@ namespace Amxx {
         return *this;
     }
 
-    Builder& Builder::set_compressor(std::unique_ptr<Compress::Compressor> compressor) noexcept
+    Builder& Builder::set_compressor(std::unique_ptr<Core::Compress::Compressor> compressor) noexcept
     {
         compressor_ = std::move(compressor);
         return *this;

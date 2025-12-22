@@ -1,7 +1,7 @@
 #include "amxx/builder.hpp"
 #include "application.hpp"
 #include "cli/arguments.hpp"
-#include "compress/zlib_compressor.hpp"
+#include "core/compress/zlib_compressor.hpp"
 #include "ui/app_version.hpp"
 #include "ui/console_user_interface.hpp"
 #include "ui/user_interface.hpp"
@@ -40,7 +40,7 @@ namespace {
     [[nodiscard]] std::unique_ptr<Amxx::Builder> make_amxx_builder()
     {
         auto amxx_builder = std::make_unique<Amxx::Builder>();
-        amxx_builder->set_compressor(std::make_unique<Compress::ZlibCompressor>());
+        amxx_builder->set_compressor(std::make_unique<Core::Compress::ZlibCompressor>());
 
         return amxx_builder;
     }

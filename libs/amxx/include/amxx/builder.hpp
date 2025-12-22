@@ -3,13 +3,13 @@
 #include "amx/data.hpp"
 #include "amx/reader.hpp"
 #include "amxx/writer.hpp"
-#include "compress/compressor.hpp"
+#include "core/compress/compressor.hpp"
 #include <concepts>
 #include <memory>
 
 namespace Amxx {
     template <typename T>
-    concept CompressorDerived = std::derived_from<T, Compress::Compressor>;
+    concept CompressorDerived = std::derived_from<T, Core::Compress::Compressor>;
 
     /**
      * @brief Constructs AMXX files from AMX input files.
@@ -52,7 +52,7 @@ namespace Amxx {
          *
          * @return Reference to the \c Builder.
          */
-        Builder& set_compressor(std::unique_ptr<Compress::Compressor> compressor) noexcept;
+        Builder& set_compressor(std::unique_ptr<Core::Compress::Compressor> compressor) noexcept;
 
         /**
          * @brief Executes the build process.
@@ -67,7 +67,7 @@ namespace Amxx {
 
       private:
         /// Compression strategy instance.
-        std::unique_ptr<Compress::Compressor> compressor_;
+        std::unique_ptr<Core::Compress::Compressor> compressor_;
 
         /// AMX bytecode reader instance.
         std::unique_ptr<Amx::Reader> amx_reader_{};
@@ -93,7 +93,8 @@ namespace Amxx {
          * @param entry  AMXX entry structure.
          * @param body   Compressed byte sequence representing the AMXX program body.
          */
-        void write_amxx(const Header& header, const Entry& entry, const Compress::Compressor::CompData& body) const;
+        void write_amxx(
+            const Header& header, const Entry& entry, const Core::Compress::Compressor::CompData& body) const;
 
         /**
          * @brief Writes a complete AMXX data structure.

@@ -3,8 +3,8 @@
 #include "amx/data.hpp"
 #include "amx/header.hpp"
 #include "amx/header_debug.hpp"
-#include "concepts/concepts.hpp"
-#include "io/binary_reader.hpp"
+#include "core/concepts/concepts.hpp"
+#include "core/io/binary_reader.hpp"
 #include <filesystem>
 #include <fstream>
 #include <optional>
@@ -30,7 +30,7 @@ namespace Amx {
         /**
          * @brief Opens the underlying file stream in binary read mode.
          *
-         * @throw \c Io::Exceptions::FileOpenError If the file cannot be opened.
+         * @throw \c Core::Io::Exceptions::FileOpenError If the file cannot be opened.
          */
         void open();
 
@@ -94,11 +94,11 @@ namespace Amx {
         /**
          * @brief Reads the entire contents of the file into a container.
          *
-         * @tparam T A container type satisfying \c Concepts::ResizableContiguousByteSafeContainer.
+         * @tparam T A container type satisfying \c Core::Concepts::ResizableContiguousByteSafeContainer.
          *
          * @return Fully populated container with file data.
          */
-        template <Concepts::ResizableContiguousByteSafeContainer T>
+        template <Core::Concepts::ResizableContiguousByteSafeContainer T>
         [[nodiscard]] T read_all();
 
         /**
@@ -113,7 +113,7 @@ namespace Amx {
         /**
          * @brief Closes the underlying file stream.
          *
-         * @throw \c Io::Exceptions::FileCloseError If closing the file fails.
+         * @throw \c Core::Io::Exceptions::FileCloseError If closing the file fails.
          */
         void close();
 
@@ -128,7 +128,7 @@ namespace Amx {
         std::ifstream stream_{};
 
         /// Binary reader wrapping the input stream.
-        Io::BinaryReader bin_reader_{stream_};
+        Core::Io::BinaryReader bin_reader_{stream_};
 
         /**
          * @brief Translates low-level stream errors into domain-specific exceptions.
@@ -136,7 +136,8 @@ namespace Amx {
          * @param error   Error code returned from binary reader.
          * @param context Additional context about the operation that failed.
          */
-        [[noreturn]] static void throw_stream_exception(Io::BinaryReader::Error error, const std::string& context = "");
+        [[noreturn]] static void throw_stream_exception(
+            Core::Io::BinaryReader::Error error, const std::string& context = "");
     };
 
     inline const std::filesystem::path& Reader::file_path() const noexcept
@@ -154,7 +155,7 @@ namespace Amx {
         return !is_closed_ && stream_.good();
     }
 
-    template <Concepts::ResizableContiguousByteSafeContainer T>
+    template <Core::Concepts::ResizableContiguousByteSafeContainer T>
     T Reader::read_all()
     {
         const auto result = bin_reader_.read_all<T>();

@@ -2,9 +2,9 @@
 
 #include "amxx/entry.hpp"
 #include "amxx/header.hpp"
-#include "concepts/concepts.hpp"
-#include "io/binary_writer.hpp"
-#include "io/exceptions/stream_error.hpp"
+#include "core/concepts/concepts.hpp"
+#include "core/io/binary_writer.hpp"
+#include "core/io/exceptions/stream_error.hpp"
 #include <concepts>
 #include <filesystem>
 #include <fstream>
@@ -17,7 +17,7 @@ namespace Amxx {
 
     template <typename T>
     concept BodyContainer =
-        std::ranges::forward_range<T> && Concepts::ContiguousByteSafeContainer<std::ranges::range_value_t<T>>;
+        std::ranges::forward_range<T> && Core::Concepts::ContiguousByteSafeContainer<std::ranges::range_value_t<T>>;
 
     /**
      * @brief Provides functionality for writing AMXX files.
@@ -38,7 +38,7 @@ namespace Amxx {
          * Truncates the target file if it already exists.
          * Subsequent write operations require the stream to be open.
          *
-         * @throw \c Io::Exceptions::FileOpenError If the file cannot be opened.
+         * @throw \c Core::Io::Exceptions::FileOpenError If the file cannot be opened.
          */
         void open();
 
@@ -120,23 +120,23 @@ namespace Amxx {
         /**
          * @brief Writes a body immediately after header and first entry.
          *
-         * @tparam T Container type satisfying \c Concepts::ContiguousByteSafeContainer.
+         * @tparam T Container type satisfying \c Core::Concepts::ContiguousByteSafeContainer.
          *
          * @param body Container holding raw bytes of the body.
          */
-        template <Concepts::ContiguousByteSafeContainer T>
+        template <Core::Concepts::ContiguousByteSafeContainer T>
         void write_body(const T& body) const;
 
         /**
          * @brief Writes a body at a specified position.
          *
-         * @tparam T Container type satisfying \c Concepts::ContiguousByteSafeContainer.
+         * @tparam T Container type satisfying \c Core::Concepts::ContiguousByteSafeContainer.
          *
          * @param body   Container holding raw bytes of the body.
          * @param offset Offset relative to \p dir where body should be written.
          * @param dir    Seek direction, defaults to beginning.
          */
-        template <Concepts::ContiguousByteSafeContainer T>
+        template <Core::Concepts::ContiguousByteSafeContainer T>
         void write_body(const T& body, std::streamoff offset, std::ios::seekdir dir = std::ios::beg) const;
 
         /**
@@ -171,7 +171,7 @@ namespace Amxx {
         /**
          * @brief Closes the underlying file stream.
          *
-         * @throw \c Io::Exceptions::FileCloseError If closing the file fails.
+         * @throw \c Core::Io::Exceptions::FileCloseError If closing the file fails.
          */
         void close();
 
@@ -186,7 +186,7 @@ namespace Amxx {
         std::ofstream stream_{};
 
         /// Binary writer wrapping the output stream.
-        Io::BinaryWriter bin_writer_{stream_};
+        Core::Io::BinaryWriter bin_writer_{stream_};
 
         /**
          * @brief Translates low-level stream errors into domain-specific exceptions.
@@ -194,7 +194,8 @@ namespace Amxx {
          * @param error   Error code returned from binary reader.
          * @param context Additional context about the operation that failed.
          */
-        [[noreturn]] static void throw_stream_exception(Io::BinaryWriter::Error error, const std::string& context = "");
+        [[noreturn]] static void throw_stream_exception(
+            Core::Io::BinaryWriter::Error error, const std::string& context = "");
     };
 
     inline const std::filesystem::path& Writer::file_path() const noexcept
@@ -223,7 +224,7 @@ namespace Amxx {
     void Writer::write_entries(const T& entries, const std::streamoff offset, const std::ios::seekdir dir) const
     {
         if (!bin_writer_.seek(offset, dir)) {
-            throw Io::Exceptions::SeekError{offset, dir, "AMXX file entries"};
+            throw Core::Io::Exceptions::SeekError{offset, dir, "AMXX file entries"};
         }
 
         for (const auto& entry : entries) {
@@ -233,18 +234,18 @@ namespace Amxx {
         }
     }
 
-    template <Concepts::ContiguousByteSafeContainer T>
+    template <Core::Concepts::ContiguousByteSafeContainer T>
     void Writer::write_body(const T& body) const
     {
         constexpr auto offset = sizeof(Header) + sizeof(Entry);
         write_body(body, offset);
     }
 
-    template <Concepts::ContiguousByteSafeContainer T>
+    template <Core::Concepts::ContiguousByteSafeContainer T>
     void Writer::write_body(const T& body, const std::streamoff offset, const std::ios::seekdir dir) const
     {
         if (!bin_writer_.seek(offset, dir)) {
-            throw Io::Exceptions::SeekError{offset, dir, "AMXX file body"};
+            throw Core::Io::Exceptions::SeekError{offset, dir, "AMXX file body"};
         }
 
         if (const auto result = bin_writer_.write_from(body); !result) {
@@ -263,7 +264,7 @@ namespace Amxx {
     void Writer::write_bodies(const T& bodies, const std::streamoff offset, const std::ios::seekdir dir) const
     {
         if (!bin_writer_.seek(offset, dir)) {
-            throw Io::Exceptions::SeekError{offset, dir, "AMXX file bodies"};
+            throw Core::Io::Exceptions::SeekError{offset, dir, "AMXX file bodies"};
         }
 
         for (const auto& body : bodies) {
