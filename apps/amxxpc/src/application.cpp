@@ -39,7 +39,8 @@ namespace {
      *
      * @return Full filesystem path to the expected `.amx` file.
      */
-    std::filesystem::path resolve_amx_path(const Cli::Arguments& arguments, const std::filesystem::path& sma_file)
+    std::filesystem::path resolve_amx_path(
+        const Interface::Cmdline::Arguments& arguments, const std::filesystem::path& sma_file)
     {
         auto output_dir = std::filesystem::current_path();
         auto output_name = sma_file.filename();
@@ -85,7 +86,7 @@ namespace {
 }
 
 namespace AmxxPc {
-    void Application::set_arguments(std::unique_ptr<Cli::Arguments> arguments)
+    void Application::set_arguments(std::unique_ptr<Interface::Cmdline::Arguments> arguments)
     {
         arguments_ = std::move(arguments);
     }

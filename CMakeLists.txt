@@ -186,7 +186,7 @@ include("cmake/SetupGitHooks.cmake")
 add_subdirectory("external/zlib")
 add_subdirectory("libs/core")
 add_subdirectory("libs/pawn")
-add_subdirectory("libs/cli")
+add_subdirectory("libs/interface")
 add_subdirectory("libs/ui")
 add_subdirectory("apps/amxxpc")
 

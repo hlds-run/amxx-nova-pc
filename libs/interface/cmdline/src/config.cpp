@@ -1,6 +1,6 @@
 #include "config.hpp"
-#include "cli/arguments.hpp"
-#include "cli/exceptions/cli_error.hpp"
+#include "interface/cmdline/arguments.hpp"
+#include "interface/cmdline/exceptions/cli_error.hpp"
 #include <cctype>
 #include <fstream>
 #include <ranges>
@@ -37,7 +37,7 @@ namespace {
      *
      * @return Full path to the located configuration file.
      *
-     * @throw \c Cli::Exceptions::CliError If the file does not exist.
+     * @throw \c Interface::Cmdline::Exceptions::CliError If the file does not exist.
      */
     [[nodiscard]] std::filesystem::path find_config_in_target(
         const std::filesystem::path& target_dir, const std::string& config_name)
@@ -48,7 +48,7 @@ namespace {
             return config_path;
         }
 
-        throw Cli::Exceptions::CliError("Configuration file not found: " + config_path.string());
+        throw Interface::Cmdline::Exceptions::CliError("Configuration file not found: " + config_path.string());
     }
 
     /**
@@ -88,9 +88,9 @@ namespace {
      * @return Optional vector of user-specified configuration file paths.
      *         Returns \c std::nullopt if the option "-T" was not provided.
      *
-     * @throw \c Cli::Exceptions::CliError If any "-T" occurrence does not have a value.
+     * @throw \c Interface::Cmdline::Exceptions::CliError If any "-T" occurrence does not have a value.
      */
-    std::optional<std::vector<std::string>> collect_user_configs(const Cli::Arguments& arguments)
+    std::optional<std::vector<std::string>> collect_user_configs(const Interface::Cmdline::Arguments& arguments)
     {
         if (!arguments.has_option("T")) {
             return std::nullopt;
@@ -99,7 +99,7 @@ namespace {
         const auto user_config_values = arguments.get_option_values("T");
 
         if (!user_config_values || user_config_values->empty()) {
-            throw Cli::Exceptions::CliError("Option -T requires a configuration file name");
+            throw Interface::Cmdline::Exceptions::CliError("Option -T requires a configuration file name");
         }
 
         std::vector<std::string> user_configs{};
@@ -107,7 +107,7 @@ namespace {
 
         for (const auto& config_value : *user_config_values) {
             if (!config_value) {
-                throw Cli::Exceptions::CliError("Option -T requires a configuration file name");
+                throw Interface::Cmdline::Exceptions::CliError("Option -T requires a configuration file name");
             }
 
             user_configs.emplace_back(*config_value);
@@ -124,14 +124,15 @@ namespace {
      *
      * @return Resolved filesystem path to an existing configuration file.
      *
-     * @throw \c Cli::Exceptions::CliError If the file does not exist.
+     * @throw \c Interface::Cmdline::Exceptions::CliError If the file does not exist.
      */
     std::filesystem::path resolve_config_path(
         const std::filesystem::path& raw_path, const std::filesystem::path& target_dir)
     {
         if (raw_path.has_parent_path()) {
             if (!std::filesystem::exists(raw_path)) {
-                throw Cli::Exceptions::CliError("Specified configuration file does not exist: " + raw_path.string());
+                throw Interface::Cmdline::Exceptions::CliError(
+                    "Specified configuration file does not exist: " + raw_path.string());
             }
 
             return raw_path;
@@ -141,7 +142,7 @@ namespace {
     }
 }
 
-namespace Cli {
+namespace Interface::Cmdline {
     std::optional<std::vector<std::filesystem::path>> resolve_config_paths(const Arguments& arguments)
     {
         const auto user_configs = collect_user_configs(arguments);

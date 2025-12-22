@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace Cli {
+namespace Interface::Cmdline {
     /**
      * @brief Resolves paths to configuration files.
      *
@@ -19,7 +19,7 @@ namespace Cli {
      *         - Each element corresponds to one resolved configuration file.
      *         - Returns \c std::nullopt if no user-specified option "-T" is provided.
      *
-     * @throw Cli::Exceptions::CliError
+     * @throw Interface::Cmdline::Exceptions::CliError
      *        - If any "-T" option is specified without a value.
      *        - If a user-specified configuration file does not exist.
      */

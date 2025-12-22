@@ -1,9 +1,9 @@
 #pragma once
 
-#include "cli/exceptions/cli_exception.hpp"
+#include "interface/cmdline/exceptions/cli_exception.hpp"
 #include <string>
 
-namespace Cli::Exceptions {
+namespace Interface::Cmdline::Exceptions {
     /**
      * @brief Exception representing unrecoverable CLI parsing errors.
      *

@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-namespace Cli {
+namespace Interface::Cmdline {
     /**
      * @brief Command-line arguments parser.
      *

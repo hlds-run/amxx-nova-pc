@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cli/parser.hpp"
+#include "interface/cmdline/parser.hpp"
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -9,7 +9,7 @@
 #include <string_view>
 #include <vector>
 
-namespace Cli {
+namespace Interface::Cmdline {
     /**
      * @brief Command-line arguments wrapper.
      */

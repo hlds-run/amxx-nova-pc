@@ -1,4 +1,4 @@
-#include "cli/arguments.hpp"
+#include "interface/cmdline/arguments.hpp"
 #include "config.hpp"
 #include <algorithm>
 #include <cstddef>
@@ -17,7 +17,7 @@ namespace {
      *
      * @return Normalized argument list including executable path.
      */
-    std::vector<std::string> build_arguments(const Cli::Parser& parser, std::string exe_path)
+    std::vector<std::string> build_arguments(const Interface::Cmdline::Parser& parser, std::string exe_path)
     {
         const auto& options = parser.options();
         const auto& definitions = parser.definitions();
@@ -57,7 +57,7 @@ namespace {
     }
 }
 
-namespace Cli {
+namespace Interface::Cmdline {
     Arguments::Arguments(const std::span<const char* const> argv)
         : exe_path_(argv[0]), parser_(std::make_unique<Parser>())
     {

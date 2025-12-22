@@ -1,4 +1,4 @@
-#include "cli/arguments.hpp"
+#include "interface/cmdline/arguments.hpp"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -23,7 +23,7 @@ namespace {
         const std::span span{argv, std::size(argv)};
 
         // Act
-        const Cli::Arguments args{span};
+        const Interface::Cmdline::Arguments args{span};
 
         // Assert
         EXPECT_EQ(args.get_executable_path().string(), "prog");
@@ -46,7 +46,7 @@ namespace {
         constexpr int argc = std::size(argv);
 
         // Act
-        const Cli::Arguments args{argc, argv};
+        const Interface::Cmdline::Arguments args{argc, argv};
 
         // Assert
         EXPECT_EQ(args.get_executable_path().string(), "prog");
@@ -66,7 +66,7 @@ namespace {
         constexpr const char* argv[] = {"prog"};
 
         // Act
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
 
         // Assert
         EXPECT_EQ(args.get_executable_path().string(), "prog");
@@ -80,7 +80,7 @@ namespace {
         constexpr const char* argv[] = {"prog", "foo=bar", "baz=qux"};
 
         // Act
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
         const auto& normalized = args.get_arguments();
 
         // Assert
@@ -94,7 +94,7 @@ namespace {
         constexpr const char* argv[] = {"prog", "-a", "-eval", "-E"};
 
         // Act
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
 
         // Assert
         EXPECT_TRUE(args.has_option("a"));
@@ -114,7 +114,7 @@ namespace {
         constexpr const char* argv[] = {"prog", "file1.txt", "file2.txt", "file3.txt"};
 
         // Act
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
         const auto& inputs = args.get_input_files();
 
         // Assert
@@ -135,7 +135,7 @@ namespace {
         constexpr const char* argv[] = {"prog", "-E", "-eval"};
 
         // Act
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
 
         // Assert
         EXPECT_EQ(args.get_option_values("z"), std::nullopt);
@@ -148,7 +148,7 @@ namespace {
         constexpr const char* argv[] = {"prog", "-a", "def=val"};
 
         // Act
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
         const auto& normalized = args.get_arguments();
 
         // Assert
@@ -164,7 +164,7 @@ namespace {
         constexpr const char* argv[] = {"prog", "-a=", "-eval"};
 
         // Act
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
 
         // Assert
         EXPECT_TRUE(args.has_option("a"));
@@ -188,7 +188,7 @@ namespace {
         constexpr const char* argv[] = {"prog", "--help", "-h", "-?", "-Tval"};
 
         // Act
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
         const auto& norm_args = args.get_arguments();
 
         // Assert
@@ -210,7 +210,7 @@ namespace {
         constexpr const char* argv[] = {"prog", "file1.txt", "-a", "file2.txt", "foo=bar", "-eval", "file3.txt"};
 
         // Act
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
         const auto& inputs = args.get_input_files();
         const auto& normalized = args.get_arguments();
 
@@ -238,7 +238,7 @@ namespace {
         const auto config2 = create_temp_file("target/config2.cfg");
         const auto config3 = create_temp_file("target/config3.cfg");
         constexpr const char* argv[] = {"prog", "-Tconfig1", "-Tconfig2", "-T:config3"};
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
 
         // Act
         const auto values_opt = args.get_option_values("T");
@@ -261,7 +261,7 @@ namespace {
     {
         // Arrange
         constexpr const char* argv[] = {"prog", "-E", "-E", "-E"};
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
 
         // Act
         const auto values_opt = args.get_option_values("E");
@@ -279,7 +279,7 @@ namespace {
     {
         // Arrange
         constexpr const char* argv[] = {"prog", "-A8", "-A16", "-A=32", "-E"};
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
 
         // Act
         const auto a_values_opt = args.get_option_values("A");
@@ -303,7 +303,7 @@ namespace {
     {
         // Arrange
         constexpr const char* argv[] = {"prog", "-A="};
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
 
         // Act
         const auto values_opt = args.get_option_values("A");
@@ -319,7 +319,7 @@ namespace {
     {
         // Arrange
         constexpr const char* argv[] = {"prog", "-evalue"};
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
 
         // Act
         const auto values_opt = args.get_option_values("e");
@@ -337,7 +337,7 @@ namespace {
         constexpr const char* argv[] = {"prog", "-A8"};
 
         // Act
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
 
         // Assert
         EXPECT_EQ(args.get_last_option_value("E"), std::nullopt);
@@ -349,7 +349,7 @@ namespace {
         constexpr const char* argv[] = {"prog", "-A8", "-A16", "-A"};
 
         // Act
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
 
         // Assert
         EXPECT_EQ(args.get_last_option_value("A"), std::nullopt);
@@ -361,7 +361,7 @@ namespace {
         constexpr const char* argv[] = {"prog", "-E", "-E", "-Eval"};
 
         // Act
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
 
         // Assert
         EXPECT_EQ(args.get_last_option_value("E"), "val");
@@ -373,7 +373,7 @@ namespace {
         constexpr const char* argv[] = {"prog", "-opath"};
 
         // Act
-        const Cli::Arguments args{std::size(argv), argv};
+        const Interface::Cmdline::Arguments args{std::size(argv), argv};
 
         // Assert
         ASSERT_TRUE(args.get_last_option_value("o").has_value());

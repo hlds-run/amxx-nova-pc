@@ -1,5 +1,5 @@
-#include "cli/parser.hpp"
-#include "cli/exceptions/cli_error.hpp"
+#include "interface/cmdline/parser.hpp"
+#include "interface/cmdline/exceptions/cli_error.hpp"
 #include "pawn/compiler/legacy/adapter/compiler.hpp"
 #include "pawn/compiler/legacy/adapter/option.hpp"
 #include <algorithm>
@@ -103,14 +103,14 @@ namespace {
      *
      * @return Pair of symbol and value.
      *
-     * @throw \c Cli::Exceptions::CliError if format is invalid or symbol is empty.
+     * @throw \c Interface::Cmdline::Exceptions::CliError if format is invalid or symbol is empty.
      */
     [[nodiscard]] std::pair<std::string, std::string> parse_definition(const std::string_view arg)
     {
         const auto eq_pos = arg.find('=');
 
         if (eq_pos == std::string_view::npos) {
-            throw Cli::Exceptions::CliError{
+            throw Interface::Cmdline::Exceptions::CliError{
                 "Invalid definition format: expected 'symbol=value', actual: " + std::string{arg}};
         }
 
@@ -118,7 +118,7 @@ namespace {
         auto value = std::string{arg.substr(eq_pos + 1)};
 
         if (symbol.empty()) {
-            throw Cli::Exceptions::CliError("Definition symbol cannot be empty");
+            throw Interface::Cmdline::Exceptions::CliError("Definition symbol cannot be empty");
         }
 
         if (value.empty()) {
@@ -137,7 +137,7 @@ namespace {
      *
      * @note Does not validate the semantic correctness of a numeric or symbolic value.
      *
-     * @see \c Cli::Parser::add_option
+     * @see \c Interface::Cmdline::Parser::add_option
      * @see \c PawnWrap::get_options
      */
     [[nodiscard]] bool is_valid_option(const std::string& option)
@@ -158,7 +158,7 @@ namespace {
     }
 }
 
-namespace Cli {
+namespace Interface::Cmdline {
     void Parser::parse(const std::vector<std::string>& args, const bool override)
     {
         for (const auto& arg : args) {

@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace Cli::Exceptions {
+namespace Interface::Cmdline::Exceptions {
     /**
      * @brief Base class for command-line related exceptions.
      *

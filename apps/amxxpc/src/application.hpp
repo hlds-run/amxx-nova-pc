@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cli/arguments.hpp"
+#include "interface/cmdline/arguments.hpp"
 #include "pawn/image/amxx/builder.hpp"
 #include <memory>
 
@@ -26,9 +26,9 @@ namespace AmxxPc {
         /**
          * @brief Assigns parsed command-line arguments to the application.
          *
-         * @param arguments Unique pointer to a configured \c Cli::Arguments instance.
+         * @param arguments Unique pointer to a configured \c Interface::Cmdline::Arguments instance.
          */
-        void set_arguments(std::unique_ptr<Cli::Arguments> arguments);
+        void set_arguments(std::unique_ptr<Interface::Cmdline::Arguments> arguments);
 
         /**
          * @brief Sets the user interface for interaction with the user.
@@ -64,7 +64,7 @@ namespace AmxxPc {
         std::shared_ptr<Ui::UserInterface> ui_{};
 
         /// Parsed command-line arguments governing program behavior.
-        std::unique_ptr<Cli::Arguments> arguments_{};
+        std::unique_ptr<Interface::Cmdline::Arguments> arguments_{};
 
         /// Builder responsible for producing AMXX binaries from AMX input.
         std::unique_ptr<Pawn::Image::Amxx::Builder> amxx_builder_{};

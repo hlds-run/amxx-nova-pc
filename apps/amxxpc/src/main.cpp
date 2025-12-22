@@ -1,6 +1,6 @@
 #include "application.hpp"
-#include "cli/arguments.hpp"
 #include "core/compress/zlib_compressor.hpp"
+#include "interface/cmdline/arguments.hpp"
 #include "pawn/image/amxx/builder.hpp"
 #include "ui/app_version.hpp"
 #include "ui/console_user_interface.hpp"
@@ -48,21 +48,22 @@ namespace {
     /**
      * @brief Parses command-line arguments into a structured representation.
      *
-     * Instantiates a \c Cli::Arguments object with the given argc/argv parameters,
+     * Instantiates a \c Interface::Cmdline::Arguments object with the given argc/argv parameters,
      * enabling option lookup and retrieval of input files.
      *
      * @param argc Number of command-line arguments.
      * @param argv Array of argument strings.
      *
-     * @return Unique pointer to a newly created Cli::Arguments instance.
+     * @return Unique pointer to a newly created Interface::Cmdline::Arguments instance.
      *
      * @throw \c std::runtime_error If parsing fails.
      *
-     * @see Cli::Arguments
+     * @see Interface::Cmdline::Arguments
      */
-    [[nodiscard]] std::unique_ptr<Cli::Arguments> make_arguments(const int argc, const char* const argv[])
+    [[nodiscard]] std::unique_ptr<Interface::Cmdline::Arguments> make_arguments(
+        const int argc, const char* const argv[])
     {
-        return std::make_unique<Cli::Arguments>(argc, argv);
+        return std::make_unique<Interface::Cmdline::Arguments>(argc, argv);
     }
 }
 

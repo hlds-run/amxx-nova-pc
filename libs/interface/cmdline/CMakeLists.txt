@@ -8,8 +8,8 @@ project("Command-Line Interface" LANGUAGES "CXX")
 # Target Definition
 #-------------------------------------------------------------------------------
 
-set(TARGET_NAME "cli")
-set(TARGET_ALIAS "CLI::${TARGET_NAME}")
+set(TARGET_NAME "cmdline")
+set(TARGET_ALIAS "CmdLine::${TARGET_NAME}")
 
 add_library("${TARGET_NAME}" STATIC)
 add_library("${TARGET_ALIAS}" ALIAS "${TARGET_NAME}")
@@ -20,16 +20,16 @@ add_library("${TARGET_ALIAS}" ALIAS "${TARGET_NAME}")
 
 target_sources("${TARGET_NAME}"
   PUBLIC
-    "include/cli/arguments.hpp"
-    "include/cli/parser.hpp"
-    "include/cli/exceptions/cli_error.hpp"
-    "include/cli/exceptions/cli_exception.hpp"
+    "include/interface/cmdline/arguments.hpp"
+    "include/interface/cmdline/exceptions/cli_error.hpp"
+    "include/interface/cmdline/exceptions/cli_exception.hpp"
+    "include/interface/cmdline/parser.hpp"
 
   PRIVATE
-    "src/cli/arguments.cpp"
-    "src/cli/config.cpp"
-    "src/cli/config.hpp"
-    "src/cli/parser.cpp"
+    "src/arguments.cpp"
+    "src/config.cpp"
+    "src/config.hpp"
+    "src/parser.cpp"
 )
 
 #-------------------------------------------------------------------------------
