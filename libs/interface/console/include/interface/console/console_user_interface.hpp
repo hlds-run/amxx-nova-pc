@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ui/user_interface.hpp"
+#include "interface/console/user_interface.hpp"
 #include <string_view>
 
-namespace Ui {
+namespace Interface::Console {
     /**
      * @brief Console-based implementation of the UserInterface.
      *

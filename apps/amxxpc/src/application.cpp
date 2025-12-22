@@ -1,8 +1,8 @@
 #include "application.hpp"
+#include "interface/console/user_interface.hpp"
 #include "pawn/compiler/legacy/adapter/compiler.hpp"
 #include "pawn/image/amx/reader.hpp"
 #include "pawn/image/amxx/writer.hpp"
-#include "ui/user_interface.hpp"
 #include <cstdlib>
 #include <filesystem>
 #include <string>
@@ -91,7 +91,7 @@ namespace AmxxPc {
         arguments_ = std::move(arguments);
     }
 
-    void Application::set_user_interface(std::shared_ptr<Ui::UserInterface> ui)
+    void Application::set_user_interface(std::shared_ptr<Interface::Console::UserInterface> ui)
     {
         ui_ = std::move(ui);
     }

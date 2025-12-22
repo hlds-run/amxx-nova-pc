@@ -187,7 +187,6 @@ add_subdirectory("external/zlib")
 add_subdirectory("libs/core")
 add_subdirectory("libs/pawn")
 add_subdirectory("libs/interface")
-add_subdirectory("libs/ui")
 add_subdirectory("apps/amxxpc")
 
 if(BUILD_UNIT_TESTS)

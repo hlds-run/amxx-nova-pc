@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace Ui {
+namespace Interface::Console {
     /**
      * @brief Structured application version metadata.
      */

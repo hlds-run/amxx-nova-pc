@@ -97,5 +97,5 @@ target_link_libraries("${TARGET_NAME}"
   PRIVATE
     "AMXX::amxx"
     "CmdLine::cmdline"
-    "UserInterface::ui"
+    "Console::console"
 )

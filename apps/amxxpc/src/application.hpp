@@ -4,11 +4,11 @@
 #include "pawn/image/amxx/builder.hpp"
 #include <memory>
 
-namespace Ui {
+namespace Interface::Console {
     class UserInterface;
 }
 
-namespace Ui {
+namespace Interface::Console {
     struct AppVersion;
 }
 
@@ -35,9 +35,9 @@ namespace AmxxPc {
          *
          * Associates the application with a UI implementation for displaying messages.
          *
-         * @param ui Shared pointer to the \c Ui::UserInterface implementation.
+         * @param ui Shared pointer to the \c Interface::Console::UserInterface implementation.
          */
-        void set_user_interface(std::shared_ptr<Ui::UserInterface> ui);
+        void set_user_interface(std::shared_ptr<Interface::Console::UserInterface> ui);
 
         /**
          * @brief Configures the AMXX builder used to generate compiled output.
@@ -61,7 +61,7 @@ namespace AmxxPc {
 
       private:
         /// Interface for displaying output and errors to the user.
-        std::shared_ptr<Ui::UserInterface> ui_{};
+        std::shared_ptr<Interface::Console::UserInterface> ui_{};
 
         /// Parsed command-line arguments governing program behavior.
         std::unique_ptr<Interface::Cmdline::Arguments> arguments_{};

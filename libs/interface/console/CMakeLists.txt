@@ -2,14 +2,14 @@
 # Project Definition
 #-------------------------------------------------------------------------------
 
-project("User Interface" LANGUAGES "CXX")
+project("Console" LANGUAGES "CXX")
 
 #-------------------------------------------------------------------------------
 # Target Definition
 #-------------------------------------------------------------------------------
 
-set(TARGET_NAME "ui")
-set(TARGET_ALIAS "UserInterface::${TARGET_NAME}")
+set(TARGET_NAME "console")
+set(TARGET_ALIAS "Console::${TARGET_NAME}")
 
 add_library("${TARGET_NAME}" STATIC)
 add_library("${TARGET_ALIAS}" ALIAS "${TARGET_NAME}")
@@ -20,12 +20,12 @@ add_library("${TARGET_ALIAS}" ALIAS "${TARGET_NAME}")
 
 target_sources("${TARGET_NAME}"
   PUBLIC
-    "include/ui/app_version.hpp"
-    "include/ui/console_user_interface.hpp"
-    "include/ui/user_interface.hpp"
+    "include/interface/console/app_version.hpp"
+    "include/interface/console/console_user_interface.hpp"
+    "include/interface/console/user_interface.hpp"
 
   PRIVATE
-    "src/ui/console_user_interface.cpp"
+    "src/console_user_interface.cpp"
 )
 
 #-------------------------------------------------------------------------------

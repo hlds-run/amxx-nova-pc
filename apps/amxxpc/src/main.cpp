@@ -1,10 +1,10 @@
 #include "application.hpp"
 #include "core/compress/zlib_compressor.hpp"
 #include "interface/cmdline/arguments.hpp"
+#include "interface/console/app_version.hpp"
+#include "interface/console/console_user_interface.hpp"
+#include "interface/console/user_interface.hpp"
 #include "pawn/image/amxx/builder.hpp"
-#include "ui/app_version.hpp"
-#include "ui/console_user_interface.hpp"
-#include "ui/user_interface.hpp"
 #include "version.hpp"
 #include <cstdlib>
 #include <exception>
@@ -16,16 +16,16 @@ namespace {
     /**
      * @brief Constructs a console-based user interface.
      *
-     * Creates and returns a shared pointer to an instance of \c Ui::ConsoleUserInterface,
+     * Creates and returns a shared pointer to an instance of \c Interface::Console::ConsoleUserInterface,
      * which provides textual interaction with the user through standard streams.
      *
-     * @return Shared pointer to a newly created \c Ui::ConsoleUserInterface.
+     * @return Shared pointer to a newly created \c Interface::Console::ConsoleUserInterface.
      *
-     * @see Ui::UserInterface
+     * @see Interface::Console::UserInterface
      */
-    [[nodiscard]] std::shared_ptr<Ui::UserInterface> make_ui()
+    [[nodiscard]] std::shared_ptr<Interface::Console::UserInterface> make_ui()
     {
-        return std::make_shared<Ui::ConsoleUserInterface>();
+        return std::make_shared<Interface::Console::ConsoleUserInterface>();
     }
 
     /**
@@ -78,7 +78,7 @@ namespace {
  */
 int main(const int argc, const char* const argv[])
 {
-    const Ui::AppVersion app_version{.major = AMXXPC_BUILD_MAJOR,
+    const Interface::Console::AppVersion app_version{.major = AMXXPC_BUILD_MAJOR,
         .minor = AMXXPC_BUILD_MINOR,
         .patch = AMXXPC_BUILD_PATCH,
         .year = CURRENT_YEAR,

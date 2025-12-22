@@ -1,11 +1,11 @@
 #pragma once
 
+#include "interface/console/app_version.hpp"
 #include "pawn/compiler/legacy/adapter/option.hpp"
-#include "ui/app_version.hpp"
 #include <string_view>
 #include <vector>
 
-namespace Ui {
+namespace Interface::Console {
     /**
      * @brief Abstract interface for user interaction in the application.
      *

@@ -19,6 +19,7 @@ add_library("${TARGET_ALIAS}" ALIAS "${TARGET_NAME}")
 #-------------------------------------------------------------------------------
 
 add_subdirectory("cmdline")
+add_subdirectory("console")
 
 #-------------------------------------------------------------------------------
 # Link Libraries
@@ -27,4 +28,5 @@ add_subdirectory("cmdline")
 target_link_libraries("${TARGET_NAME}"
   INTERFACE
     CmdLine::cmdline
+    Console::console
 )

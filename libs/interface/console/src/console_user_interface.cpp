@@ -1,6 +1,6 @@
-#include "ui/console_user_interface.hpp"
+#include "interface/console/console_user_interface.hpp"
+#include "interface/console/app_version.hpp"
 #include "pawn/compiler/legacy/adapter/option.hpp"
-#include "ui/app_version.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <optional>
@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace Ui {
+namespace Interface::Console {
     void ConsoleUserInterface::show_header(const AppVersion& app_version)
     {
         std::print("AMX Mod X Compiler {}\n\n", app_version.string);
