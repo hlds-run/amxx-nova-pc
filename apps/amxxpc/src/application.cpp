@@ -1,6 +1,6 @@
 #include "application.hpp"
-#include "amx/reader.hpp"
-#include "amxx/writer.hpp"
+#include "pawn/image/amx/reader.hpp"
+#include "pawn/image/amxx/writer.hpp"
 #include "pawnwrap/compiler.hpp"
 #include "ui/user_interface.hpp"
 #include <cstdlib>
@@ -66,18 +66,18 @@ namespace {
      * then to `.amxx`, using the provided builder.
      * Intermediate `.amx` file is removed after packaging.
      *
-     * @param amxx_builder Initialized \c Amxx::Builder.
+     * @param amxx_builder Initialized \c Pawn::Image::Amxx::Builder.
      * @param amx_file     Path to the already compiled `.amx` bytecode file.
      *
      * @throw \c std::runtime_error On errors during building or file handling.
      */
-    void build_amxx_file(Amxx::Builder& amxx_builder, const std::filesystem::path& amx_file)
+    void build_amxx_file(Pawn::Image::Amxx::Builder& amxx_builder, const std::filesystem::path& amx_file)
     {
         auto amxx_file = amx_file;
         amxx_file.replace_extension(".amxx");
 
-        amxx_builder.set_input(std::make_unique<Amx::Reader>(amx_file));
-        amxx_builder.set_output(std::make_unique<Amxx::Writer>(amxx_file));
+        amxx_builder.set_input(std::make_unique<Pawn::Image::Amx::Reader>(amx_file));
+        amxx_builder.set_output(std::make_unique<Pawn::Image::Amxx::Writer>(amxx_file));
         amxx_builder.build();
 
         remove_file(amx_file);
@@ -95,7 +95,7 @@ namespace AmxxPc {
         ui_ = std::move(ui);
     }
 
-    void Application::set_amxx_builder(std::unique_ptr<Amxx::Builder> amxx_builder)
+    void Application::set_amxx_builder(std::unique_ptr<Pawn::Image::Amxx::Builder> amxx_builder)
     {
         amxx_builder_ = std::move(amxx_builder);
     }

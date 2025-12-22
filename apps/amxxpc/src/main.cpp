@@ -1,7 +1,7 @@
-#include "amxx/builder.hpp"
 #include "application.hpp"
 #include "cli/arguments.hpp"
 #include "core/compress/zlib_compressor.hpp"
+#include "pawn/image/amxx/builder.hpp"
 #include "ui/app_version.hpp"
 #include "ui/console_user_interface.hpp"
 #include "ui/user_interface.hpp"
@@ -31,15 +31,15 @@ namespace {
     /**
      * @brief Constructs an AMXX builder with a default compression strategy.
      *
-     * Creates an \c Amxx::Builder, configures it with a Zlib compressor, and returns ownership.
+     * Creates an \c Pawn::Image::Amxx::Builder, configures it with a Zlib compressor, and returns ownership.
      *
-     * @return Unique pointer to a configured \c Amxx::Builder.
+     * @return Unique pointer to a configured \c Pawn::Image::Amxx::Builder.
      *
-     * @see Amxx::Builder
+     * @see Pawn::Image::Amxx::Builder
      */
-    [[nodiscard]] std::unique_ptr<Amxx::Builder> make_amxx_builder()
+    [[nodiscard]] std::unique_ptr<Pawn::Image::Amxx::Builder> make_amxx_builder()
     {
-        auto amxx_builder = std::make_unique<Amxx::Builder>();
+        auto amxx_builder = std::make_unique<Pawn::Image::Amxx::Builder>();
         amxx_builder->set_compressor(std::make_unique<Core::Compress::ZlibCompressor>());
 
         return amxx_builder;

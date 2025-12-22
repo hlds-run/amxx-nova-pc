@@ -1,7 +1,7 @@
 #pragma once
 
-#include "amxx/builder.hpp"
 #include "cli/arguments.hpp"
+#include "pawn/image/amxx/builder.hpp"
 #include <memory>
 
 namespace Ui {
@@ -42,9 +42,9 @@ namespace AmxxPc {
         /**
          * @brief Configures the AMXX builder used to generate compiled output.
          *
-         * @param amxx_builder Unique pointer to an \c Amxx::Builder instance.
+         * @param amxx_builder Unique pointer to an \c Pawn::Image::Amxx::Builder instance.
          */
-        void set_amxx_builder(std::unique_ptr<Amxx::Builder> amxx_builder);
+        void set_amxx_builder(std::unique_ptr<Pawn::Image::Amxx::Builder> amxx_builder);
 
         /**
          * @brief Executes the application workflow.
@@ -67,6 +67,6 @@ namespace AmxxPc {
         std::unique_ptr<Cli::Arguments> arguments_{};
 
         /// Builder responsible for producing AMXX binaries from AMX input.
-        std::unique_ptr<Amxx::Builder> amxx_builder_{};
+        std::unique_ptr<Pawn::Image::Amxx::Builder> amxx_builder_{};
     };
 }
