@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.21...3.31)
 #-------------------------------------------------------------------------------
 
 project(        "AMXX Nova Pawn Compiler"
-  VERSION       "1.0.0"
+  VERSION       "0.6.7"
   DESCRIPTION   "AMXX Nova pawn compiler"
   HOMEPAGE_URL  "https://github.com/hlds-run/amxx-nova-pc"
   LANGUAGES     "C" "CXX"
