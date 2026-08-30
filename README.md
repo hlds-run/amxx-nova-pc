@@ -18,7 +18,7 @@ The project has been refactored using C++23 and a modern CMake build system, ena
 *   **Full compatibility**: The project retains the original Pawn compiler core from AMX Mod X, which guarantees 100% compatibility of compiled plugins (.amxx) and eliminates the need to make any changes to the existing source code (.sma).
 *   **Cross-Platform**: Natively build and run the compiler on both Windows and Linux.
 *   **Modern Architecture and Wrapper**: The command-line wrapper (`amxxpc`) and the project's build system have been completely rewritten in modern C++23 using CMake. This ensures cross-platform compatibility and ease of compilation while preserving the original, time-tested compiler core.
-*   **Code Quality**: Integrated static analyzers (Clang-Tidy, Cppcheck) and formatters (Clang-Format) to maintain code cleanliness and stability.
+*   **Code Quality**: Integrated static analyzers (Clang-Tidy, Cppcheck, PVS-Studio, IWYU) and formatters (Clang-Format) to maintain code cleanliness and stability.
 
 ## Usage
 
@@ -30,7 +30,7 @@ The compiler is a drop-in replacement for the standard `amxxpc` and offers flexi
 ```bash
 amxxpc my_plugin.sma
 ```
-This command will create `my_plugin.amxx` in the same directory.
+This command will create `my_plugin.amxx` in the current working directory (use the `-o` option to change the output location).
 
 **Specifying Output Path:**
 ```bash
@@ -48,43 +48,60 @@ The full list of options can also be displayed in the terminal by running the co
 
 ```
 Options:
-        -A<num>       Alignment for the data segment and stack in bytes. Must be a power of two.
+        -A<num>       Alignment for the data segment and stack in bytes. Must be a multiple of the cell size (4 bytes).
         -a            Generate a human-readable assembler listing (.asm) instead of a binary (.amxx).
         -C[+/-]       Enable/disable (+/-) compact encoding to reduce the output file size.
         -c<name>      Codepage name or number for the source file (e.g., 1252 for Windows Latin-1).
-        -D<path>      Set the compiler's working directory. Affects how relative paths are resolved.
+        -D<path>      Set the compiler's working directory. Affects how relative paths are resolved. (Windows only)
         
         -d0           Disable debug info and checks. For maximum performance (release).
-        -d1           [Default] Enable run-time checks only (bounds checking, etc.).
-        -d2           Enable full debug info and checks. Recommended for development.
+        -d1           Enable run-time checks only (bounds checking, etc.), without symbolic info.
+        -d2           [Default] Enable full debug info (symbolic information) and run-time checks.
         -d3           Same as -d2, but with optimizations disabled. Useful for step-by-step debugging.
         
+        -E            Treat warnings as errors.
         -e<name>      Redirect all errors and warnings to a specified file.
-        -H<hwnd>      Window handle (HWND) to send a notification message on compilation finish (Windows only).
-        -i<path>      Add a path to search for include files (#include <... A.I.>). Can be specified multiple times.
+        -H<hwnd>      Window handle (HWND) to send a notification message on compilation finish. (Windows only)
+        -h            Show the paths of the files included during compilation.
+        -i<path>      Add a path to search for include files (#include <...>). Can be specified multiple times.
         -l            Create a listing file (.lst) showing the code after preprocessor handling.
         -o<name>      Set the base name/path for the output file.
         -p<name>      Specify a "prefix" file that will be implicitly included at the top of every script.
         -r[name]      Generate a cross-reference report (.xml) on symbol usage.
+        -S<num>       Stack/heap size in cells.
+        -s<num>       Skip the specified number of lines at the beginning of the source file.
         -sui[+/-]     Show/hide (+/-) stack usage information after a successful compilation.
-        -T<file>      Load compilation options from the specified configuration file.
+        -T<name>      Load compilation options from the specified configuration file.
+        -t<num>       TAB indent size (in character positions).
+        -v<num>       Verbosity level; 0=quiet, 1=normal, 2=verbose.
+        -w<num>       Disable a specific warning by its number.
+        -X<num>       Abstract machine size limit in bytes.
+        -\            Use '\' as the escape character.
+        -^            Use '^' as the escape character.
+        -;[+/-]       Require/don't require (+/-) a semicolon to terminate each statement.
+        -([+/-]       Require/don't require (+/-) parentheses for function invocation.
 ```
+
+Constant and macro definitions (`sym=value`, `sym=`) are described in the section below.
 
 ### Configuration Files (.cfg)
 
-To avoid long and repetitive commands, you can specify compiler options in `.cfg` files. This is particularly useful for managing different build profiles (e.g., `debug` and `release`).
+To avoid long and repetitive commands, you can specify compiler options in `.cfg` files. Each line contains a single option; lines starting with `#` are treated as comments. This is particularly useful for managing different build profiles (e.g., `debug` and `release`).
 
 **Loading Configuration:**
 
-1.  **Explicitly (`-T`)**: Use the `-T` option to load a specific configuration file.
-    *   `amxxpc -T D:\configs\my_build.cfg ...` — loads the file from a full path.
-    *   `amxxpc -T release ...` — will look for the file `<compiler_dir>/target/release.cfg`.
+1.  **Explicitly (`-T`)**: Use the `-T` option to load one or more configuration files (the option can be specified multiple times).
+    *   `amxxpc -T D:\configs\my_build.cfg ...` — loads the file from a full path (the file must exist).
+    *   `amxxpc -T release ...` — will look for the file `<compiler_dir>/target/release.cfg` (the `.cfg` extension is appended to a bare name automatically).
 
 2.  **Default Loading** (if `-T` is not used):
     *   The compiler searches for `<compiler_dir>/target/default.cfg`.
     *   If not found, it looks for `pawn.cfg` next to the compiler's executable.
 
-**Option Precedence:** Options are applied in the following order: first from the `.cfg` file, and then from the command line. **Command-line arguments always have priority** and will override settings from the file.
+> [!NOTE]
+> Independently of the options above, the compiler core additionally loads `<compiler_dir>/target/default.cfg` at startup. If that file exists, its options are applied even when a configuration file is selected with `-T`.
+
+**Option Precedence:** Options are applied in the following order: first from the command line, then from the `.cfg` file(s). For options that accept a single value (e.g., `-d`, `-o`), **the value from the `.cfg` file overrides the command-line value**. Options that can be repeated (e.g., `-i`) are combined from all sources. Constant and macro definitions (`sym=value`) specified on the command line always take priority over definitions from the file.
 
 ### Defining Constants and Macros
 
@@ -110,15 +127,18 @@ amxxpc DEBUG_MODE= BUILD_ID=512 VERSION_NAME="1.5.0 Beta" my_plugin.sma
     sudo apt-get update
     sudo apt-get install -y build-essential gcc-multilib g++-multilib cmake ninja-build git
     ```
+*   GCC builds use the Gold linker by default (`ld.gold`); install the `binutils-gold` package if the linking stage fails.
 
 **Windows:**
 *   Visual Studio 2022 (with the "Desktop development with C++" workload).
 *   [CMake](https://cmake.org/download/) (version 3.21+).
 *   [Ninja Build](https://github.com/ninja-build/ninja/releases) (recommended, add to `PATH`).
 
+**Alternative:** A ready-to-use VS Code development container (Ubuntu 24.04 with GCC, Clang and Cppcheck preinstalled) is provided in `.devcontainer/`.
+
 ### Build Instructions
 
-We provide convenient build scripts in the `tools` directory.
+We provide convenient build scripts in the `tools` directory. Both scripts support additional flags: `-c` (compiler: `gcc`/`clang` on Linux, `msvc`/`clang` on Windows), `-j` (number of parallel jobs), `-k` (keep the build directory between runs), `-s` (static linking of the runtime), `-g` (generator, Windows only) — and pass any extra CMake arguments after `--`.
 
 #### Linux
 
@@ -135,7 +155,7 @@ We provide convenient build scripts in the `tools` directory.
     ```bash
     ./tools/linux/build.sh
     ```
-    *To build a Debug version, use the `-b Debug` flag.*
+    *The build type is set with the `-b` flag: `Release` (default), `Debug`, or `RelWithDebInfo`.*
 
 #### Windows (PowerShell)
 
@@ -148,11 +168,11 @@ We provide convenient build scripts in the `tools` directory.
     ```powershell
     .\tools\windows\build.ps1
     ```
-    *To build a Debug version, use the `-b Debug` flag.*
+    *The build type is set with the `-b` flag: `Release` (default), `Debug`, or `RelWithDebInfo`.*
 
 ### Build Artifacts
 
-The compiled binaries (`amxxpc` and `amxxpc32.so`/`amxxpc32.dll`) will be located in the `bin/` directory, inside a subfolder corresponding to the compiler and build type (e.g., `bin/gcc-Release`).
+The compiled `amxxpc` binary (with the 32-bit compiler core statically linked in) will be located in the `bin/` directory, inside a subfolder named after the toolchain and build type (e.g., `bin/GNU-Release` for GCC on Linux or `bin/MSVC-Release` for Visual Studio on Windows).
 
 ## Contributing
 
@@ -164,7 +184,9 @@ Contributions are what make the open-source community such an amazing place to l
 4.  Push to the Branch (`git push origin feature/AmazingFeature`).
 5.  Open a Pull Request.
 
-Please adhere to the code style defined in the `.clang-format` file.
+Please adhere to the code style defined in the `.clang-format` file. A formatting pre-commit hook (using the pinned `clang-format-20` binaries bundled in `tools/`) is installed automatically when you configure the project with CMake.
+
+The project also has unit tests based on [GoogleTest](https://github.com/google/googletest): build with `-D BUILD_UNIT_TESTS=ON` (the framework is downloaded at configure time) and run the `amxxpc.test` target.
 
 ## License
 
