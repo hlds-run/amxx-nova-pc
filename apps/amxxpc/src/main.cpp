@@ -1,10 +1,10 @@
-#include "amxx/builder.hpp"
 #include "application.hpp"
-#include "cli/arguments.hpp"
-#include "compress/zlib_compressor.hpp"
-#include "ui/app_version.hpp"
-#include "ui/console_user_interface.hpp"
-#include "ui/user_interface.hpp"
+#include "core/compress/zlib_compressor.hpp"
+#include "interface/cmdline/arguments.hpp"
+#include "interface/console/app_version.hpp"
+#include "interface/console/console_user_interface.hpp"
+#include "interface/console/user_interface.hpp"
+#include "pawn/image/amxx/builder.hpp"
 #include "version.hpp"
 #include <cstdlib>
 #include <exception>
@@ -16,31 +16,31 @@ namespace {
     /**
      * @brief Constructs a console-based user interface.
      *
-     * Creates and returns a shared pointer to an instance of \c Ui::ConsoleUserInterface,
+     * Creates and returns a shared pointer to an instance of \c Interface::Console::ConsoleUserInterface,
      * which provides textual interaction with the user through standard streams.
      *
-     * @return Shared pointer to a newly created \c Ui::ConsoleUserInterface.
+     * @return Shared pointer to a newly created \c Interface::Console::ConsoleUserInterface.
      *
-     * @see Ui::UserInterface
+     * @see Interface::Console::UserInterface
      */
-    [[nodiscard]] std::shared_ptr<Ui::UserInterface> make_ui()
+    [[nodiscard]] std::shared_ptr<Interface::Console::UserInterface> make_ui()
     {
-        return std::make_shared<Ui::ConsoleUserInterface>();
+        return std::make_shared<Interface::Console::ConsoleUserInterface>();
     }
 
     /**
      * @brief Constructs an AMXX builder with a default compression strategy.
      *
-     * Creates an \c Amxx::Builder, configures it with a Zlib compressor, and returns ownership.
+     * Creates an \c Pawn::Image::Amxx::Builder, configures it with a Zlib compressor, and returns ownership.
      *
-     * @return Unique pointer to a configured \c Amxx::Builder.
+     * @return Unique pointer to a configured \c Pawn::Image::Amxx::Builder.
      *
-     * @see Amxx::Builder
+     * @see Pawn::Image::Amxx::Builder
      */
-    [[nodiscard]] std::unique_ptr<Amxx::Builder> make_amxx_builder()
+    [[nodiscard]] std::unique_ptr<Pawn::Image::Amxx::Builder> make_amxx_builder()
     {
-        auto amxx_builder = std::make_unique<Amxx::Builder>();
-        amxx_builder->set_compressor(std::make_unique<Compress::ZlibCompressor>());
+        auto amxx_builder = std::make_unique<Pawn::Image::Amxx::Builder>();
+        amxx_builder->set_compressor(std::make_unique<Core::Compress::ZlibCompressor>());
 
         return amxx_builder;
     }
@@ -48,21 +48,22 @@ namespace {
     /**
      * @brief Parses command-line arguments into a structured representation.
      *
-     * Instantiates a \c Cli::Arguments object with the given argc/argv parameters,
+     * Instantiates a \c Interface::Cmdline::Arguments object with the given argc/argv parameters,
      * enabling option lookup and retrieval of input files.
      *
      * @param argc Number of command-line arguments.
      * @param argv Array of argument strings.
      *
-     * @return Unique pointer to a newly created Cli::Arguments instance.
+     * @return Unique pointer to a newly created Interface::Cmdline::Arguments instance.
      *
      * @throw \c std::runtime_error If parsing fails.
      *
-     * @see Cli::Arguments
+     * @see Interface::Cmdline::Arguments
      */
-    [[nodiscard]] std::unique_ptr<Cli::Arguments> make_arguments(const int argc, const char* const argv[])
+    [[nodiscard]] std::unique_ptr<Interface::Cmdline::Arguments> make_arguments(
+        const int argc, const char* const argv[])
     {
-        return std::make_unique<Cli::Arguments>(argc, argv);
+        return std::make_unique<Interface::Cmdline::Arguments>(argc, argv);
     }
 }
 
@@ -77,7 +78,7 @@ namespace {
  */
 int main(const int argc, const char* const argv[])
 {
-    const Ui::AppVersion app_version{.major = AMXXPC_BUILD_MAJOR,
+    const Interface::Console::AppVersion app_version{.major = AMXXPC_BUILD_MAJOR,
         .minor = AMXXPC_BUILD_MINOR,
         .patch = AMXXPC_BUILD_PATCH,
         .year = CURRENT_YEAR,

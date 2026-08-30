@@ -33,7 +33,7 @@ target_sources("${TARGET_NAME}"
 
 target_link_libraries("${TARGET_NAME}"
   PRIVATE
-    "CLI::cli"
+    "CmdLine::cmdline"
     "GTest::gtest_main"
 )
 

@@ -1,5 +1,5 @@
-#include "cli/parser.hpp"
-#include "cli/exceptions/cli_error.hpp"
+#include "interface/cmdline/parser.hpp"
+#include "interface/cmdline/exceptions/cli_error.hpp"
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
@@ -20,8 +20,8 @@ namespace {
     TEST(ParserTest, EmptyArguments_ReturnsEmptyContainers)
     {
         // Arrange
-        Cli::Parser parser{};
-        constexpr Cli::Parser::Arguments args = {};
+        Interface::Cmdline::Parser parser{};
+        constexpr Interface::Cmdline::Parser::Arguments args = {};
 
         // Act
         parser.parse(args, false);
@@ -35,7 +35,7 @@ namespace {
     TEST(ParserTest, SimpleOptionWithoutValue_CorrectlyParsed)
     {
         // Arrange
-        Cli::Parser parser{};
+        Interface::Cmdline::Parser parser{};
         const std::vector<std::string> args = {"-l"};
 
         // Act
@@ -52,7 +52,7 @@ namespace {
     TEST(ParserTest, OptionWithValueColonSeparator_CorrectlyParsed)
     {
         // Arrange
-        Cli::Parser parser{};
+        Interface::Cmdline::Parser parser{};
         const std::vector<std::string> args = {"-o:output.amxx"};
 
         // Act
@@ -68,7 +68,7 @@ namespace {
     TEST(ParserTest, OptionWithEmptyValueAfterSeparator_CorrectlyParsed)
     {
         // Arrange
-        Cli::Parser parser{};
+        Interface::Cmdline::Parser parser{};
         const std::vector<std::string> args = {"-o:"};
 
         // Act
@@ -83,7 +83,7 @@ namespace {
     TEST(ParserTest, OptionWithValueEqualSeparator_CorrectlyParsed)
     {
         // Arrange
-        Cli::Parser parser{};
+        Interface::Cmdline::Parser parser{};
         const std::vector<std::string> args = {"/S=8192"};
 
         // Act
@@ -100,7 +100,7 @@ namespace {
     {
         {
             // Arrange
-            Cli::Parser parser{};
+            Interface::Cmdline::Parser parser{};
             std::vector<std::string> args{"-d2"};
 
             // Act
@@ -112,7 +112,7 @@ namespace {
         }
         {
             // Arrange
-            Cli::Parser parser{};
+            Interface::Cmdline::Parser parser{};
             std::vector<std::string> args{"-d=2"};
 
             // Act
@@ -124,7 +124,7 @@ namespace {
         }
         {
             // Arrange
-            Cli::Parser parser{};
+            Interface::Cmdline::Parser parser{};
             std::vector<std::string> args{"-d:2"};
 
             // Act
@@ -139,7 +139,7 @@ namespace {
     TEST(ParserTest, SpecialSuiOptionWithValue_CorrectlyParsed)
     {
         // Arrange
-        Cli::Parser parser{};
+        Interface::Cmdline::Parser parser{};
         const std::vector<std::string> args = {"-sui+"};
 
         // Act
@@ -155,7 +155,7 @@ namespace {
     TEST(ParserTest, SpecialHelpOption_CorrectlyParsed)
     {
         // Arrange
-        Cli::Parser parser{};
+        Interface::Cmdline::Parser parser{};
         const std::vector<std::string> args = {"--help", "-h", "-?"};
 
         // Act
@@ -174,7 +174,7 @@ namespace {
     TEST(ParserTest, DuplicateOptionWithoutOverride_DoesNotUpdateValue)
     {
         // Arrange
-        Cli::Parser parser{};
+        Interface::Cmdline::Parser parser{};
         parser.parse({"-A8"}, false);
 
         // Act
@@ -189,7 +189,7 @@ namespace {
     TEST(ParserTest, DuplicateOptionWithOverride_DoesUpdateValue)
     {
         // Arrange
-        Cli::Parser parser{};
+        Interface::Cmdline::Parser parser{};
         parser.parse({"-A8"}, false);
 
         // Act
@@ -204,9 +204,9 @@ namespace {
     TEST(ParserTest, DuplicateInputFiles_Ignored)
     {
         // Arrange
-        Cli::Parser parser{};
+        Interface::Cmdline::Parser parser{};
         const auto temp_file = create_temp_file("main.sma");
-        const Cli::Parser::Arguments args = {"main.sma", "main.sma"};
+        const Interface::Cmdline::Parser::Arguments args = {"main.sma", "main.sma"};
 
         // Act
         parser.parse(args, false);
@@ -221,17 +221,17 @@ namespace {
     TEST(ParserTest, NonExistentInputFile_ThrowsException)
     {
         // Arrange
-        Cli::Parser parser{};
-        const Cli::Parser::Arguments args = {"nonexistent.sma"};
+        Interface::Cmdline::Parser parser{};
+        const Interface::Cmdline::Parser::Arguments args = {"nonexistent.sma"};
 
         // Act & Assert
-        EXPECT_THROW(parser.parse(args, false), Cli::Exceptions::CliError);
+        EXPECT_THROW(parser.parse(args, false), Interface::Cmdline::Exceptions::CliError);
     }
 
     TEST(ParserTest, ComprehensiveMixOfArguments_AreParsedCorrectly)
     {
         // Arrange
-        Cli::Parser parser{};
+        Interface::Cmdline::Parser parser{};
         const auto plugin_path = create_temp_file("plugin.sma");
 
         std::vector<std::string> args{
@@ -294,7 +294,7 @@ namespace {
     TEST(ParserTest, MultipleValuesForSingleOption_ParsedCorrectly)
     {
         // Arrange
-        Cli::Parser parser{};
+        Interface::Cmdline::Parser parser{};
         const std::vector<std::string> args = {"-Tconfig1.cfg", "/T=config2.cfg", "-T:config3.cfg"};
 
         // Act
@@ -312,7 +312,7 @@ namespace {
     TEST(ParserTest, MultipleFlagsWithoutValue_ParsedCorrectly)
     {
         // Arrange
-        Cli::Parser parser{};
+        Interface::Cmdline::Parser parser{};
         const std::vector<std::string> args = {"-E", "-E", "-E"};
 
         // Act
@@ -330,7 +330,7 @@ namespace {
     TEST(ParserTest, MixedValuesAndFlags_ParsedCorrectly)
     {
         // Arrange
-        Cli::Parser parser{};
+        Interface::Cmdline::Parser parser{};
         const std::vector<std::string> args = {"-A8", "/A16", "-A=32", "-E"};
 
         // Act
@@ -353,7 +353,7 @@ namespace {
     TEST(ParserTest, OverrideClearsPreviousValues)
     {
         // Arrange
-        Cli::Parser parser{};
+        Interface::Cmdline::Parser parser{};
         parser.parse({"-X1", "-X2"}, false);
 
         // Act

@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.21...3.31)
 #-------------------------------------------------------------------------------
 
 project(        "AMXX Nova Pawn Compiler"
-  VERSION       "1.0.0"
+  VERSION       "0.6.7"
   DESCRIPTION   "AMXX Nova pawn compiler"
   HOMEPAGE_URL  "https://github.com/hlds-run/amxx-nova-pc"
   LANGUAGES     "C" "CXX"
@@ -184,15 +184,9 @@ include("cmake/SetupGitHooks.cmake")
 #-------------------------------------------------------------------------------
 
 add_subdirectory("external/zlib")
-add_subdirectory("libs/pawncore")
-add_subdirectory("libs/pawnwrap")
-add_subdirectory("libs/concepts")
-add_subdirectory("libs/compress")
-add_subdirectory("libs/binary")
-add_subdirectory("libs/amx")
-add_subdirectory("libs/amxx")
-add_subdirectory("libs/cli")
-add_subdirectory("libs/ui")
+add_subdirectory("libs/core")
+add_subdirectory("libs/pawn")
+add_subdirectory("libs/interface")
 add_subdirectory("apps/amxxpc")
 
 if(BUILD_UNIT_TESTS)
