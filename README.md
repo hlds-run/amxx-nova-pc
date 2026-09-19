@@ -13,26 +13,30 @@ A modern, cross-platform Pawn language compiler for AMX Mod X. This is a command
 
 The project has been refactored using C++23 and a modern CMake build system, enabling straightforward compilation on both Windows and Linux, and integrating contemporary tools to maintain high code quality.
 
-Nova is a drop-in replacement for the original `amxxpc`: it accepts the same `.sma` sources and the same core command-line options, and produces fully compatible `.amxx` plugins. At the same time, the project improves on the original toolchain in several notable ways — see [Improvements over the original compiler](#improvements-over-the-original-compiler).
+Nova is a drop-in replacement for the original `amxxpc`: it retains the original Pawn compiler core, accepts the same `.sma` sources and the same core command-line options, and produces fully compatible `.amxx` plugins — existing plugin sources compile without any changes. At the same time, the project improves on the original toolchain in several notable ways — see [Improvements over the original compiler](#improvements-over-the-original-compiler).
 
 ## Improvements over the original compiler
 
-*   **Single self-contained binary.** The original toolchain consists of the `amxxpc` launcher and a separately loaded compiler core (`amxxpc32.dll`/`amxxpc32.so`) resolved at runtime. Nova links the 32-bit compiler core statically, so the whole compiler is a single file with no runtime library lookups.
+*   **Single self-contained binary.** The original toolchain consists of the `amxxpc` launcher and a separately loaded compiler core (`amxxpc32.dll`/`amxxpc32.so`) resolved at runtime. The command-line wrapper, rewritten in modern C++23, links the 32-bit compiler core statically, so the whole compiler is a single file with no runtime library lookups.
 *   **Build profiles (.cfg).** The original compiler only auto-loaded a legacy `pawn.cfg` next to the executable. Nova adds named profiles (`-T release` → `<compiler_dir>/target/release.cfg`), a default-profile search chain (`target/default.cfg` → `pawn.cfg`) and multiple `-T` files per invocation.
 *   **Complete `--help`.** The option table is generated from the actual option registry (30+ options, including `-E`, `-h`, `-S`, `-s`, `-t`, `-v`, `-w`, `-X`, escape-character switches and the `-;`/`-(` toggles), while the original prints a hardcoded 17-line list.
 *   **Strict command-line validation.** Unknown options and missing input files are rejected with clear error messages, and Nova never blocks the console waiting for a keypress. The original forwarded everything to the core and dumped legacy help on parse errors.
 *   **Pragma directives.** New `#pragma warning` directives (`push`/`pop` to save and restore the warning state, `enable`/`disable` for individual warnings) — the original compiler has no warning-management pragmas at all. `#pragma unused` now also works for enum members: previously the pragma silently failed for them, and the compiler kept emitting "symbol is never used" warnings.
 *   **Extended command-line definitions.** In addition to numeric constants (`BUILD_ID=512`, which the original also supports), Nova allows defining string macros (`VERSION_NAME="1.5.0"`) and conditional-compilation flags (`DEBUG_MODE=`) directly on the command line.
-*   **Modern build system.** CMake 3.21+ with Ninja/VS 2022 presets and one-command build scripts (`-b` build type, `-c` compiler, `-j` jobs) replace the AMBuild and MSVC solution workflow.
+*   **Modern build system.** CMake 3.21+ with Ninja/VS 2022 presets and one-command build scripts (`-b` build type, `-c` compiler, `-j` jobs) enable native builds on both Windows and Linux, replacing the AMBuild and MSVC solution workflow.
 *   **Quality gates.** A pinned `clang-format-20` pre-commit hook, Clang-Tidy, Cppcheck, PVS-Studio and Include-What-You-Use run on the codebase, and the wrapper is covered by unit tests (GoogleTest) — none of which are present in the original compiler sources.
-*   **Compiler-core fixes.** The preserved Pawn core carries numerous fixes absent from the original AMX Mod X 1.9/1.10 compiler sources: a compiler crash when local enums shadow global symbols, warning 206 on intentional infinite loops, global symbol corruption from local constants, incorrect debug symbol name length calculation, undefined behavior from uninitialized variables, memory and resource leaks, a dangling pointer after reallocation in the source writer, incorrect static function scope resolution, unchecked memory allocation failures, and wrong `.amx` output paths for multi-dot filenames and CLI-defined destinations. Unsafe string functions were also replaced with bounded `strlcpy`/`strlcat`.
-
-## Key Features
-
-*   **Full compatibility**: The project retains the original Pawn compiler core from AMX Mod X, which guarantees 100% compatibility of compiled plugins (.amxx) and eliminates the need to make any changes to the existing source code (.sma).
-*   **Cross-Platform**: Natively build and run the compiler on both Windows and Linux.
-*   **Modern Architecture and Wrapper**: The command-line wrapper (`amxxpc`) and the project's build system have been completely rewritten in modern C++23 using CMake. This ensures cross-platform compatibility and ease of compilation while preserving the original, time-tested compiler core.
-*   **Code Quality**: Integrated static analyzers (Clang-Tidy, Cppcheck, PVS-Studio, IWYU) and formatters (Clang-Format) to maintain code cleanliness and stability.
+*   **Compiler-core fixes.** The preserved Pawn core carries numerous fixes absent from the original AMX Mod X 1.9/1.10 compiler sources:
+    *   Fixed a compiler crash when local enums shadow global symbols.
+    *   Warning 206 is no longer emitted on intentional infinite loops.
+    *   Fixed global symbol corruption caused by local constants.
+    *   Fixed incorrect debug symbol name length calculation.
+    *   Fixed undefined behavior from uninitialized variables.
+    *   Fixed memory and resource leaks.
+    *   Fixed a dangling pointer after reallocation in the source writer.
+    *   Fixed incorrect static function scope resolution.
+    *   Memory allocation failures are now checked and handled.
+    *   Fixed wrong `.amx` output paths for multi-dot filenames and CLI-defined destinations.
+    *   Unsafe string functions were replaced with bounded `strlcpy`/`strlcat`.
 
 ## Usage
 
