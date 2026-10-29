@@ -61,7 +61,7 @@ namespace Interface::Cmdline {
     Arguments::Arguments(const std::span<const char* const> argv)
         : exe_path_(argv[0]), parser_(std::make_unique<Parser>())
     {
-        std::vector<std::string> args{argv.cbegin() + 1, argv.cend()};
+        std::vector<std::string> args{argv.begin() + 1, argv.end()};
         parser_->parse(args, false);
 
         if (const auto config_paths = resolve_config_paths(*this); config_paths) {
