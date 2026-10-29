@@ -141,6 +141,16 @@
       "hidden": true
     },
     {
+      "name": "macos",
+      "description": "Configuration for macOS",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "hidden": true
+    },
+    {
       "name": "windows",
       "description": "Configuration for Windows",
       "cacheVariables": {
@@ -235,6 +245,23 @@
       "inherits": [
         "unittest",
         "ninja-clang-linux"
+      ]
+    },
+    {
+      "name": "ninja-clang-macos",
+      "inherits": [
+        "base",
+        "ninja-multi-config",
+        "clang",
+        "macos"
+      ]
+    },
+    {
+      "name": "unittest-ninja-clang-macos",
+      "displayName": "Unittest Ninja Clang",
+      "inherits": [
+        "unittest",
+        "ninja-clang-macos"
       ]
     },
     {
@@ -416,6 +443,16 @@
       "hidden": true
     },
     {
+      "name": "macos",
+      "description": "Configuration for macOS",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "hidden": true
+    },
+    {
       "name": "windows",
       "description": "Configuration for Windows",
       "condition": {
@@ -514,6 +551,53 @@
       "inherits": [
         "base",
         "linux"
+      ],
+      "targets": [
+        "amxxpc.test"
+      ]
+    },
+    {
+      "name": "ninja-clang-macos-debug",
+      "displayName": "Ninja Clang Debug",
+      "description": "Build using Ninja Multi-Config generator and Clang compiler with Debug configuration",
+      "configurePreset": "ninja-clang-macos",
+      "configuration": "Debug",
+      "inherits": [
+        "base",
+        "macos"
+      ]
+    },
+    {
+      "name": "ninja-clang-macos-release",
+      "displayName": "Ninja Clang Release",
+      "description": "Build using Ninja Multi-Config generator and Clang compiler with Release configuration",
+      "configurePreset": "ninja-clang-macos",
+      "configuration": "Release",
+      "inherits": [
+        "base",
+        "macos"
+      ]
+    },
+    {
+      "name": "ninja-clang-macos-reldebinfo",
+      "displayName": "Ninja Clang RelWithDebInfo",
+      "description": "Build using Ninja Multi-Config generator and Clang compiler with RelWithDebInfo configuration",
+      "configurePreset": "ninja-clang-macos",
+      "configuration": "RelWithDebInfo",
+      "inherits": [
+        "base",
+        "macos"
+      ]
+    },
+    {
+      "name": "unittest-ninja-clang-macos-release",
+      "displayName": "Unittest Ninja Clang Release",
+      "description": "Build unit tests using Ninja Multi-Config generator and Clang compiler with Release configuration",
+      "configurePreset": "unittest-ninja-clang-macos",
+      "configuration": "Release",
+      "inherits": [
+        "base",
+        "macos"
       ],
       "targets": [
         "amxxpc.test"
@@ -793,6 +877,16 @@
       "hidden": true
     },
     {
+      "name": "macos",
+      "description": "Configuration for macOS",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "hidden": true
+    },
+    {
       "name": "windows",
       "description": "Configuration for Windows",
       "condition": {
@@ -816,6 +910,14 @@
       "inherits": [
         "base",
         "linux"
+      ]
+    },
+    {
+      "name": "ninja-clang-macos",
+      "configurePreset": "unittest-ninja-clang-macos",
+      "inherits": [
+        "base",
+        "macos"
       ]
     },
     {

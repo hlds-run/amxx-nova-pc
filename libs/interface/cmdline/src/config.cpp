@@ -24,7 +24,7 @@ namespace {
         auto trimmed_view = str | std::views::drop_while(is_whitespace) | std::views::reverse |
                             std::views::drop_while(is_whitespace) | std::views::reverse;
 
-        return std::string{trimmed_view.cbegin(), trimmed_view.cend()};
+        return std::string{trimmed_view.begin(), trimmed_view.end()};
     }
 
     /**
